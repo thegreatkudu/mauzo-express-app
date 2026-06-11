@@ -5,8 +5,7 @@ import { User } from "../models/user.model.js";
 export const inngest = new Inngest({ id: "mauzo-express-app" });
 
 const syncUser = inngest.createFunction(
-  { id: "sync-user" },
-  { event: "clerk/user.created" },
+  { id: "sync-user", triggers: [{ event: "clerk/user.created" }] },
   async ({ event }) => {
     await connectDB();
     const { id, email_addresses, first_name, last_name, image_url } = event.data;
@@ -25,8 +24,7 @@ const syncUser = inngest.createFunction(
 );
 
 const deleteUserFromDB = inngest.createFunction(
-  { id: "delete-user-from-db" },
-  { event: "clerk/user.deleted" },
+  { id: "delete-user-from-db", triggers: [{ event: "clerk/user.deleted" }] },
   async ({ event }) => {
     await connectDB();
 
