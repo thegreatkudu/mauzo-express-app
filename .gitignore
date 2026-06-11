@@ -1,2 +1,5 @@
 node_modules
-.envbackend/.env
+.env
+backend/.env
+admin/.env
+.expo/
