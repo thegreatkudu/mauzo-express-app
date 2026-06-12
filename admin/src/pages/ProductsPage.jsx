@@ -156,7 +156,7 @@ function ProductsPage() {
                     <div className="flex items-center gap-6 mt-4">
                       <div>
                         <p className="text-xs text-base-content/70">Price</p>
-                        <p className="font-bold text-lg">${product.price}</p>
+                        <p className="font-bold text-lg">${product.price.toFixed(2)}</p>
                       </div>
                       <div>
                         <p className="text-xs text-base-content/70">Stock</p>

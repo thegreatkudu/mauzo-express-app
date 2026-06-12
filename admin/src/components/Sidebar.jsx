@@ -43,7 +43,11 @@ function Sidebar() {
         <div className="p-4 w-full">
           <div className="flex items-center gap-3">
             <div className="avatar shrink-0">
-              <img src={user?.imageUrl} alt={user?.name} className="w-10 h-10 rounded-full" />
+              <img
+                src={user?.imageUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.firstName || "U")}&background=random`}
+                alt={user?.name}
+                className="w-10 h-10 rounded-full"
+              />
             </div>
 
             <div className="flex-1 min-w-0 is-drawer-close:hidden">

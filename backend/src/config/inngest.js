@@ -2,7 +2,7 @@ import { Inngest } from "inngest";
 import { connectDB } from "./db.js";
 import { User } from "../models/user.model.js";
 
-export const inngest = new Inngest({ id: "mauzo-express-app" });
+export const inngest = new Inngest({ id: "ecommerce-app" });
 
 const syncUser = inngest.createFunction(
   { id: "sync-user", triggers: [{ event: "clerk/user.created" }] },
