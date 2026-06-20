@@ -13,8 +13,9 @@ import { useTranslation } from 'react-i18next'
 import { useOrderDetail, useAcceptOrder, useRejectOrder } from '@/hooks/useOrders'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { formatDate, formatOrderId } from '@/utils/date'
+import { useResponsive } from '@/hooks/useResponsive'
 import {
-  BackIcon, CheckCircleIcon, CloseIcon,
+  BackIcon, CheckCircleIcon, CloseIcon, ChevronRightIcon,
   CalendarIcon, BuildingIcon, PackageIcon,
   ClockIcon, SuppliersNavIcon, DeliveryIcon, TickIcon,
 } from '@/constants/icons'
@@ -187,7 +188,19 @@ export default function OrderDetailScreen() {
           {order.items.map((item, i) => {
             const quote = order.quotations.find(q => q.order_item_id === item.id)
             return (
-              <View key={item.id} style={[styles.itemRow, i < order.items.length - 1 && styles.itemRowBorder]}>
+              <TouchableOpacity
+                key={item.id}
+                style={[styles.itemRow, i < order.items.length - 1 && styles.itemRowBorder]}
+                onPress={() => router.push({
+                  pathname: '/product/[id]',
+                  params: {
+                    id:           String(item.product.id),
+                    supplierId:   String(order.supplier.id),
+                    supplierName: order.supplier.business_name,
+                  },
+                } as any)}
+                activeOpacity={0.7}
+              >
                 <View style={styles.itemLeft}>
                   <Text style={styles.itemName}>{item.product.name}</Text>
                   <Text style={styles.itemMeta}>
@@ -205,8 +218,9 @@ export default function OrderDetailScreen() {
                   ) : (
                     <Text style={styles.noPriceText}>{t('order_detail.awaiting_quote')}</Text>
                   )}
+                  <HugeiconsIcon icon={ChevronRightIcon} size={13} color='#D1D5DB' strokeWidth={1.5} />
                 </View>
-              </View>
+              </TouchableOpacity>
             )
           })}
         </View>
@@ -286,13 +300,28 @@ export default function OrderDetailScreen() {
 
 function Header({ onBack }: { onBack: () => void }) {
   const { t } = useTranslation()
+  const { rf, hp, isTablet } = useResponsive()
+  const btnSize   = isTablet ? 46 : 40
+  const btnRadius = isTablet ? 15 : 13
   return (
-    <View style={styles.header}>
-      <TouchableOpacity onPress={onBack} hitSlop={8} activeOpacity={0.7}>
-        <HugeiconsIcon icon={BackIcon} size={22} color='#374151' strokeWidth={2} />
+    <View style={[styles.header, { paddingHorizontal: hp }]}>
+      <TouchableOpacity
+        onPress={onBack}
+        hitSlop={8}
+        activeOpacity={0.7}
+        style={[styles.backBtn, { width: btnSize, height: btnSize, borderRadius: btnRadius }]}
+      >
+        <HugeiconsIcon
+          icon={BackIcon}
+          size={isTablet ? 22 : 20}
+          color='#111827'
+          strokeWidth={2}
+        />
       </TouchableOpacity>
-      <Text style={styles.headerTitle}>{t('order_detail.header_title')}</Text>
-      <View style={{ width: 22 }} />
+      <Text style={[styles.headerTitle, { fontSize: rf(17) }]} numberOfLines={1}>
+        {t('order_detail.header_title')}
+      </Text>
+      <View style={{ width: btnSize }} />
     </View>
   )
 }
@@ -314,14 +343,28 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingTop: 12,
+    paddingBottom: 8,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#F3F4F6',
   },
-  headerTitle: { fontSize: 17, fontFamily: 'Poppins-SemiBold', color: '#111827' },
+  backBtn: {
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.10,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  headerTitle: {
+    flex: 1,
+    textAlign: 'center',
+    fontFamily: 'Poppins-SemiBold',
+    color: '#111827',
+  },
 
   card: {
     backgroundColor: '#fff',

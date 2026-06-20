@@ -92,18 +92,32 @@ export default function HomeScreen() {
                 {profile?.business_name ?? 'Welcome'}
               </Text>
             </View>
-            <TouchableOpacity
-              style={[styles.notifBtn, isTablet && styles.notifBtnTablet]}
-              onPress={() => router.push('/notifications')}
-              activeOpacity={0.8}
-            >
-              <HugeiconsIcon icon={NotificationIcon} size={isTablet ? 24 : 22} color='#374151' strokeWidth={1.5} />
-              {unreadCount > 0 && (
-                <View style={styles.notifBadge}>
-                  <Text style={styles.notifBadgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
-                </View>
-              )}
-            </TouchableOpacity>
+            <View style={styles.headerActions}>
+              <TouchableOpacity
+                style={[styles.notifBtn, isTablet && styles.notifBtnTablet]}
+                onPress={() => router.push('/(tabs)/cart')}
+                activeOpacity={0.8}
+              >
+                <HugeiconsIcon icon={CartIcon} size={isTablet ? 24 : 22} color='#374151' strokeWidth={1.5} />
+                {cartCount > 0 && (
+                  <View style={styles.notifBadge}>
+                    <Text style={styles.notifBadgeText}>{cartCount > 9 ? '9+' : cartCount}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.notifBtn, isTablet && styles.notifBtnTablet]}
+                onPress={() => router.push('/notifications')}
+                activeOpacity={0.8}
+              >
+                <HugeiconsIcon icon={NotificationIcon} size={isTablet ? 24 : 22} color='#374151' strokeWidth={1.5} />
+                {unreadCount > 0 && (
+                  <View style={styles.notifBadge}>
+                    <Text style={styles.notifBadgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* ── Trial banner ── */}
@@ -309,7 +323,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  headerLeft: { flex: 1, marginRight: 12 },
+  headerLeft:    { flex: 1, marginRight: 12 },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   greeting: {
     fontFamily: 'Poppins-Regular',
     color: '#6B7280',

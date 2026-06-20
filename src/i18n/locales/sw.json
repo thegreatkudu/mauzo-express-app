@@ -292,5 +292,57 @@
     "error_load_subtitle": "Angalia muunganiko wako na ujaribu tena",
     "empty_title": "Hakuna bidhaa zilizopatikana",
     "empty_subtitle": "Msambazaji huyu hana bidhaa bado"
+  },
+  "product_detail": {
+    "header_title": "Maelezo ya Bidhaa",
+    "description_title": "Kuhusu Bidhaa Hii",
+    "brands_title": "Chapa / Aina",
+    "units_title": "Kitengo Na Bei",
+    "min_order": "Kiwango cha chini: vipande {{count}}",
+    "stock_count": "{{count}} zinapatikana",
+    "not_found_title": "Bidhaa haijapatikana",
+    "not_found_subtitle": "Bidhaa hii huenda isipatikane tena kutoka kwa msambazaji huyu",
+    "error_load": "Imeshindwa kupakia bidhaa",
+    "price_preview_label": "Jumla",
+    "go_back": "Rudi Nyuma"
+  },
+  "supplier_profile": {
+    "header_title": "Wasifu wa Msambazaji",
+    "products_title": "Bidhaa",
+    "browse_products": "Tazama Bidhaa Zote",
+    "not_found_title": "Msambazaji haijapatikana",
+    "not_found_subtitle": "Msambazaji huyu huenda haipo tena"
+  },
+  "order_success": {
+    "title": "Agizo Limetumwa!",
+    "subtitle": "Ombi lako la nukuu limetumwa kwa msambazaji.\nWatajibu na nukuu hivi karibuni.",
+    "status_awaiting": "Inasubiri Nukuu",
+    "label_date": "Tarehe",
+    "label_supplier_one": "Msambazaji",
+    "label_supplier_other": "Wasambazaji",
+    "label_items": "Bidhaa",
+    "items_one": "bidhaa {{count}}",
+    "items_other": "bidhaa {{count}}",
+    "label_estimated": "Jumla Inayokadiriwa",
+    "quote_info": "Msambazaji atakapokagua ombi lako, atatuma nukuu ya bei. Unaweza kukubali au kukataa kutoka Maagizo Yangu.",
+    "view_order": "Tazama Maelezo ya Agizo",
+    "view_all_orders": "Maagizo Yangu",
+    "continue_shopping": "Endelea Kununua",
+    "back_home": "Rudi Nyumbani"
+  },
+  "order_review": {
+    "header_title": "Kagua Agizo",
+    "quote_info": "Baada ya kutumwa, msambazaji wako atakagua na kutoa bei kwa kila bidhaa. Unaweza kukubali au kukataa nukuu.",
+    "estimated_total": "Jumla Inayokadiriwa",
+    "total_note": "Bei za mwisho zitathibitishwa msambazaji atakapotuma nukuu",
+    "notes_label": "Maelezo kwa Msambazaji",
+    "notes_placeholder": "Hiari: mf. Maelekezo ya uwasilishaji, maombi maalum…",
+    "place_order": "Tuma Ombi la Nukuu",
+    "empty_title": "Kikapu chako ni tupu",
+    "empty_subtitle": "Tazama wasambazaji na ongeza bidhaa kuanza",
+    "confirm_title": "Tuma Agizo",
+    "confirm_message_one": "Tuma ombi la nukuu kwa msambazaji {{count}}?",
+    "confirm_message_other": "Tuma maombi ya nukuu kwa wasambazaji {{count}}?",
+    "success": "Agizo limetumwa — linasubiri nukuu"
   }
 }

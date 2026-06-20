@@ -112,10 +112,10 @@ export function useResponsive(): ResponsiveValues {
     const rf = (size: number) =>
       Math.round(Math.min(Math.max(size * fontScale, size * 0.85), size * 1.3))
 
-    // Tab bar
-    const tabIconSize  = isTablet ? 24 : 22
-    const tabFontSize  = isTablet ? 12 : 11
-    const tabBarHeight = isTablet ? 66 : 58
+    // Tab bar — smallPhone needs tighter values so all 5 tabs fit on 360px screens
+    const tabIconSize  = isTablet ? 24 : isSmallPhone ? 20 : 22
+    const tabFontSize  = isTablet ? 12 : isSmallPhone ? 10 : 11
+    const tabBarHeight = isTablet ? 66 : isSmallPhone ? 52 : 56
 
     return {
       width,

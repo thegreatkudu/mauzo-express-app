@@ -292,5 +292,57 @@
     "error_load_subtitle": "Check your connection and try again",
     "empty_title": "No products found",
     "empty_subtitle": "This supplier has no products yet"
+  },
+  "product_detail": {
+    "header_title": "Product Details",
+    "description_title": "About this Product",
+    "brands_title": "Brand / Variety",
+    "units_title": "Unit & Pricing",
+    "min_order": "Min. order: {{count}} units",
+    "stock_count": "{{count}} in stock",
+    "not_found_title": "Product not found",
+    "not_found_subtitle": "This product may no longer be available from this supplier",
+    "error_load": "Could not load product",
+    "price_preview_label": "Total",
+    "go_back": "Go Back"
+  },
+  "supplier_profile": {
+    "header_title": "Supplier Profile",
+    "products_title": "Products",
+    "browse_products": "Browse All Products",
+    "not_found_title": "Supplier not found",
+    "not_found_subtitle": "This supplier may no longer be available"
+  },
+  "order_success": {
+    "title": "Order Placed!",
+    "subtitle": "Your quote request has been sent to the supplier.\nThey will respond with a quotation shortly.",
+    "status_awaiting": "Awaiting Quotation",
+    "label_date": "Date",
+    "label_supplier_one": "Supplier",
+    "label_supplier_other": "Suppliers",
+    "label_items": "Items",
+    "items_one": "{{count}} item",
+    "items_other": "{{count}} items",
+    "label_estimated": "Estimated Total",
+    "quote_info": "Once the supplier reviews your request, they will send you a price quotation. You can then accept or reject it from My Orders.",
+    "view_order": "View Order Details",
+    "view_all_orders": "My Orders",
+    "continue_shopping": "Browse More",
+    "back_home": "Back to Home"
+  },
+  "order_review": {
+    "header_title": "Review Order",
+    "quote_info": "Once submitted, your supplier will review and quote prices for each item. You can then accept or reject the quotation.",
+    "estimated_total": "Estimated Total",
+    "total_note": "Final prices will be confirmed after the supplier sends a quotation",
+    "notes_label": "Notes to Supplier",
+    "notes_placeholder": "Optional: e.g. Delivery instructions, special requests…",
+    "place_order": "Submit Quote Request",
+    "empty_title": "Your cart is empty",
+    "empty_subtitle": "Browse suppliers and add products to get started",
+    "confirm_title": "Submit Order",
+    "confirm_message_one": "Send quote request to {{count}} supplier?",
+    "confirm_message_other": "Send quote requests to {{count}} suppliers?",
+    "success": "Order submitted — awaiting quotation"
   }
 }

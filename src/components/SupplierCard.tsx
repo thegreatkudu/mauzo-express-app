@@ -1,7 +1,9 @@
 import { memo } from 'react'
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { HugeiconsIcon } from '@hugeicons/react-native'
-import { BuildingIcon, LocationIcon, PackageIcon, ChevronRightIcon } from '@/constants/icons'
+import {
+  BuildingIcon, LocationIcon, PackageIcon, ChevronRightIcon,
+} from '@/constants/icons'
 import { useResponsive } from '@/hooks/useResponsive'
 import { useTranslation } from 'react-i18next'
 import type { Supplier } from '@/types'
@@ -13,9 +15,25 @@ interface SupplierCardProps {
   compact?: boolean
 }
 
-const SupplierCard = memo(function SupplierCard({ supplier, onPress, compact = false }: SupplierCardProps) {
+// Category → accent colour mapping for the header bands
+const ACCENT_COLORS: Record<string, { bg: string; icon: string; text: string }> = {}
+const DEFAULT_ACCENT = { bg: '#FEF0E6', icon: '#CE4002', text: '#CE4002' }
+
+function getAccent(categoryName: string) {
+  return ACCENT_COLORS[categoryName] ?? DEFAULT_ACCENT
+}
+
+const SupplierCard = memo(function SupplierCard({
+  supplier,
+  onPress,
+  compact = false,
+}: SupplierCardProps) {
   const { rf } = useResponsive()
   const { t } = useTranslation()
+  const accent = getAccent(supplier.category.name)
+
+  // Header band height scales with compact mode (mirrors product image sizing)
+  const bandHeight = compact ? 90 : 110
 
   return (
     <TouchableOpacity
@@ -23,59 +41,69 @@ const SupplierCard = memo(function SupplierCard({ supplier, onPress, compact = f
       onPress={onPress}
       activeOpacity={0.85}
     >
-      {/* Avatar + business info */}
-      <View style={[styles.header, compact && styles.headerCompact]}>
-        <View style={[styles.avatar, compact && styles.avatarCompact]}>
-          <HugeiconsIcon
-            icon={BuildingIcon}
-            size={compact ? 18 : 22}
-            color='#CE4002'
-            strokeWidth={1.5}
-          />
-        </View>
-        <View style={styles.headerText}>
-          <Text
-            style={[styles.name, { fontSize: rf(compact ? 14 : 15) }]}
-            numberOfLines={1}
-          >
-            {supplier.business_name}
-          </Text>
-          <View style={styles.locationRow}>
-            <HugeiconsIcon icon={LocationIcon} size={12} color='#9CA3AF' strokeWidth={1.5} />
-            <Text
-              style={[styles.location, { fontSize: rf(11) }]}
-              numberOfLines={1}
-            >
-              {supplier.location}
-            </Text>
-          </View>
-        </View>
-      </View>
-
-      {/* Category chip + product count */}
-      <View style={[styles.meta, compact && styles.metaCompact]}>
-        <View style={styles.chip}>
-          <Text style={[styles.chipText, { fontSize: rf(11) }]}>
+      {/* ── Coloured header band (mirrors product image area) ── */}
+      <View style={[styles.band, { height: bandHeight, backgroundColor: accent.bg }]}>
+        {/* Category chip — top-left */}
+        <View style={styles.categoryChip}>
+          <Text style={[styles.categoryChipText, { fontSize: rf(10) }]} numberOfLines={1}>
             {supplier.category.name}
           </Text>
         </View>
-        <View style={styles.productCount}>
-          <HugeiconsIcon icon={PackageIcon} size={12} color='#6B7280' strokeWidth={1.5} />
-          <Text style={[styles.productCountText, { fontSize: rf(11) }]}>
+
+        {/* Centred building icon */}
+        <View style={styles.bandIconWrap}>
+          <View style={[styles.bandIconCircle, compact && styles.bandIconCircleCompact]}>
+            <HugeiconsIcon
+              icon={BuildingIcon}
+              size={compact ? 22 : 28}
+              color={accent.icon}
+              strokeWidth={1.5}
+            />
+          </View>
+        </View>
+
+        {/* Product count badge — bottom-right */}
+        <View style={styles.productBadge}>
+          <HugeiconsIcon icon={PackageIcon} size={10} color='#6B7280' strokeWidth={1.5} />
+          <Text style={[styles.productBadgeText, { fontSize: rf(10) }]}>
             {t(
               supplier.product_count !== 1
                 ? 'supplier_card.products_other'
                 : 'supplier_card.products_one',
-              { count: supplier.product_count }
+              { count: supplier.product_count },
             )}
           </Text>
         </View>
       </View>
 
-      {/* Browse CTA */}
-      <View style={[styles.btn, compact && styles.btnCompact]}>
-        <Text style={[styles.btnText, { fontSize: rf(12) }]}>{t('supplier_card.browse')}</Text>
-        <HugeiconsIcon icon={ChevronRightIcon} size={14} color='#CE4002' strokeWidth={2} />
+      {/* ── Card body ── */}
+      <View style={[styles.body, compact && styles.bodyCompact]}>
+        {/* Business name */}
+        <Text
+          style={[styles.name, compact && styles.nameCompact, { fontSize: rf(compact ? 13 : 14) }]}
+          numberOfLines={1}
+        >
+          {supplier.business_name}
+        </Text>
+
+        {/* Location row */}
+        <View style={styles.locationRow}>
+          <HugeiconsIcon icon={LocationIcon} size={12} color='#9CA3AF' strokeWidth={1.5} />
+          <Text
+            style={[styles.location, { fontSize: rf(11) }]}
+            numberOfLines={1}
+          >
+            {supplier.location}
+          </Text>
+        </View>
+
+        {/* Browse CTA */}
+        <View style={[styles.cta, compact && styles.ctaCompact]}>
+          <Text style={[styles.ctaText, { fontSize: rf(12) }]}>
+            {t('supplier_card.browse')}
+          </Text>
+          <HugeiconsIcon icon={ChevronRightIcon} size={13} color='#CE4002' strokeWidth={2} />
+        </View>
       </View>
     </TouchableOpacity>
   )
@@ -87,53 +115,77 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: '#fff',
     borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
     borderWidth: 1,
     borderColor: '#F3F4F6',
+    overflow: 'hidden',
+    marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,
   },
-  cardCompact: {
-    padding: 12,
-    marginBottom: 0,
+  cardCompact: { marginBottom: 0 },
+
+  // Header colour band
+  band: {
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
   },
 
-  // Header
-  header: {
+  // Category chip — top-left corner of band
+  categoryChip: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    backgroundColor: 'rgba(255,255,255,0.90)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 20,
+  },
+  categoryChipText: { fontFamily: 'Poppins-SemiBold', color: '#CE4002' },
+
+  // Centred icon
+  bandIconWrap: { alignItems: 'center', justifyContent: 'center' },
+  bandIconCircle: {
+    width: 56, height: 56, borderRadius: 28,
+    backgroundColor: '#fff',
+    alignItems: 'center', justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  bandIconCircleCompact: { width: 44, height: 44, borderRadius: 22 },
+
+  // Product count — bottom-right corner of band
+  productBadge: {
+    position: 'absolute',
+    bottom: 8,
+    right: 8,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    marginBottom: 12,
+    gap: 4,
+    backgroundColor: 'rgba(255,255,255,0.90)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 20,
   },
-  headerCompact: {
-    gap: 8,
-    marginBottom: 10,
-  },
+  productBadgeText: { fontFamily: 'Poppins-Regular', color: '#6B7280' },
 
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: '#FEF0E6',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  avatarCompact: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-  },
+  // Body
+  body:        { padding: 12, gap: 5 },
+  bodyCompact: { padding: 10, gap: 4 },
 
-  headerText: { flex: 1, gap: 3 },
   name: {
     fontFamily: 'Poppins-SemiBold',
     color: '#111827',
   },
+  nameCompact: {},
+
   locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -145,49 +197,21 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  // Meta row
-  meta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  metaCompact: { marginBottom: 10 },
-
-  chip: {
-    backgroundColor: '#FEF0E6',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 20,
-  },
-  chipText: {
-    fontFamily: 'Poppins-SemiBold',
-    color: '#CE4002',
-  },
-  productCount: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  productCountText: {
-    fontFamily: 'Poppins-Regular',
-    color: '#6B7280',
-  },
-
-  // Browse CTA — now a View (card itself is the touchable)
-  btn: {
+  // Browse CTA row
+  cta: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 5,
+    gap: 4,
     borderWidth: 1.5,
     borderColor: '#CE4002',
-    borderRadius: 12,
-    paddingVertical: 10,
+    borderRadius: 10,
+    paddingVertical: 8,
+    marginTop: 4,
     backgroundColor: 'transparent',
   },
-  btnCompact: { paddingVertical: 8 },
-  btnText: {
+  ctaCompact: { paddingVertical: 6, marginTop: 2 },
+  ctaText: {
     fontFamily: 'Poppins-SemiBold',
     color: '#CE4002',
   },

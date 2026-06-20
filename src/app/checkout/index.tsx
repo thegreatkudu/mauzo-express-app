@@ -1,561 +1,480 @@
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import { HugeiconsIcon } from '@hugeicons/react-native'
-import { LinearGradient } from 'expo-linear-gradient'
-import { router } from 'expo-router'
-import { useCartStore } from '@/store/cart.store'
-import { CATEGORY_META } from '@/data/mock'
-import {
-  CATEGORY_ICON_MAP,
-  DEFAULT_CATEGORY_ICON,
-  BackIcon,
-  TickIcon,
-  LocationIcon,
-  BagIcon,
-  CreditCardIcon,
-  ReceiptIcon,
-  SparklesIcon,
-  LockIcon,
-  VerifiedIcon,
-} from '@/constants/icons'
+// TODO: Replace with Flask API once backend integration begins.
 
-export default function CheckoutScreen() {
-  const vendorGroups  = useCartStore(s => s.getVendorGroups())
-  const subtotal      = useCartStore(s => s.getSubtotal())
-  const discount      = useCartStore(s => s.getDiscount())
-  const deliveryFee   = useCartStore(s => s.getDeliveryFee())
-  const total         = useCartStore(s => s.getTotal())
-  const appliedPromo  = useCartStore(s => s.appliedPromo)
-  const itemCount     = useCartStore(s => s.getItemCount())
+import { useMemo, useState } from 'react'
+import {
+  ActivityIndicator, Alert, RefreshControl, ScrollView,
+  StyleSheet, Text, TextInput, TouchableOpacity, View,
+} from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { router } from 'expo-router'
+import { HugeiconsIcon } from '@hugeicons/react-native'
+import { toast } from 'sonner-native'
+import { useTranslation } from 'react-i18next'
+
+import { useCartStore } from '@/store/cart.store'
+import { placeOrder } from '@/api/orders'
+import { extractApiError } from '@/api/client'
+import { useResponsive } from '@/hooks/useResponsive'
+import EmptyState from '@/components/ui/EmptyState'
+import {
+  BackIcon, CartIcon, BuildingIcon, PackageIcon, CheckCircleIcon, AlertCircleIcon,
+} from '@/constants/icons'
+import type { CartItem, Supplier } from '@/types'
+
+type SupplierGroup = {
+  supplier: Supplier
+  items: CartItem[]
+  estimatedSubtotal: number
+}
+
+export default function OrderReviewScreen() {
+  const { t } = useTranslation()
+  const { items, isLoading, fetchCart, clearLocalCart } = useCartStore()
+  const [placingOrder, setPlacingOrder] = useState(false)
+  const [notes, setNotes] = useState('')
+  const { rf, hp, isTablet } = useResponsive()
+  const insets = useSafeAreaInsets()
+
+  const groups = useMemo<SupplierGroup[]>(() => {
+    const map = new Map<number, SupplierGroup>()
+    for (const item of items) {
+      const sid = item.supplier.id
+      if (!map.has(sid)) {
+        map.set(sid, { supplier: item.supplier, items: [], estimatedSubtotal: 0 })
+      }
+      const g = map.get(sid)!
+      g.items.push(item)
+      g.estimatedSubtotal += item.subtotal
+    }
+    return Array.from(map.values())
+  }, [items])
+
+  const estimatedTotal = useMemo(
+    () => items.reduce((sum, item) => sum + item.subtotal, 0),
+    [items],
+  )
+
+  function confirmSubmit() {
+    Alert.alert(
+      t('order_review.confirm_title'),
+      t(
+        groups.length !== 1 ? 'order_review.confirm_message_other' : 'order_review.confirm_message_one',
+        { count: groups.length },
+      ),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('order_review.place_order'), style: 'default', onPress: doPlaceOrder },
+      ],
+    )
+  }
+
+  async function doPlaceOrder() {
+    setPlacingOrder(true)
+    try {
+      const result = await placeOrder()
+      clearLocalCart()
+      router.replace({
+        pathname: '/checkout/success',
+        params: {
+          orderId:       result.order_id,
+          supplierNames: groups.map(g => g.supplier.business_name).join('|'),
+          totalAmount:   String(estimatedTotal),
+          itemCount:     String(items.length),
+          createdAt:     new Date().toISOString(),
+        },
+      })
+    } catch (err) {
+      toast.error(extractApiError(err).message || t('common.error_generic'))
+    } finally {
+      setPlacingOrder(false)
+    }
+  }
+
+  const bottomBarH = (isTablet ? 80 : 68) + insets.bottom
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.safe} edges={['top']}>
+        <ScreenHeader onBack={() => router.back()} rf={rf} hp={hp} isTablet={isTablet} />
+        <View style={styles.center}>
+          <ActivityIndicator color='#CE4002' size='large' />
+        </View>
+      </SafeAreaView>
+    )
+  }
+
+  if (items.length === 0) {
+    return (
+      <SafeAreaView style={styles.safe} edges={['top']}>
+        <ScreenHeader onBack={() => router.back()} rf={rf} hp={hp} isTablet={isTablet} />
+        <EmptyState
+          icon={CartIcon as any}
+          title={t('order_review.empty_title')}
+          subtitle={t('order_review.empty_subtitle')}
+          actionLabel={t('common.browse_suppliers')}
+          onAction={() => router.replace('/(tabs)/suppliers')}
+        />
+      </SafeAreaView>
+    )
+  }
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      {/* nav */}
-      <View style={styles.nav}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
-          <HugeiconsIcon icon={BackIcon} size={20} color='#111827' strokeWidth={2} />
-        </TouchableOpacity>
-        <Text style={styles.navTitle}>Checkout</Text>
-        <View style={{ width: 40 }} />
-      </View>
+    <SafeAreaView style={styles.safe} edges={['top']}>
+      <ScreenHeader onBack={() => router.back()} rf={rf} hp={hp} isTablet={isTablet} />
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[
+          styles.scroll,
+          { paddingHorizontal: hp, paddingBottom: bottomBarH + 16 },
+        ]}
+        refreshControl={
+          <RefreshControl refreshing={false} onRefresh={fetchCart} tintColor='#CE4002' />
+        }
+      >
+        {/* ── Quote-flow info banner ── */}
+        <View style={styles.infoBanner}>
+          <HugeiconsIcon icon={AlertCircleIcon} size={18} color='#2563EB' strokeWidth={1.5} />
+          <Text style={[styles.infoBannerText, { fontSize: rf(13) }]}>
+            {t('order_review.quote_info')}
+          </Text>
+        </View>
 
-        {/* progress indicator */}
-        <View style={styles.progress}>
-          {['Bag', 'Details', 'Payment', 'Confirm'].map((step, i) => (
-            <View key={step} style={styles.progressStep}>
-              <View style={[styles.progressDot, i === 1 && styles.progressDotActive, i === 0 && styles.progressDotDone]}>
-                {i === 0
-                  ? <HugeiconsIcon icon={TickIcon} size={12} color='#fff' strokeWidth={2} />
-                  : <Text style={[styles.progressNum, i === 1 && styles.progressNumActive]}>{i + 1}</Text>
-                }
+        {/* ── One card per supplier ── */}
+        {groups.map(group => (
+          <View key={group.supplier.id} style={styles.card}>
+            <View style={styles.supplierHeader}>
+              <View style={styles.supplierIconWrap}>
+                <HugeiconsIcon icon={BuildingIcon} size={14} color='#CE4002' strokeWidth={1.5} />
               </View>
-              <Text style={[styles.progressLabel, i === 1 && styles.progressLabelActive]}>{step}</Text>
-              {i < 3 && <View style={[styles.progressLine, i === 0 && styles.progressLineDone]} />}
+              <Text style={[styles.supplierName, { fontSize: rf(14) }]} numberOfLines={1}>
+                {group.supplier.business_name}
+              </Text>
             </View>
-          ))}
-        </View>
 
-        {/* delivery address */}
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <View style={styles.cardIconWrap}>
-              <HugeiconsIcon icon={LocationIcon} size={18} color='#CE4002' strokeWidth={1.5} />
-            </View>
-            <Text style={styles.cardTitle}>Delivery Address</Text>
-            <TouchableOpacity hitSlop={8} activeOpacity={0.7}>
-              <Text style={styles.cardAction}>Change</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={styles.addressBox}>
-            <Text style={styles.addressName}>John Doe</Text>
-            <Text style={styles.addressLine}>123 Main Street, Nairobi</Text>
-            <Text style={styles.addressLine}>Nairobi County, 00100 · Kenya</Text>
-            <Text style={styles.addressPhone}>+254 700 000 000</Text>
-          </View>
-        </View>
+            {group.items.map((item, i) => (
+              <View key={item.id} style={[styles.itemRow, i > 0 && styles.itemRowBorder]}>
+                <View style={styles.itemIconWrap}>
+                  <HugeiconsIcon icon={PackageIcon} size={16} color='#9CA3AF' strokeWidth={1.5} />
+                </View>
+                <View style={styles.itemInfo}>
+                  <Text style={[styles.itemName, { fontSize: rf(14) }]} numberOfLines={2}>
+                    {item.product.name}
+                  </Text>
+                  <Text style={[styles.itemMeta, { fontSize: rf(12) }]}>
+                    {item.brand ? `${item.brand.name} · ` : ''}
+                    {item.unit.name} × {item.quantity}
+                  </Text>
+                </View>
+                <Text style={[styles.itemSubtotal, { fontSize: rf(13) }]}>
+                  TZS {item.subtotal.toLocaleString()}
+                </Text>
+              </View>
+            ))}
 
-        {/* order items */}
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <View style={styles.cardIconWrap}>
-              <HugeiconsIcon icon={BagIcon} size={18} color='#CE4002' strokeWidth={1.5} />
+            <View style={styles.groupTotalRow}>
+              <Text style={[styles.groupTotalLabel, { fontSize: rf(13) }]}>
+                {t('cart.subtotal')}
+              </Text>
+              <Text style={[styles.groupTotalValue, { fontSize: rf(14) }]}>
+                TZS {group.estimatedSubtotal.toLocaleString()}
+              </Text>
             </View>
-            <Text style={styles.cardTitle}>Order Items ({itemCount})</Text>
           </View>
-          {vendorGroups.map(group => (
-            <View key={group.vendorId}>
-              <Text style={styles.vendorLabel}>{group.vendorName}</Text>
-              {group.items.map(item => {
-                const meta = CATEGORY_META[item.product.category] ?? { color: '#CE4002', icon: 'bag-outline', bg: '#FEF0E6' }
-                return (
-                  <View key={item._id} style={styles.orderItem}>
-                    <View style={[styles.orderThumb, { backgroundColor: meta.color + '18' }]}>
-                      <HugeiconsIcon
-                        icon={CATEGORY_ICON_MAP[meta.icon] ?? DEFAULT_CATEGORY_ICON}
-                        size={20}
-                        color={meta.color}
-                        strokeWidth={1.5}
-                      />
-                    </View>
-                    <View style={styles.orderItemInfo}>
-                      <Text style={styles.orderItemName} numberOfLines={1}>{item.product.name}</Text>
-                      {item.variant?.size  && <Text style={styles.orderItemMeta}>Size: {item.variant.size}</Text>}
-                      {item.variant?.color && <Text style={styles.orderItemMeta}>Color: {item.variant.color}</Text>}
-                    </View>
-                    <View style={styles.orderItemRight}>
-                      <Text style={styles.orderItemQty}>×{item.quantity}</Text>
-                      <Text style={styles.orderItemPrice}>${(item.product.price * item.quantity).toFixed(2)}</Text>
-                    </View>
-                  </View>
-                )
-              })}
-            </View>
-          ))}
-        </View>
+        ))}
 
-        {/* payment method */}
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <View style={styles.cardIconWrap}>
-              <HugeiconsIcon icon={CreditCardIcon} size={18} color='#CE4002' strokeWidth={1.5} />
-            </View>
-            <Text style={styles.cardTitle}>Payment Method</Text>
-            <TouchableOpacity hitSlop={8} activeOpacity={0.7}>
-              <Text style={styles.cardAction}>Change</Text>
-            </TouchableOpacity>
+        {/* ── Estimated total ── */}
+        <View style={styles.totalCard}>
+          <View style={styles.totalRow}>
+            <Text style={[styles.totalLabel, { fontSize: rf(16) }]}>
+              {t('order_review.estimated_total')}
+            </Text>
+            <Text style={[styles.totalValue, { fontSize: rf(20) }]}>
+              TZS {estimatedTotal.toLocaleString()}
+            </Text>
           </View>
-          <View style={styles.paymentRow}>
-            <View style={styles.paymentCard}>
-              <HugeiconsIcon icon={CreditCardIcon} size={18} color='#4285F4' strokeWidth={1.5} />
-              <Text style={styles.paymentLabel}>M-Pesa</Text>
-            </View>
-            <View style={styles.paymentBadge}>
-              <Text style={styles.paymentBadgeText}>Default</Text>
-            </View>
+          <View style={styles.totalDivider} />
+          <View style={styles.totalNoteRow}>
+            <HugeiconsIcon icon={CheckCircleIcon} size={13} color='#9CA3AF' strokeWidth={1.5} />
+            <Text style={[styles.totalNote, { fontSize: rf(12) }]}>
+              {t('order_review.total_note')}
+            </Text>
           </View>
         </View>
 
-        {/* order summary */}
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <View style={styles.cardIconWrap}>
-              <HugeiconsIcon icon={ReceiptIcon} size={18} color='#CE4002' strokeWidth={1.5} />
-            </View>
-            <Text style={styles.cardTitle}>Order Summary</Text>
-          </View>
-          <View style={styles.summaryRows}>
-            <SummaryRow label={`Subtotal (${itemCount} items)`} value={`$${subtotal.toFixed(2)}`} />
-            {appliedPromo && discount > 0 && (
-              <SummaryRow label={`Discount (${appliedPromo.code})`} value={`-$${discount.toFixed(2)}`} green />
-            )}
-            <SummaryRow
-              label='Delivery fee'
-              value={deliveryFee === 0 ? 'FREE' : `$${deliveryFee.toFixed(2)}`}
-              green={deliveryFee === 0}
-            />
-          </View>
-          <View style={styles.summaryDivider} />
-          <View style={styles.summaryTotal}>
-            <Text style={styles.summaryTotalLabel}>Total</Text>
-            <Text style={styles.summaryTotalValue}>${total.toFixed(2)}</Text>
-          </View>
-          {discount > 0 && (
-            <View style={styles.savingsBanner}>
-              <HugeiconsIcon icon={SparklesIcon as any} size={13} color='#10B981' strokeWidth={1.5} />
-              <Text style={styles.savingsText}>You're saving ${discount.toFixed(2)} on this order!</Text>
-            </View>
-          )}
+        {/* ── Optional notes ── */}
+        <View style={styles.notesCard}>
+          <Text style={[styles.notesLabel, { fontSize: rf(14) }]}>
+            {t('order_review.notes_label')}
+          </Text>
+          <TextInput
+            style={[styles.notesInput, { fontSize: rf(14) }]}
+            value={notes}
+            onChangeText={setNotes}
+            placeholder={t('order_review.notes_placeholder')}
+            placeholderTextColor='#9CA3AF'
+            multiline
+            numberOfLines={3}
+            textAlignVertical='top'
+          />
         </View>
-
-        <View style={{ height: 24 }} />
       </ScrollView>
 
-      {/* place order CTA */}
-      <View style={styles.footer}>
-        <TouchableOpacity activeOpacity={0.88} style={styles.placeOrderWrap}>
-          <LinearGradient
-            colors={['#B33600', '#CE4002']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.placeOrderBtn}
-          >
-            <HugeiconsIcon icon={LockIcon} size={17} color='#fff' strokeWidth={1.5} />
-            <Text style={styles.placeOrderText}>Place Order</Text>
-            <View style={styles.placeOrderPill}>
-              <Text style={styles.placeOrderPillText}>${total.toFixed(2)}</Text>
-            </View>
-          </LinearGradient>
+      {/* ── Submit bar ── */}
+      <View style={[
+        styles.bottomBar,
+        {
+          paddingHorizontal: hp,
+          paddingBottom: insets.bottom + (isTablet ? 16 : 12),
+          paddingTop: isTablet ? 14 : 12,
+        },
+      ]}>
+        <TouchableOpacity
+          style={[
+            styles.placeBtn,
+            isTablet && styles.placeBtnTablet,
+            placingOrder && styles.placeBtnDisabled,
+          ]}
+          onPress={confirmSubmit}
+          disabled={placingOrder}
+          activeOpacity={0.88}
+        >
+          {placingOrder ? (
+            <ActivityIndicator color='#fff' />
+          ) : (
+            <>
+              <HugeiconsIcon icon={CheckCircleIcon} size={18} color='#fff' strokeWidth={2} />
+              <Text style={[styles.placeBtnText, { fontSize: rf(16) }]}>
+                {t('order_review.place_order')}
+              </Text>
+            </>
+          )}
         </TouchableOpacity>
-        <View style={styles.footerNoteRow}>
-          <HugeiconsIcon icon={VerifiedIcon} size={11} color='#9CA3AF' strokeWidth={1.5} />
-          <Text style={styles.footerNote}>Secured with 256-bit encryption</Text>
-        </View>
       </View>
     </SafeAreaView>
   )
 }
 
-function SummaryRow({ label, value, green }: { label: string; value: string; green?: boolean }) {
+function ScreenHeader({ onBack, rf, hp, isTablet }: {
+  onBack: () => void
+  rf: (s: number) => number
+  hp: number
+  isTablet: boolean
+}) {
+  const { t } = useTranslation()
+  const btnSize   = isTablet ? 46 : 40
+  const btnRadius = isTablet ? 15 : 13
   return (
-    <View style={styles.summaryRow}>
-      <Text style={styles.summaryRowLabel}>{label}</Text>
-      <Text style={[styles.summaryRowValue, green && styles.summaryRowGreen]}>{value}</Text>
+    <View style={[styles.header, { paddingHorizontal: hp }]}>
+      <TouchableOpacity
+        onPress={onBack}
+        hitSlop={8}
+        activeOpacity={0.7}
+        style={[styles.backBtn, { width: btnSize, height: btnSize, borderRadius: btnRadius }]}
+      >
+        <HugeiconsIcon
+          icon={BackIcon}
+          size={isTablet ? 22 : 20}
+          color='#111827'
+          strokeWidth={2}
+        />
+      </TouchableOpacity>
+      <Text style={[styles.headerTitle, { fontSize: rf(17) }]} numberOfLines={1}>
+        {t('order_review.header_title')}
+      </Text>
+      <View style={{ width: btnSize }} />
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: '#F9FAFB',
-  },
+  safe:   { flex: 1, backgroundColor: '#F8FAFC' },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
-  /* nav */
-  nav: {
+  // ── Header ───────────────────────────────────────────────────────────────────
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 12,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  navTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: 17,
-    fontFamily: 'Poppins-Bold',
-    color: '#111827',
-  },
-
-  /* scroll */
-  scroll: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    gap: 14,
-  },
-
-  /* progress */
-  progress: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
-    marginBottom: 4,
-  },
-  progressStep: {
-    alignItems: 'center',
-    position: 'relative',
-  },
-  progressDot: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#E5E7EB',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  progressDotActive: {
-    backgroundColor: '#CE4002',
-  },
-  progressDotDone: {
-    backgroundColor: '#10B981',
-  },
-  progressNum: {
-    fontSize: 12,
-    fontFamily: 'Poppins-SemiBold',
-    color: '#9CA3AF',
-  },
-  progressNumActive: {
-    color: '#FFFFFF',
-  },
-  progressLabel: {
-    fontSize: 10,
-    fontFamily: 'Poppins-Medium',
-    color: '#9CA3AF',
-    marginTop: 4,
-  },
-  progressLabelActive: {
-    color: '#CE4002',
-  },
-  progressLine: {
-    position: 'absolute',
-    top: 14,
-    left: 30,
-    width: 40,
-    height: 2,
-    backgroundColor: '#E5E7EB',
-  },
-  progressLineDone: {
-    backgroundColor: '#10B981',
-  },
-
-  /* card */
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 18,
-    padding: 16,
-    gap: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  cardIconWrap: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    backgroundColor: '#FEF0E6',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cardTitle: {
-    flex: 1,
-    fontSize: 15,
-    fontFamily: 'Poppins-SemiBold',
-    color: '#111827',
-  },
-  cardAction: {
-    fontSize: 13,
-    fontFamily: 'Poppins-SemiBold',
-    color: '#CE4002',
-  },
-
-  /* address */
-  addressBox: {
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#F3F4F6',
-    gap: 2,
-  },
-  addressName: {
-    fontSize: 14,
-    fontFamily: 'Poppins-SemiBold',
-    color: '#111827',
-    marginBottom: 2,
-  },
-  addressLine: {
-    fontSize: 13,
-    fontFamily: 'Poppins-Regular',
-    color: '#6B7280',
-  },
-  addressPhone: {
-    fontSize: 13,
-    fontFamily: 'Poppins-Medium',
-    color: '#CE4002',
-    marginTop: 4,
-  },
-
-  /* vendor / order items */
-  vendorLabel: {
-    fontSize: 12,
-    fontFamily: 'Poppins-SemiBold',
-    color: '#CE4002',
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-    marginBottom: 4,
-  },
-  orderItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: 6,
-  },
-  orderThumb: {
-    width: 44,
-    height: 44,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  orderItemInfo: {
-    flex: 1,
-    gap: 2,
-  },
-  orderItemName: {
-    fontSize: 13,
-    fontFamily: 'Poppins-SemiBold',
-    color: '#111827',
-  },
-  orderItemMeta: {
-    fontSize: 11,
-    fontFamily: 'Poppins-Regular',
-    color: '#9CA3AF',
-  },
-  orderItemRight: {
-    alignItems: 'flex-end',
-    gap: 2,
-  },
-  orderItemQty: {
-    fontSize: 11,
-    fontFamily: 'Poppins-Regular',
-    color: '#9CA3AF',
-  },
-  orderItemPrice: {
-    fontSize: 14,
-    fontFamily: 'Poppins-Bold',
-    color: '#111827',
-  },
-
-  /* payment */
-  paymentRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#F3F4F6',
-  },
-  paymentCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  paymentLabel: {
-    fontSize: 14,
-    fontFamily: 'Poppins-SemiBold',
-    color: '#111827',
-  },
-  paymentBadge: {
-    backgroundColor: '#FEF0E6',
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 20,
-  },
-  paymentBadgeText: {
-    fontSize: 11,
-    fontFamily: 'Poppins-SemiBold',
-    color: '#CE4002',
-  },
-
-  /* summary */
-  summaryRows: {
-    gap: 8,
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  summaryRowLabel: {
-    fontSize: 14,
-    fontFamily: 'Poppins-Regular',
-    color: '#6B7280',
-  },
-  summaryRowValue: {
-    fontSize: 14,
-    fontFamily: 'Poppins-SemiBold',
-    color: '#374151',
-  },
-  summaryRowGreen: {
-    color: '#10B981',
-    fontFamily: 'Poppins-Bold',
-  },
-  summaryDivider: {
-    height: 1,
-    backgroundColor: '#F3F4F6',
-  },
-  summaryTotal: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  summaryTotalLabel: {
-    fontSize: 17,
-    fontFamily: 'Poppins-Bold',
-    color: '#111827',
-  },
-  summaryTotalValue: {
-    fontSize: 22,
-    fontFamily: 'Poppins-Bold',
-    color: '#111827',
-  },
-  savingsBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: '#ECFDF5',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  savingsText: {
-    fontSize: 12,
-    fontFamily: 'Poppins-SemiBold',
-    color: '#065F46',
-  },
-
-  /* footer */
-  footer: {
-    paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: 8,
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
-    gap: 8,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
   },
-  placeOrderWrap: {
+  backBtn: {
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.10,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  headerTitle: {
+    flex: 1,
+    textAlign: 'center',
+    fontFamily: 'Poppins-SemiBold',
+    color: '#111827',
+  },
+
+  scroll: { paddingTop: 14, gap: 12 },
+
+  // ── Info banner ──────────────────────────────────────────────────────────────
+  infoBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    backgroundColor: '#EFF6FF',
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+  },
+  infoBannerText: {
+    flex: 1,
+    fontFamily: 'Poppins-Regular',
+    color: '#1D4ED8',
+    lineHeight: 20,
+  },
+
+  // ── Supplier card ────────────────────────────────────────────────────────────
+  card: {
+    backgroundColor: '#fff',
     borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
     overflow: 'hidden',
   },
-  placeOrderBtn: {
+  supplierHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#FEF0E6',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  supplierIconWrap: {
+    width: 28, height: 28, borderRadius: 8,
+    backgroundColor: '#fff',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  supplierName: { fontFamily: 'Poppins-SemiBold', color: '#CE4002', flex: 1 },
+
+  // ── Item rows ────────────────────────────────────────────────────────────────
+  itemRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  itemRowBorder:   { borderTopWidth: 1, borderTopColor: '#F9FAFB' },
+  itemIconWrap: {
+    width: 32, height: 32, borderRadius: 8,
+    backgroundColor: '#F9FAFB',
+    alignItems: 'center', justifyContent: 'center',
+    marginTop: 1, flexShrink: 0,
+  },
+  itemInfo:     { flex: 1, gap: 3 },
+  itemName:     { fontFamily: 'Poppins-Medium',  color: '#111827' },
+  itemMeta:     { fontFamily: 'Poppins-Regular', color: '#6B7280' },
+  itemSubtotal: { fontFamily: 'Poppins-Bold',    color: '#374151', marginTop: 3 },
+
+  // ── Group subtotal row ───────────────────────────────────────────────────────
+  groupTotalRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#F9FAFB',
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+  },
+  groupTotalLabel: { fontFamily: 'Poppins-Regular', color: '#6B7280' },
+  groupTotalValue: { fontFamily: 'Poppins-Bold',    color: '#374151' },
+
+  // ── Estimated total card ─────────────────────────────────────────────────────
+  totalCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+    gap: 12,
+  },
+  totalRow:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  totalLabel:  { fontFamily: 'Poppins-SemiBold', color: '#111827' },
+  totalValue:  { fontFamily: 'Poppins-Bold',     color: '#CE4002' },
+  totalDivider: { height: 1, backgroundColor: '#F3F4F6' },
+  totalNoteRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
+  totalNote:    { flex: 1, fontFamily: 'Poppins-Regular', color: '#9CA3AF', lineHeight: 18 },
+
+  // ── Notes card ───────────────────────────────────────────────────────────────
+  notesCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+    paddingTop: 16,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
     gap: 8,
   },
-  placeOrderText: {
-    fontSize: 15,
-    fontFamily: 'Poppins-SemiBold',
-    color: '#FFFFFF',
+  notesLabel: { fontFamily: 'Poppins-SemiBold', color: '#111827' },
+  notesInput: {
+    padding: 12,
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    fontFamily: 'Poppins-Regular',
+    color: '#111827',
+    minHeight: 80,
   },
-  placeOrderPill: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 20,
+
+  // ── Bottom action bar ─────────────────────────────────────────────────────────
+  bottomBar: {
+    position: 'absolute',
+    bottom: 0, left: 0, right: 0,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 12,
   },
-  placeOrderPillText: {
-    fontSize: 13,
-    fontFamily: 'Poppins-Bold',
-    color: '#FFFFFF',
-  },
-  footerNoteRow: {
+  placeBtn: {
+    backgroundColor: '#CE4002',
+    height: 52,
+    borderRadius: 14,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
+    gap: 8,
   },
-  footerNote: {
-    textAlign: 'center',
-    fontSize: 11,
-    fontFamily: 'Poppins-Regular',
-    color: '#9CA3AF',
-  },
+  placeBtnTablet:   { height: 58, borderRadius: 16 },
+  placeBtnDisabled: { backgroundColor: '#E8A07A' },
+  placeBtnText:     { fontFamily: 'Poppins-Bold', color: '#fff' },
 })
