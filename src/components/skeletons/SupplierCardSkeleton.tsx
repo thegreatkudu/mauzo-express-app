@@ -1,40 +1,33 @@
 import { StyleSheet, View } from 'react-native'
 import { SkeletonBox } from './Shimmer'
-import { useResponsive } from '@/hooks/useResponsive'
 
 export function SupplierCardSkeleton({ compact = false }: { compact?: boolean }) {
-  const { isTablet } = useResponsive()
-  const p           = compact ? 12 : 16
-  const avatarSize  = compact ? 36 : 44
-  const avatarR     = compact ? 10 : 12
-  const mb          = compact ? 0 : 12
+  const bandH = compact ? 90 : 110
 
   return (
-    <View style={[styles.card, { padding: p, marginBottom: mb }]}>
+    <View style={[styles.card, compact && styles.cardCompact]}>
 
-      {/* Header row: avatar + name / location */}
-      <View style={[styles.headerRow, { gap: compact ? 8 : 12, marginBottom: compact ? 10 : 12 }]}>
-        <SkeletonBox width={avatarSize} height={avatarSize} borderRadius={avatarR} style={styles.shrink0} />
-        <View style={styles.headerText}>
-          <SkeletonBox height={15} width='62%' borderRadius={6} />
-          <View style={[styles.locRow, { marginTop: 6 }]}>
-            <SkeletonBox width={12} height={12} borderRadius={3} style={styles.shrink0} />
-            <SkeletonBox height={11} width='44%' borderRadius={4} />
-          </View>
-        </View>
-      </View>
+      {/* Colour band */}
+      <SkeletonBox height={bandH} borderRadius={0} />
 
-      {/* Meta row: category chip + product count */}
-      <View style={[styles.metaRow, { marginBottom: compact ? 10 : 12 }]}>
-        <SkeletonBox height={24} width={90} borderRadius={20} />
-        <View style={styles.locRow}>
+      {/* Body */}
+      <View style={[styles.body, compact && styles.bodyCompact]}>
+        {/* Business name */}
+        <SkeletonBox height={13} width='70%' borderRadius={5} />
+
+        {/* Location row */}
+        <View style={[styles.locRow, { marginTop: compact ? 5 : 6 }]}>
           <SkeletonBox width={12} height={12} borderRadius={3} style={styles.shrink0} />
-          <SkeletonBox height={11} width={58} borderRadius={4} />
+          <SkeletonBox height={11} width='48%' borderRadius={4} />
         </View>
-      </View>
 
-      {/* Browse button */}
-      <SkeletonBox height={compact ? 36 : 40} borderRadius={12} />
+        {/* CTA button */}
+        <SkeletonBox
+          height={compact ? 32 : 36}
+          borderRadius={10}
+          style={{ marginTop: compact ? 6 : 8 }}
+        />
+      </View>
     </View>
   )
 }
@@ -43,23 +36,24 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: '#fff',
     borderRadius:    16,
+    marginBottom:    12,
+    overflow:        'hidden',
     borderWidth:     1,
     borderColor:     '#F3F4F6',
   },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems:    'center',
+  cardCompact: {
+    marginBottom: 0,
   },
-  headerText: { flex: 1 },
+  body: {
+    padding: 12,
+  },
+  bodyCompact: {
+    padding: 10,
+  },
   locRow: {
     flexDirection: 'row',
     alignItems:    'center',
     gap:           4,
-  },
-  metaRow: {
-    flexDirection:  'row',
-    alignItems:     'center',
-    justifyContent: 'space-between',
   },
   shrink0: { flexShrink: 0 },
 })

@@ -92,18 +92,19 @@ export default function SuppliersScreen() {
 
         {/* ── Content ── */}
         {isLoading ? (
-          <View style={[styles.skeletonWrap, { paddingHorizontal: hp }]}>
-            {isMultiCol ? (
-              <View style={{ flexDirection: 'row', gap }}>
-                {Array.from({ length: suppliersColumns * 2 }).map((_, i) => (
-                  <View key={i} style={{ flex: 1 }}>
-                    <SupplierCardSkeleton compact />
+          <View style={[styles.skeletonGrid, { paddingHorizontal: hp }]}>
+            {[0, 1, 2].map(row => (
+              <View
+                key={row}
+                style={isMultiCol ? [styles.skeletonRow, { gap }] : undefined}
+              >
+                {Array.from({ length: isMultiCol ? suppliersColumns : 1 }).map((_, col) => (
+                  <View key={col} style={isMultiCol ? { flex: 1 } : undefined}>
+                    <SupplierCardSkeleton compact={isMultiCol} />
                   </View>
                 ))}
               </View>
-            ) : (
-              [1, 2, 3, 4].map(i => <SupplierCardSkeleton key={i} />)
-            )}
+            ))}
           </View>
         ) : isError ? (
           <View style={styles.errorWrap}>
@@ -182,26 +183,17 @@ export default function SuppliersScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe:  { flex: 1, backgroundColor: '#F8FAFC' },
+  safe: { flex: 1, backgroundColor: '#F8FAFC' },
 
-  // Page header
   pageHeader: {
     paddingBottom: 8,
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'space-between',
   },
-  title: {
-    fontFamily: 'Poppins-Bold',
-    color: '#111827',
-  },
-  titleSub: {
-    fontFamily: 'Poppins-Regular',
-    color: '#6B7280',
-    marginTop: 2,
-  },
+  title:    { fontFamily: 'Poppins-Bold',    color: '#111827' },
+  titleSub: { fontFamily: 'Poppins-Regular', color: '#6B7280', marginTop: 2 },
 
-  // Search bar
   searchWrap: { paddingVertical: 10 },
   searchBar: {
     flexDirection: 'row',
@@ -226,35 +218,29 @@ const styles = StyleSheet.create({
     padding: 0,
   },
 
-  // Section header row
   sectionRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 14,
-    marginTop: 6,
+    marginTop: 4,
   },
   sectionLabel: { fontFamily: 'Poppins-Bold',    color: '#111827' },
   sectionCount: { fontFamily: 'Poppins-Regular', color: '#6B7280' },
 
-  // Skeleton
-  skeletonWrap: { paddingVertical: 8 },
+  skeletonGrid: { paddingVertical: 8, gap: 10 },
+  skeletonRow:  { flexDirection: 'row' },
 
-  // List / grid
-  list:     { paddingTop: 10, paddingBottom: 24 },
+  list:     { paddingBottom: 32, paddingTop: 12 },
   gridItem: { flex: 1, paddingBottom: 12 },
 
-  // Error state
   errorWrap: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,
   },
-  errorText: {
-    fontFamily: 'Poppins-Regular',
-    color: '#6B7280',
-  },
+  errorText: { fontFamily: 'Poppins-Regular', color: '#6B7280' },
   retryBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -265,8 +251,5 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: '#CE4002',
   },
-  retryText: {
-    fontFamily: 'Poppins-SemiBold',
-    color: '#CE4002',
-  },
+  retryText: { fontFamily: 'Poppins-SemiBold', color: '#CE4002' },
 })

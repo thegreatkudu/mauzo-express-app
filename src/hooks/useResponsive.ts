@@ -36,9 +36,9 @@ function getDeviceType(width: number): DeviceType {
 // ── Column presets per list type ─────────────────────────────────────────────
 const COLS: Record<DeviceType, { suppliers: number; orders: number; products: number }> = {
   smallPhone:  { suppliers: 1, orders: 1, products: 1 },
-  phone:       { suppliers: 1, orders: 1, products: 2 },
-  tablet:      { suppliers: 2, orders: 2, products: 3 },
-  largeTablet: { suppliers: 3, orders: 3, products: 4 },
+  phone:       { suppliers: 2, orders: 1, products: 2 },
+  tablet:      { suppliers: 3, orders: 2, products: 3 },
+  largeTablet: { suppliers: 4, orders: 3, products: 4 },
 }
 
 // ── Hook ──────────────────────────────────────────────────────────────────────
