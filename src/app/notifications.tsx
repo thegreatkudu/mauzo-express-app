@@ -195,8 +195,8 @@ const styles = StyleSheet.create({
   },
   unreadBannerText: { fontSize: 12, fontFamily: 'Poppins-Regular', color: '#CE4002' },
 
-  skeletonList: { padding: 16, paddingBottom: 40, gap: 14 },
-  list:         { padding: 16, paddingBottom: 40, gap: 14 },
+  skeletonList: { padding: 16, paddingBottom: 40 },
+  list:         { padding: 16, paddingBottom: 40 },
 
   row: {
     flexDirection:     'row',
@@ -205,6 +205,7 @@ const styles = StyleSheet.create({
     backgroundColor:   '#fff',
     borderRadius:      16,
     padding:           16,
+    marginBottom:      14,
     borderWidth:       1,
     borderLeftWidth:   3,
     borderColor:       '#F3F4F6',
