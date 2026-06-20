@@ -216,11 +216,11 @@ const styles = StyleSheet.create({
   inputRow: {
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 14, borderRadius: 16, gap: 8,
-    borderWidth: 1.5, borderColor: '#E5E7EB', backgroundColor: '#F9FAFB',
+    borderWidth: 1.5, borderColor: '#E8E8E8', backgroundColor: '#F9FAFB',
   },
   inputError:  { borderColor: '#EF4444' },
   dialCode:    { fontFamily: 'Poppins-SemiBold', color: '#374151' },
-  dialDivider: { width: 1, height: 20, backgroundColor: '#E5E7EB' },
+  dialDivider: { width: 1, height: 20, backgroundColor: '#E8E8E8' },
   input:       { flex: 1, fontFamily: 'Poppins-Regular', color: '#111827' },
 
   forgotRow:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },

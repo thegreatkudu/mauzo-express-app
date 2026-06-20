@@ -54,7 +54,7 @@ export function getNotifMeta(type: NotificationType, message: string): NotifMeta
     return { icon: SparklesIcon as unknown as IconSvgElement, color: '#7C3AED', bgColor: '#EDE9FE', label: 'System', title: 'System Update' }
   }
   if (msg.includes('maintenance')) {
-    return { icon: SettingsIcon as unknown as IconSvgElement, color: '#6B7280', bgColor: '#F3F4F6', label: 'Maintenance', title: 'Maintenance Notice' }
+    return { icon: SettingsIcon as unknown as IconSvgElement, color: '#6B7280', bgColor: '#F0F0F0', label: 'Maintenance', title: 'Maintenance Notice' }
   }
 
   return { icon: OrdersIcon as unknown as IconSvgElement, color: '#D97706', bgColor: '#FEF3C7', label: 'Order Update', title: 'Order Update' }

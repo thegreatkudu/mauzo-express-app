@@ -39,7 +39,7 @@ const styles = StyleSheet.create({
     marginBottom:    12,
     overflow:        'hidden',
     borderWidth:     1,
-    borderColor:     '#F3F4F6',
+    borderColor:     '#F0F0F0',
   },
   cardCompact: {
     marginBottom: 0,

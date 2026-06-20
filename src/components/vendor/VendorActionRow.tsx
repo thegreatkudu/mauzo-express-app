@@ -49,7 +49,7 @@ export default function VendorActionRow({ vendor, onMessage }: Props) {
       </TouchableOpacity>
 
       {/* Share */}
-      <TouchableOpacity onPress={handleShare} style={[styles.iconBtn, { backgroundColor: '#F3F4F6' }]} activeOpacity={0.8}>
+      <TouchableOpacity onPress={handleShare} style={[styles.iconBtn, { backgroundColor: '#F0F0F0' }]} activeOpacity={0.8}>
         <HugeiconsIcon icon={ShareIcon} size={18} color='#374151' strokeWidth={1.5} />
       </TouchableOpacity>
     </View>

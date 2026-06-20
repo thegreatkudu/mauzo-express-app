@@ -147,7 +147,7 @@ export default function OrdersScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: '#F8FAFC' },
+  safe:   { flex: 1, backgroundColor: '#F6F6F4' },
 
   header: { paddingTop: 16, paddingBottom: 4 },
   title:    { fontFamily: 'Poppins-Bold',    color: '#111827' },
@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: '#ECECEC',
   },
   filterTabActive: {
     backgroundColor: '#CE4002',

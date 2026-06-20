@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius:    16,
     borderWidth:     1,
-    borderColor:     '#F3F4F6',
+    borderColor:     '#F0F0F0',
     overflow:        'hidden',
   },
   sectionHeader: {
@@ -66,7 +66,7 @@ const styles = StyleSheet.create({
     paddingVertical:  12,
     backgroundColor: '#FEF0E6',
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: '#F0F0F0',
   },
   itemRow: {
     flexDirection:   'row',
@@ -74,12 +74,12 @@ const styles = StyleSheet.create({
     justifyContent:  'space-between',
     paddingHorizontal: 16,
     paddingVertical:  14,
-    borderBottomColor: '#F9FAFB',
+    borderBottomColor: '#F4F4F4',
     gap:              12,
   },
   itemBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: '#F9FAFB',
+    borderBottomColor: '#F4F4F4',
   },
   itemInfo:    { flex: 1 },
   itemActions: { alignItems: 'flex-end', gap: 10 },
@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
     justifyContent:  'space-between',
     paddingHorizontal: 16,
     paddingVertical:  12,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#F4F4F4',
   },
   shrink0: { flexShrink: 0 },
 })

@@ -87,7 +87,7 @@ export default function MessageVendorSheet({ vendor, visible, onClose }: Props) 
               <TouchableOpacity
                 onPress={handleSend}
                 activeOpacity={0.85}
-                style={[styles.sendBtn, { backgroundColor: message.trim() ? vendor.color : '#E5E7EB' }]}
+                style={[styles.sendBtn, { backgroundColor: message.trim() ? vendor.color : '#E8E8E8' }]}
               >
                 <Text style={[styles.sendText, { color: message.trim() ? '#fff' : '#9CA3AF' }]}>Send Message</Text>
                 <HugeiconsIcon icon={ChatIcon} size={16} color={message.trim() ? '#fff' : '#9CA3AF'} strokeWidth={1.5} />
@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
   handle: {
     width: 40,
     height: 4,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: '#E8E8E8',
     borderRadius: 2,
     alignSelf: 'center',
     marginBottom: 20,
@@ -154,10 +154,10 @@ const styles = StyleSheet.create({
     color: '#111827',
   },
   input: {
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#F4F4F4',
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#F3F4F6',
+    borderColor: '#F0F0F0',
     padding: 14,
     fontSize: 14,
     fontFamily: 'Poppins-Regular',

@@ -12,7 +12,7 @@ export const Colors = {
   info:     '#6366f1',
 
   // surface
-  background:   '#F8FAFC',
+  background:   '#F6F6F4',
   card:         '#FFFFFF',
   border:       '#E2E8F0',
   borderLight:  '#F1F5F9',

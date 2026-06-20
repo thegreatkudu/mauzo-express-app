@@ -39,7 +39,7 @@ const styles = StyleSheet.create({
     padding:         16,
     marginBottom:    10,
     borderWidth:     1,
-    borderColor:     '#F3F4F6',
+    borderColor:     '#F0F0F0',
     gap:             8,
   },
   cardTablet: {

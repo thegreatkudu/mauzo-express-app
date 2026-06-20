@@ -328,11 +328,11 @@ const styles = StyleSheet.create({
   inputRow: {
     height: 56, flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 14, borderRadius: 16, gap: 8,
-    borderWidth: 1.5, borderColor: '#E5E7EB', backgroundColor: '#F9FAFB',
+    borderWidth: 1.5, borderColor: '#E8E8E8', backgroundColor: '#F9FAFB',
   },
   inputError:  { borderColor: '#EF4444' },
   dialCode:    { fontSize: 14, fontFamily: 'Poppins-SemiBold', color: '#374151' },
-  dialDivider: { width: 1, height: 20, backgroundColor: '#E5E7EB' },
+  dialDivider: { width: 1, height: 20, backgroundColor: '#E8E8E8' },
   input:       { flex: 1, fontSize: 14, fontFamily: 'Poppins-Regular', color: '#111827' },
 
   retryText:         { fontSize: 13, fontFamily: 'Poppins-SemiBold', color: '#CE4002' },
@@ -350,7 +350,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24,
     paddingHorizontal: 20, paddingBottom: 36, paddingTop: 12, maxHeight: '70%',
   },
-  sheetHandle:       { width: 40, height: 4, borderRadius: 2, backgroundColor: '#E5E7EB', alignSelf: 'center', marginBottom: 16 },
+  sheetHandle:       { width: 40, height: 4, borderRadius: 2, backgroundColor: '#E8E8E8', alignSelf: 'center', marginBottom: 16 },
   sheetTitle:        { fontSize: 17, fontFamily: 'Poppins-SemiBold', color: '#111827', marginBottom: 12 },
   sheetItem:         { paddingVertical: 14, paddingHorizontal: 12, borderRadius: 12, marginBottom: 4 },
   sheetItemActive:   { backgroundColor: '#FEF0E6' },

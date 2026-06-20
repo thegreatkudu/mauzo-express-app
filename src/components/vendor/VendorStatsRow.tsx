@@ -50,7 +50,7 @@ const styles = StyleSheet.create({
   },
   statBorder: {
     borderRightWidth: 1,
-    borderRightColor: '#F3F4F6',
+    borderRightColor: '#F0F0F0',
   },
   value: {
     fontSize: 18,

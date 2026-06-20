@@ -37,7 +37,7 @@ export default function AccordionSection({ title, children, defaultOpen = false 
 const styles = StyleSheet.create({
   wrapper: {
     borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
+    borderTopColor: '#F0F0F0',
   },
   header: {
     flexDirection: 'row',

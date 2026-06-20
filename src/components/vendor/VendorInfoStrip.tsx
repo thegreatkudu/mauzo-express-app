@@ -26,7 +26,7 @@ export default function VendorInfoStrip({ vendor }: Props) {
         </View>
       ))}
       {vendor.isVerified && (
-        <View style={[styles.item, styles.itemBorder, { borderLeftWidth: 1, borderLeftColor: '#F3F4F6' }]}>
+        <View style={[styles.item, styles.itemBorder, { borderLeftWidth: 1, borderLeftColor: '#F0F0F0' }]}>
           <HugeiconsIcon icon={VerifiedIcon} size={13} color={vendor.color} strokeWidth={1.5} />
           <Text style={[styles.label, { color: vendor.color }]}>Verified</Text>
         </View>
@@ -39,12 +39,12 @@ const styles = StyleSheet.create({
   strip: {
     flexDirection: 'row',
     marginHorizontal: 16,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#F4F4F4',
     borderRadius: 12,
     paddingVertical: 10,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#F3F4F6',
+    borderColor: '#F0F0F0',
   },
   item: {
     flex: 1,
@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
   },
   itemBorder: {
     borderRightWidth: 1,
-    borderRightColor: '#F3F4F6',
+    borderRightColor: '#F0F0F0',
   },
   label: {
     fontSize: 11,

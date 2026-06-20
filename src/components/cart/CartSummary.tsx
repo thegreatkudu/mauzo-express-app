@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#F0F0F0',
     marginVertical: 12,
   },
   totalRow: {

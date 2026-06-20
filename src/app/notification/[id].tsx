@@ -161,7 +161,7 @@ export default function NotificationPreviewScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F8FAFC' },
+  safe: { flex: 1, backgroundColor: '#F6F6F4' },
 
   header: {
     flexDirection:     'row',
@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
     paddingVertical:   14,
     backgroundColor:   '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: '#F0F0F0',
   },
   headerTitle: { fontSize: 17, fontFamily: 'Poppins-SemiBold', color: '#111827' },
 
@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
     padding:         18,
     marginBottom:    12,
     borderWidth:     1,
-    borderColor:     '#F3F4F6',
+    borderColor:     '#F0F0F0',
     shadowColor:     '#000',
     shadowOffset:    { width: 0, height: 1 },
     shadowOpacity:   0.04,
@@ -269,7 +269,7 @@ const styles = StyleSheet.create({
     paddingVertical:   4,
     marginBottom:    24,
     borderWidth:     1,
-    borderColor:     '#F3F4F6',
+    borderColor:     '#F0F0F0',
     shadowColor:     '#000',
     shadowOffset:    { width: 0, height: 1 },
     shadowOpacity:   0.04,
@@ -284,7 +284,7 @@ const styles = StyleSheet.create({
   },
   detailLabel: { fontSize: 13, fontFamily: 'Poppins-Regular', color: '#6B7280' },
   detailValue: { fontSize: 13, fontFamily: 'Poppins-SemiBold', color: '#374151' },
-  divider: { height: 1, backgroundColor: '#F3F4F6' },
+  divider: { height: 1, backgroundColor: '#F0F0F0' },
 
   statusPill: {
     paddingHorizontal: 10,

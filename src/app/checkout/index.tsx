@@ -289,7 +289,7 @@ function ScreenHeader({ onBack, rf, hp, isTablet }: {
 }
 
 const styles = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: '#F8FAFC' },
+  safe:   { flex: 1, backgroundColor: '#F6F6F4' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
   // ── Header ───────────────────────────────────────────────────────────────────
@@ -300,7 +300,7 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: '#F0F0F0',
   },
   backBtn: {
     backgroundColor: '#fff',
@@ -344,7 +344,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#F3F4F6',
+    borderColor: '#F0F0F0',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
@@ -360,7 +360,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     backgroundColor: '#FEF0E6',
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: '#F0F0F0',
   },
   supplierIconWrap: {
     width: 28, height: 28, borderRadius: 8,
@@ -377,10 +377,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
-  itemRowBorder:   { borderTopWidth: 1, borderTopColor: '#F9FAFB' },
+  itemRowBorder:   { borderTopWidth: 1, borderTopColor: '#F4F4F4' },
   itemIconWrap: {
     width: 32, height: 32, borderRadius: 8,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#F4F4F4',
     alignItems: 'center', justifyContent: 'center',
     marginTop: 1, flexShrink: 0,
   },
@@ -396,9 +396,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#F4F4F4',
     borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
+    borderTopColor: '#F0F0F0',
   },
   groupTotalLabel: { fontFamily: 'Poppins-Regular', color: '#6B7280' },
   groupTotalValue: { fontFamily: 'Poppins-Bold',    color: '#374151' },
@@ -409,7 +409,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#F3F4F6',
+    borderColor: '#F0F0F0',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
@@ -420,7 +420,7 @@ const styles = StyleSheet.create({
   totalRow:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   totalLabel:  { fontFamily: 'Poppins-SemiBold', color: '#111827' },
   totalValue:  { fontFamily: 'Poppins-Bold',     color: '#CE4002' },
-  totalDivider: { height: 1, backgroundColor: '#F3F4F6' },
+  totalDivider: { height: 1, backgroundColor: '#F0F0F0' },
   totalNoteRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   totalNote:    { flex: 1, fontFamily: 'Poppins-Regular', color: '#9CA3AF', lineHeight: 18 },
 
@@ -429,7 +429,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#F3F4F6',
+    borderColor: '#F0F0F0',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
@@ -443,9 +443,9 @@ const styles = StyleSheet.create({
   notesLabel: { fontFamily: 'Poppins-SemiBold', color: '#111827' },
   notesInput: {
     padding: 12,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#F4F4F4',
     borderWidth: 1.5,
-    borderColor: '#E5E7EB',
+    borderColor: '#E8E8E8',
     borderRadius: 12,
     fontFamily: 'Poppins-Regular',
     color: '#111827',
@@ -458,7 +458,7 @@ const styles = StyleSheet.create({
     bottom: 0, left: 0, right: 0,
     backgroundColor: '#fff',
     borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
+    borderTopColor: '#F0F0F0',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.08,

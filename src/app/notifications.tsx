@@ -171,7 +171,7 @@ export default function NotificationsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: '#F8FAFC' },
+  safe:   { flex: 1, backgroundColor: '#F6F6F4' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
 
   header: {
@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
     paddingVertical:    14,
     backgroundColor:    '#fff',
     borderBottomWidth:  1,
-    borderBottomColor:  '#F3F4F6',
+    borderBottomColor:  '#F0F0F0',
   },
   headerTitle: { fontSize: 17, fontFamily: 'Poppins-SemiBold', color: '#111827' },
 
@@ -208,8 +208,8 @@ const styles = StyleSheet.create({
     marginBottom:      14,
     borderWidth:       1,
     borderLeftWidth:   3,
-    borderColor:       '#F3F4F6',
-    borderLeftColor:   '#F3F4F6',
+    borderColor:       '#F0F0F0',
+    borderLeftColor:   '#F0F0F0',
     shadowColor:       '#000',
     shadowOffset:      { width: 0, height: 1 },
     shadowOpacity:     0.04,

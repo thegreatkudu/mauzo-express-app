@@ -26,16 +26,16 @@ import type { OrderStatus, QuotationStatus } from '@/types'
 
 function getStatusMeta(status: OrderStatus) {
   const map: Record<OrderStatus, { bg: string; text: string }> = {
-    awaiting_quote: { bg: '#F3F4F6', text: '#6B7280' },
+    awaiting_quote: { bg: '#F0F0F0', text: '#6B7280' },
     quote_received: { bg: '#FEF3C7', text: '#D97706' },
     accepted:       { bg: '#D1FAE5', text: '#059669' },
     rejected:       { bg: '#FEE2E2', text: '#DC2626' },
     dispatched:     { bg: '#EDE9FE', text: '#7C3AED' },
     delivered:      { bg: '#DBEAFE', text: '#2563EB' },
-    closed:         { bg: '#F3F4F6', text: '#6B7280' },
+    closed:         { bg: '#F0F0F0', text: '#6B7280' },
     cancelled:      { bg: '#FEE2E2', text: '#DC2626' },
   }
-  return map[status] ?? { bg: '#F3F4F6', text: '#6B7280' }
+  return map[status] ?? { bg: '#F0F0F0', text: '#6B7280' }
 }
 
 function getQuoteStatusBadge(status: QuotationStatus) {
@@ -477,7 +477,7 @@ function ScreenHeader({ onBack, onRefresh }: { onBack: () => void; onRefresh?: (
 // ── Styles ────────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: '#F8FAFC' },
+  safe:   { flex: 1, backgroundColor: '#F6F6F4' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
   scroll: { paddingVertical: 16, gap: 14, paddingBottom: 48 },
 
@@ -490,7 +490,7 @@ const styles = StyleSheet.create({
     paddingVertical:   14,
     backgroundColor:   '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: '#F0F0F0',
   },
   headerTitle: { fontSize: 17, fontFamily: 'Poppins-SemiBold', color: '#111827' },
 
@@ -500,7 +500,7 @@ const styles = StyleSheet.create({
     borderRadius:    18,
     overflow:        'hidden',
     borderWidth:     1,
-    borderColor:     '#F3F4F6',
+    borderColor:     '#F0F0F0',
     shadowColor:     '#000',
     shadowOffset:    { width: 0, height: 2 },
     shadowOpacity:   0.05,
@@ -529,7 +529,7 @@ const styles = StyleSheet.create({
   },
   infoRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   infoText: { fontSize: 13, fontFamily: 'Poppins-Regular', color: '#374151', flex: 1 },
-  divider:  { height: 1, backgroundColor: '#F3F4F6' },
+  divider:  { height: 1, backgroundColor: '#F0F0F0' },
 
   totalRow: {
     flexDirection:  'row',
@@ -549,7 +549,7 @@ const styles = StyleSheet.create({
     borderRadius:    16,
     padding:         16,
     borderWidth:     1,
-    borderColor:     '#F3F4F6',
+    borderColor:     '#F0F0F0',
     shadowColor:     '#000',
     shadowOffset:    { width: 0, height: 1 },
     shadowOpacity:   0.04,
@@ -613,7 +613,7 @@ const styles = StyleSheet.create({
     borderRadius:    16,
     padding:         16,
     borderWidth:     1,
-    borderColor:     '#F3F4F6',
+    borderColor:     '#F0F0F0',
     shadowColor:     '#000',
     shadowOffset:    { width: 0, height: 2 },
     shadowOpacity:   0.04,
@@ -667,15 +667,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#CE4002',
   },
   timelineDotPending: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#F0F0F0',
     borderWidth:     2,
-    borderColor:     '#E5E7EB',
+    borderColor:     '#E8E8E8',
   },
 
   timelineLine: {
     width:           2,
     flex:            1,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: '#E8E8E8',
     marginVertical:  3,
   },
   timelineLineDone: { backgroundColor: '#CE4002' },
@@ -704,7 +704,7 @@ const styles = StyleSheet.create({
   },
   itemRowBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: '#F0F0F0',
   },
   itemIconWrap: {
     width:           40,
@@ -735,7 +735,7 @@ const styles = StyleSheet.create({
     borderRadius:    16,
     padding:         16,
     borderWidth:     1,
-    borderColor:     '#F3F4F6',
+    borderColor:     '#F0F0F0',
     shadowColor:     '#000',
     shadowOffset:    { width: 0, height: 2 },
     shadowOpacity:   0.04,
@@ -780,7 +780,7 @@ const styles = StyleSheet.create({
   },
   sheetHandle: {
     width: 40, height: 4, borderRadius: 2,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: '#E8E8E8',
     alignSelf: 'center', marginBottom: 16,
   },
   sheetHeader: {
@@ -790,9 +790,9 @@ const styles = StyleSheet.create({
   sheetTitle:    { fontSize: 17, fontFamily: 'Poppins-SemiBold', color: '#111827' },
   sheetSubtitle: { fontSize: 13, fontFamily: 'Poppins-Regular',  color: '#6B7280', marginBottom: 14 },
   reasonInput: {
-    borderWidth: 1.5, borderColor: '#E5E7EB', borderRadius: 14,
+    borderWidth: 1.5, borderColor: '#E8E8E8', borderRadius: 14,
     padding: 14, fontSize: 14, fontFamily: 'Poppins-Regular',
-    color: '#111827', backgroundColor: '#F9FAFB',
+    color: '#111827', backgroundColor: '#F4F4F4',
     minHeight: 100, marginBottom: 20,
   },
   rejectConfirmBtn: {

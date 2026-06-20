@@ -206,7 +206,7 @@ function ScreenHeader({ onBack, rf, hp, isTablet }: {
 }
 
 const styles = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: '#F8FAFC' },
+  safe:   { flex: 1, backgroundColor: '#F6F6F4' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
   // ── Header ───────────────────────────────────────────────────────────────────
@@ -217,7 +217,7 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: '#F0F0F0',
   },
   backBtn: {
     backgroundColor: '#fff',
@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
     padding: 24,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#F3F4F6',
+    borderColor: '#F0F0F0',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
@@ -274,7 +274,7 @@ const styles = StyleSheet.create({
   },
   metaItem:   { flexDirection: 'row', alignItems: 'center', gap: 5 },
   metaText:   { fontFamily: 'Poppins-Regular', color: '#6B7280' },
-  metaDivider: { width: 1, height: 14, backgroundColor: '#E5E7EB' },
+  metaDivider: { width: 1, height: 14, backgroundColor: '#E8E8E8' },
 
   categoryChip: {
     backgroundColor: '#EFF6FF',
@@ -290,7 +290,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#F3F4F6',
+    borderColor: '#F0F0F0',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     gap: 10,
   },
-  productRowBorder: { borderTopWidth: 1, borderTopColor: '#F9FAFB' },
+  productRowBorder: { borderTopWidth: 1, borderTopColor: '#F4F4F4' },
   productLeft:  { flex: 1, gap: 2 },
   productName:  { fontFamily: 'Poppins-Medium', color: '#111827' },
   productMeta:  { fontFamily: 'Poppins-Regular', color: '#9CA3AF' },

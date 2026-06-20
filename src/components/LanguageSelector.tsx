@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: '#F9FAFB',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: '#E8E8E8',
   },
   triggerFlag:  { fontSize: 16 },
   triggerLabel: { fontSize: 13, fontFamily: 'Poppins-Medium', color: '#374151', flex: 1 },
@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
   },
   sheetHandle: {
     width: 40, height: 4, borderRadius: 2,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: '#E8E8E8',
     alignSelf: 'center',
     marginBottom: 20,
   },

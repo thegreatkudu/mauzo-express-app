@@ -270,7 +270,7 @@ function SecondaryBtn({
 // ── Styles ────────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: '#F8FAFC' },
+  safe:   { flex: 1, backgroundColor: '#F6F6F4' },
   scroll: { paddingTop: 36 },
 
   // Hero
@@ -301,10 +301,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#F3F4F6',
+    borderColor: '#F0F0F0',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.07,
+    shadowOpacity: 0.04,
     shadowRadius: 16,
     elevation: 4,
     overflow: 'hidden',
@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
     gap: 12,
   },
-  detailRowBorder: { borderBottomWidth: 1, borderBottomColor: '#F9FAFB' },
+  detailRowBorder: { borderBottomWidth: 1, borderBottomColor: '#F4F4F4' },
   detailLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   detailLabel: { fontFamily: 'Poppins-Regular', color: '#9CA3AF' },
   detailValue: { fontFamily: 'Poppins-SemiBold', textAlign: 'right', flex: 1 },

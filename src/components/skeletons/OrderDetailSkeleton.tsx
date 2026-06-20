@@ -92,13 +92,13 @@ const styles = StyleSheet.create({
     borderRadius:    18,
     overflow:        'hidden',
     borderWidth:     1,
-    borderColor:     '#F3F4F6',
+    borderColor:     '#F0F0F0',
   },
   heroBand: {
     flexDirection:     'row',
     alignItems:        'center',
     justifyContent:    'space-between',
-    backgroundColor:   '#F3F4F6',
+    backgroundColor:   '#F0F0F0',
     paddingHorizontal: 18,
     paddingVertical:   16,
   },
@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
     borderRadius:    16,
     padding:         16,
     borderWidth:     1,
-    borderColor:     '#F3F4F6',
+    borderColor:     '#F0F0F0',
   },
   supplierInfo: { flex: 1, gap: 0 },
 
@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
     borderRadius:    16,
     padding:         16,
     borderWidth:     1,
-    borderColor:     '#F3F4F6',
+    borderColor:     '#F0F0F0',
     gap:             10,
   },
 
@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
   },
   itemBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: '#F0F0F0',
   },
   itemLeft:  { flex: 1, gap: 0 },
   itemRight: { alignItems: 'flex-end', gap: 0 },

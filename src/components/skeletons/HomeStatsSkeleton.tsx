@@ -44,7 +44,7 @@ const styles = StyleSheet.create({
     padding:          14,
     borderTopWidth:   3,
     borderWidth:      1,
-    borderColor:      '#F3F4F6',
+    borderColor:      '#F0F0F0',
     borderTopColor:   '#E8EAED',
     alignItems:       'center',
   },
@@ -58,6 +58,6 @@ const styles = StyleSheet.create({
     borderRadius:    16,
     padding:         16,
     borderWidth:     1,
-    borderColor:     '#F3F4F6',
+    borderColor:     '#F0F0F0',
   },
 })

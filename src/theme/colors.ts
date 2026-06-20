@@ -38,7 +38,7 @@ export const palette = {
   textMuted:   '#9CA3AF',
 
   border:      '#E5E7EB',
-  borderLight: '#F3F4F6',
+  borderLight: '#F0F0F0',
 
   // ── Badge palette (Snapcart-style) ─────────────────────────────────────────
   hot:         '#ef4444',  // "Hot" badge
