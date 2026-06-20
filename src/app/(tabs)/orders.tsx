@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import {
   RefreshControl, ScrollView,
-  StyleSheet, Text, TouchableOpacity, View,
+  StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native'
 import { FlashList } from '@shopify/flash-list'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -14,7 +14,8 @@ import { useResponsive } from '@/hooks/useResponsive'
 import OrderCard from '@/components/OrderCard'
 import EmptyState from '@/components/ui/EmptyState'
 import { OrderCardSkeleton } from '@/components/skeletons'
-import { OrdersIcon, RefreshIcon } from '@/constants/icons'
+import { OrdersIcon, RefreshIcon, SearchIcon, CloseIcon } from '@/constants/icons'
+import { formatDate } from '@/utils/date'
 import type { Order, OrderStatus } from '@/types'
 
 type FilterKey = 'all' | 'awaiting_quote' | 'quote_received' | 'accepted' | 'completed'
@@ -23,6 +24,7 @@ const COMPLETED_STATUSES: OrderStatus[] = ['dispatched', 'delivered', 'closed']
 
 export default function OrdersScreen() {
   const [activeFilter, setActiveFilter] = useState<FilterKey>('all')
+  const [search, setSearch] = useState('')
   const { data: orders, isLoading, isError, refetch, isRefetching } = useOrders()
   const { hp, rf, gap, ordersColumns, contentMaxWidth } = useResponsive()
   const { t } = useTranslation()
@@ -37,14 +39,33 @@ export default function OrdersScreen() {
 
   const filtered = useMemo<Order[]>(() => {
     if (!orders) return []
-    if (activeFilter === 'all') return orders
+
+    let list = orders
+
+    // Apply status filter tab
     if (activeFilter === 'completed') {
-      return orders.filter(o => COMPLETED_STATUSES.includes(o.status))
+      list = list.filter(o => COMPLETED_STATUSES.includes(o.status))
+    } else if (activeFilter !== 'all') {
+      list = list.filter(o => o.status === activeFilter)
     }
-    return orders.filter(o => o.status === activeFilter)
-  }, [orders, activeFilter])
+
+    // Apply search query
+    const q = search.trim().toLowerCase()
+    if (q) {
+      list = list.filter(o =>
+        o.order_id.toLowerCase().includes(q) ||
+        o.supplier.business_name.toLowerCase().includes(q) ||
+        o.status.replace(/_/g, ' ').includes(q) ||
+        o.items.some(item => item.product.name.toLowerCase().includes(q)) ||
+        formatDate(o.created_at).toLowerCase().includes(q)
+      )
+    }
+
+    return list
+  }, [orders, activeFilter, search])
 
   const isMultiCol = ordersColumns > 1
+  const hasSearch = search.trim().length > 0
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -55,6 +76,27 @@ export default function OrdersScreen() {
           {orders && (
             <Text style={[styles.subtitle, { fontSize: rf(13) }]}>{t('orders.total_other', { count: orders.length })}</Text>
           )}
+        </View>
+
+        {/* Search bar */}
+        <View style={[styles.searchWrap, { paddingHorizontal: hp }]}>
+          <View style={styles.searchBar}>
+            <HugeiconsIcon icon={SearchIcon} size={18} color='#9CA3AF' strokeWidth={1.5} />
+            <TextInput
+              style={[styles.searchInput, { fontSize: rf(14) }]}
+              placeholder={t('orders.search_placeholder')}
+              placeholderTextColor='#9CA3AF'
+              value={search}
+              onChangeText={setSearch}
+              returnKeyType='search'
+              autoCorrect={false}
+            />
+            {hasSearch && (
+              <TouchableOpacity onPress={() => setSearch('')} hitSlop={8}>
+                <HugeiconsIcon icon={CloseIcon} size={16} color='#9CA3AF' strokeWidth={1.5} />
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
 
         {/* Filter tabs */}
@@ -129,14 +171,22 @@ export default function OrdersScreen() {
             ListEmptyComponent={
               <EmptyState
                 icon={OrdersIcon as any}
-                title={activeFilter === 'all' ? t('orders.empty_all_title') : t('orders.empty_filtered_title')}
-                subtitle={
-                  activeFilter === 'all'
-                    ? t('orders.empty_all_subtitle')
-                    : t('orders.empty_filtered_subtitle')
+                title={
+                  hasSearch
+                    ? t('orders.empty_search_title')
+                    : activeFilter === 'all'
+                      ? t('orders.empty_all_title')
+                      : t('orders.empty_filtered_title')
                 }
-                actionLabel={activeFilter === 'all' ? t('common.browse_suppliers') : undefined}
-                onAction={activeFilter === 'all' ? () => router.push('/(tabs)/suppliers') : undefined}
+                subtitle={
+                  hasSearch
+                    ? t('orders.empty_search_subtitle')
+                    : activeFilter === 'all'
+                      ? t('orders.empty_all_subtitle')
+                      : t('orders.empty_filtered_subtitle')
+                }
+                actionLabel={!hasSearch && activeFilter === 'all' ? t('common.browse_suppliers') : undefined}
+                onAction={!hasSearch && activeFilter === 'all' ? () => router.push('/(tabs)/suppliers') : undefined}
               />
             }
           />
@@ -153,9 +203,26 @@ const styles = StyleSheet.create({
   title:    { fontFamily: 'Poppins-Bold',    color: '#111827' },
   subtitle: { fontFamily: 'Poppins-Regular', color: '#6B7280', marginTop: 2 },
 
+  searchWrap: { paddingVertical: 8 },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#F4F4F2',
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  searchInput: {
+    flex: 1,
+    fontFamily: 'Poppins-Regular',
+    color: '#111827',
+    padding: 0,
+  },
+
   filtersScroll: { flexGrow: 0 },
   filtersRow: {
-    paddingVertical: 12,
+    paddingVertical: 8,
     gap: 8,
   },
   filterTab: {

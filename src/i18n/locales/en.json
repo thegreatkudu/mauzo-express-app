@@ -146,11 +146,14 @@
     "filter_quote_received": "Quote Received",
     "filter_accepted": "Accepted",
     "filter_completed": "Completed",
+    "search_placeholder": "Search by order number, supplier or product…",
     "error_load": "Could not load orders.",
     "empty_all_title": "No orders yet",
     "empty_all_subtitle": "Place an order to get started",
     "empty_filtered_title": "No orders here",
-    "empty_filtered_subtitle": "No orders match this filter"
+    "empty_filtered_subtitle": "No orders match this filter",
+    "empty_search_title": "No matching orders",
+    "empty_search_subtitle": "Try a different order number, supplier name, or status"
   },
   "order_card": {
     "more": "+{{count}} more"

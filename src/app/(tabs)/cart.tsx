@@ -76,12 +76,25 @@ export default function CartScreen() {
   }
 
   async function doPlaceOrder() {
+    // Snapshot cart data before it's cleared
+    const supplierNames = groups.map(g => g.supplier.business_name).join('|')
+    const totalAmt      = grandTotal
+    const count         = items.length
+
     setPlacingOrder(true)
     try {
-      await placeOrder()
+      const result = await placeOrder()
       clearLocalCart()
-      toast.success(t('cart.order_success'))
-      router.replace('/(tabs)/orders')
+      router.replace({
+        pathname: '/checkout/success',
+        params: {
+          orderId:       result.order_id,
+          supplierNames,
+          totalAmount:   String(totalAmt),
+          itemCount:     String(count),
+          createdAt:     new Date().toISOString(),
+        },
+      } as any)
     } catch (err) {
       toast.error(extractApiError(err).message || t('cart.remove_error'))
     } finally {

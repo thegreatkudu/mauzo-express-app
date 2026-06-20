@@ -146,11 +146,14 @@
     "filter_quote_received": "Nukuu Imepokelewa",
     "filter_accepted": "Zilizokubaliwa",
     "filter_completed": "Zilizokamilika",
+    "search_placeholder": "Tafuta kwa nambari ya agizo, msambazaji au bidhaa…",
     "error_load": "Maagizo hayakupakia.",
     "empty_all_title": "Hakuna maagizo bado",
     "empty_all_subtitle": "Weka agizo kuanza",
     "empty_filtered_title": "Hakuna maagizo hapa",
-    "empty_filtered_subtitle": "Hakuna maagizo yanayolingana na kichujio hiki"
+    "empty_filtered_subtitle": "Hakuna maagizo yanayolingana na kichujio hiki",
+    "empty_search_title": "Hakuna maagizo yanayolingana",
+    "empty_search_subtitle": "Jaribu nambari ya agizo tofauti, jina la msambazaji au hali"
   },
   "order_card": {
     "more": "+{{count}} zaidi"
