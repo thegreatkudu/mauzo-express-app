@@ -180,7 +180,15 @@
     "timeline_quoted": "Quoted",
     "timeline_accepted": "Accepted",
     "timeline_dispatched": "Dispatched",
-    "timeline_delivered": "Delivered"
+    "timeline_delivered": "Delivered",
+    "items_one": "{{count}} item",
+    "items_other": "{{count}} items",
+    "supplier_section": "Supplier",
+    "browse_supplier": "Browse Products",
+    "quote_banner_title": "Quotation Ready",
+    "quote_banner_body": "A supplier has submitted prices for your order. Review the items below then accept or reject.",
+    "rejection_section": "Rejection Reason",
+    "rejection_no_reason": "No reason was provided."
   },
   "cart": {
     "title": "My Cart",

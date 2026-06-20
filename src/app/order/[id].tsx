@@ -3,7 +3,6 @@ import {
   ActivityIndicator, Alert, Modal, Pressable, RefreshControl,
   ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native'
-import { OrderDetailSkeleton } from '@/components/skeletons'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { router, useLocalSearchParams } from 'expo-router'
 import { HugeiconsIcon } from '@hugeicons/react-native'
@@ -11,17 +10,42 @@ import { toast } from 'sonner-native'
 import { useTranslation } from 'react-i18next'
 
 import { useOrderDetail, useAcceptOrder, useRejectOrder } from '@/hooks/useOrders'
+import { OrderDetailSkeleton } from '@/components/skeletons'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { formatDate, formatOrderId } from '@/utils/date'
 import { useResponsive } from '@/hooks/useResponsive'
 import {
   BackIcon, CheckCircleIcon, CloseIcon, ChevronRightIcon,
   CalendarIcon, BuildingIcon, PackageIcon,
-  ClockIcon, SuppliersNavIcon, DeliveryIcon, TickIcon,
+  ClockIcon, DeliveryIcon, TickIcon, LocationIcon,
+  CoinsIcon, RefreshIcon, AlertCircleIcon,
 } from '@/constants/icons'
+import type { OrderStatus, QuotationStatus } from '@/types'
 
-const TIMELINE_ICONS = [ClockIcon, PackageIcon, CheckCircleIcon, DeliveryIcon, TickIcon]
-const TIMELINE_KEYS  = ['placed', 'quoted', 'accepted', 'dispatched', 'delivered']
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function getStatusMeta(status: OrderStatus) {
+  const map: Record<OrderStatus, { bg: string; text: string }> = {
+    awaiting_quote: { bg: '#F3F4F6', text: '#6B7280' },
+    quote_received: { bg: '#FEF3C7', text: '#D97706' },
+    accepted:       { bg: '#D1FAE5', text: '#059669' },
+    rejected:       { bg: '#FEE2E2', text: '#DC2626' },
+    dispatched:     { bg: '#EDE9FE', text: '#7C3AED' },
+    delivered:      { bg: '#DBEAFE', text: '#2563EB' },
+    closed:         { bg: '#F3F4F6', text: '#6B7280' },
+    cancelled:      { bg: '#FEE2E2', text: '#DC2626' },
+  }
+  return map[status] ?? { bg: '#F3F4F6', text: '#6B7280' }
+}
+
+function getQuoteStatusBadge(status: QuotationStatus) {
+  switch (status) {
+    case 'ACCEPTED':  return { bg: '#D1FAE5', text: '#059669', label: 'Accepted' }
+    case 'SUBMITTED': return { bg: '#DBEAFE', text: '#2563EB', label: 'Submitted' }
+    case 'CLOSED':    return { bg: '#FEE2E2', text: '#DC2626', label: 'Closed' }
+    default:          return { bg: '#FEF3C7', text: '#D97706', label: 'Pending' }
+  }
+}
 
 function getTimelineStep(status: string): number {
   switch (status) {
@@ -34,12 +58,15 @@ function getTimelineStep(status: string): number {
   }
 }
 
+// ── Screen ────────────────────────────────────────────────────────────────────
+
 export default function OrderDetailScreen() {
   const { t } = useTranslation()
   const { id: orderId } = useLocalSearchParams<{ id: string }>()
   const { data: order, isLoading, isError, refetch, isRefetching } = useOrderDetail(orderId)
   const acceptMutation = useAcceptOrder()
   const rejectMutation = useRejectOrder()
+  const { hp } = useResponsive()
 
   const [rejectModalOpen, setRejectModalOpen] = useState(false)
   const [rejectReason,    setRejectReason]    = useState('')
@@ -70,7 +97,7 @@ export default function OrderDetailScreen() {
             }
           },
         },
-      ]
+      ],
     )
   }
 
@@ -86,10 +113,12 @@ export default function OrderDetailScreen() {
     }
   }
 
+  // ── Loading / Error ─────────────────────────────────────────────────────────
+
   if (isLoading) {
     return (
       <SafeAreaView style={styles.safe} edges={['top']}>
-        <Header onBack={() => router.back()} />
+        <ScreenHeader onBack={() => router.back()} />
         <OrderDetailSkeleton />
       </SafeAreaView>
     )
@@ -98,10 +127,11 @@ export default function OrderDetailScreen() {
   if (isError || !order) {
     return (
       <SafeAreaView style={styles.safe} edges={['top']}>
-        <Header onBack={() => router.back()} />
+        <ScreenHeader onBack={() => router.back()} />
         <View style={styles.center}>
           <Text style={styles.errorText}>{t('order_detail.error_load')}</Text>
-          <TouchableOpacity style={styles.retryBtn} onPress={() => refetch()}>
+          <TouchableOpacity style={styles.retryBtn} onPress={() => refetch()} activeOpacity={0.8}>
+            <HugeiconsIcon icon={RefreshIcon} size={16} color='#CE4002' strokeWidth={2} />
             <Text style={styles.retryText}>{t('common.retry')}</Text>
           </TouchableOpacity>
         </View>
@@ -109,88 +139,193 @@ export default function OrderDetailScreen() {
     )
   }
 
-  const activeStep = getTimelineStep(order.status)
-  const canActOnQuotation = order.status === 'quote_received'
+  const activeStep  = getTimelineStep(order.status)
+  const statusMeta  = getStatusMeta(order.status)
+  const canAct      = order.status === 'quote_received'
+  const isRejected  = order.status === 'rejected' || order.status === 'cancelled'
+  const rejectionReason = order.quotations.find(q => q.rejection_reason)?.rejection_reason ?? null
+  const itemCount   = order.items.length
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <Header onBack={() => router.back()} />
+      <ScreenHeader onBack={() => router.back()} onRefresh={refetch} />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={[styles.scroll, { paddingHorizontal: hp }]}
         refreshControl={
           <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor='#CE4002' />
         }
       >
-        {/* ── Order Info ── */}
-        <View style={styles.card}>
-          <View style={styles.orderTopRow}>
-            <Text style={styles.orderId}>{formatOrderId(order.order_id)}</Text>
-            <StatusBadge status={order.status} />
-          </View>
-          <View style={styles.infoRow}>
-            <HugeiconsIcon icon={CalendarIcon} size={14} color='#9CA3AF' strokeWidth={1.5} />
-            <Text style={styles.infoText}>{formatDate(order.created_at)}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <HugeiconsIcon icon={BuildingIcon} size={14} color='#9CA3AF' strokeWidth={1.5} />
-            <Text style={styles.infoText}>{order.supplier.business_name}</Text>
-          </View>
-          {order.total_quoted_amount != null && (
-            <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>{t('order_detail.quoted_total')}</Text>
-              <Text style={styles.totalValue}>TZS {order.total_quoted_amount.toLocaleString()}</Text>
+        {/* ── 1. Order Hero ── */}
+        <View style={styles.heroCard}>
+          {/* Status-colored band */}
+          <View style={[styles.heroBand, { backgroundColor: statusMeta.bg }]}>
+            <View style={styles.heroBandLeft}>
+              <Text style={[styles.heroOrderId, { color: statusMeta.text }]}>
+                {formatOrderId(order.order_id)}
+              </Text>
+              <View style={styles.heroDateRow}>
+                <HugeiconsIcon icon={CalendarIcon} size={12} color={statusMeta.text + 'AA'} strokeWidth={1.5} />
+                <Text style={[styles.heroDate, { color: statusMeta.text + 'CC' }]}>
+                  {formatDate(order.created_at)}
+                </Text>
+              </View>
             </View>
-          )}
+            <StatusBadge status={order.status} size='md' />
+          </View>
+
+          {/* Body */}
+          <View style={styles.heroBody}>
+            <View style={styles.infoRow}>
+              <HugeiconsIcon icon={BuildingIcon} size={14} color='#9CA3AF' strokeWidth={1.5} />
+              <Text style={styles.infoText} numberOfLines={1}>{order.supplier.business_name}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <HugeiconsIcon icon={PackageIcon} size={14} color='#9CA3AF' strokeWidth={1.5} />
+              <Text style={styles.infoText}>
+                {itemCount === 1
+                  ? t('order_detail.items_one', { count: itemCount })
+                  : t('order_detail.items_other', { count: itemCount })
+                }
+              </Text>
+            </View>
+
+            {order.total_quoted_amount != null && (
+              <>
+                <View style={styles.divider} />
+                <View style={styles.totalRow}>
+                  <Text style={styles.totalLabel}>{t('order_detail.quoted_total')}</Text>
+                  <View style={styles.totalValueWrap}>
+                    <HugeiconsIcon icon={CoinsIcon} size={14} color='#CE4002' strokeWidth={1.5} />
+                    <Text style={styles.totalValue}>
+                      TZS {order.total_quoted_amount.toLocaleString()}
+                    </Text>
+                  </View>
+                </View>
+              </>
+            )}
+          </View>
         </View>
 
-        {/* ── Timeline ── */}
+        {/* ── 2. Supplier Card ── */}
+        <TouchableOpacity
+          style={styles.supplierCard}
+          onPress={() => router.push({
+            pathname: '/supplier/[id]',
+            params: { id: order.supplier.id, name: order.supplier.business_name },
+          } as any)}
+          activeOpacity={0.85}
+        >
+          <View style={styles.supplierIconWrap}>
+            <HugeiconsIcon icon={BuildingIcon} size={22} color='#CE4002' strokeWidth={1.5} />
+          </View>
+          <View style={styles.supplierInfo}>
+            <Text style={styles.supplierName} numberOfLines={1}>{order.supplier.business_name}</Text>
+            <View style={styles.supplierMeta}>
+              <HugeiconsIcon icon={LocationIcon} size={11} color='#9CA3AF' strokeWidth={1.5} />
+              <Text style={styles.supplierMetaText} numberOfLines={1}>
+                {order.supplier.location} · {order.supplier.category.name}
+              </Text>
+            </View>
+          </View>
+          <HugeiconsIcon icon={ChevronRightIcon} size={16} color='#D1D5DB' strokeWidth={1.5} />
+        </TouchableOpacity>
+
+        {/* ── 3. Quotation received banner ── */}
+        {canAct && (
+          <View style={styles.quoteBanner}>
+            <View style={styles.quoteBannerIconWrap}>
+              <HugeiconsIcon icon={AlertCircleIcon} size={20} color='#D97706' strokeWidth={1.5} />
+            </View>
+            <View style={styles.quoteBannerText}>
+              <Text style={styles.quoteBannerTitle}>{t('order_detail.quote_banner_title')}</Text>
+              <Text style={styles.quoteBannerBody}>{t('order_detail.quote_banner_body')}</Text>
+            </View>
+          </View>
+        )}
+
+        {/* ── 4. Rejection reason card ── */}
+        {isRejected && (
+          <View style={styles.rejectionCard}>
+            <View style={styles.rejectionHeader}>
+              <HugeiconsIcon icon={CloseIcon} size={18} color='#DC2626' strokeWidth={2} />
+              <Text style={styles.rejectionTitle}>{t('order_detail.rejection_section')}</Text>
+            </View>
+            <Text style={styles.rejectionReason}>
+              {rejectionReason ?? t('order_detail.rejection_no_reason')}
+            </Text>
+          </View>
+        )}
+
+        {/* ── 5. Timeline ── */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>{t('order_detail.timeline_title')}</Text>
           <View style={styles.timeline}>
             {TIMELINE_STEPS.map((step, i) => {
-              const done   = i <= activeStep
+              const done   = i < activeStep
               const active = i === activeStep
+              const pending = i > activeStep
               return (
                 <View key={step.key} style={styles.timelineStep}>
+                  {/* Left: dot + connector line */}
                   <View style={styles.timelineLeft}>
-                    <View style={[
-                      styles.timelineDot,
-                      done   && styles.timelineDotDone,
-                      active && styles.timelineDotActive,
-                    ]}>
-                      <HugeiconsIcon
-                        icon={step.icon}
-                        size={12}
-                        color={done ? '#fff' : '#D1D5DB'}
-                        strokeWidth={2}
-                      />
-                    </View>
+                    {active ? (
+                      <View style={styles.timelineDotActiveOuter}>
+                        <View style={styles.timelineDotActiveInner}>
+                          <HugeiconsIcon icon={step.icon} size={13} color='#fff' strokeWidth={2} />
+                        </View>
+                      </View>
+                    ) : (
+                      <View style={[
+                        styles.timelineDot,
+                        done    && styles.timelineDotDone,
+                        pending && styles.timelineDotPending,
+                      ]}>
+                        <HugeiconsIcon
+                          icon={step.icon}
+                          size={13}
+                          color={done ? '#fff' : '#D1D5DB'}
+                          strokeWidth={2}
+                        />
+                      </View>
+                    )}
                     {i < TIMELINE_STEPS.length - 1 && (
-                      <View style={[styles.timelineLine, done && i < activeStep && styles.timelineLineDone]} />
+                      <View style={[styles.timelineLine, done && styles.timelineLineDone]} />
                     )}
                   </View>
-                  <Text style={[styles.timelineLabel, active && styles.timelineLabelActive]}>
-                    {step.label}
-                  </Text>
+
+                  {/* Right: label */}
+                  <View style={styles.timelineLabelWrap}>
+                    <Text style={[
+                      styles.timelineLabel,
+                      done    && styles.timelineLabelDone,
+                      active  && styles.timelineLabelActive,
+                    ]}>
+                      {step.label}
+                    </Text>
+                  </View>
                 </View>
               )
             })}
           </View>
         </View>
 
-        {/* ── Items & Quotations ── */}
+        {/* ── 6. Items & Quotations ── */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>
-            {t('order_detail.items_title', { count: order.items.length })}
+            {t('order_detail.items_title', { count: itemCount })}
           </Text>
+
           {order.items.map((item, i) => {
-            const quote = order.quotations.find(q => q.order_item_id === item.id)
+            const quote     = order.quotations.find(q => q.order_item_id === item.id)
+            const qBadge    = quote ? getQuoteStatusBadge(quote.status) : null
+            const isLast    = i === order.items.length - 1
+
             return (
               <TouchableOpacity
                 key={item.id}
-                style={[styles.itemRow, i < order.items.length - 1 && styles.itemRowBorder]}
+                style={[styles.itemRow, !isLast && styles.itemRowBorder]}
                 onPress={() => router.push({
                   pathname: '/product/[id]',
                   params: {
@@ -201,19 +336,31 @@ export default function OrderDetailScreen() {
                 } as any)}
                 activeOpacity={0.7}
               >
+                {/* Product icon bubble */}
+                <View style={styles.itemIconWrap}>
+                  <HugeiconsIcon icon={PackageIcon} size={16} color='#CE4002' strokeWidth={1.5} />
+                </View>
+
+                {/* Product info */}
                 <View style={styles.itemLeft}>
-                  <Text style={styles.itemName}>{item.product.name}</Text>
+                  <Text style={styles.itemName} numberOfLines={1}>{item.product.name}</Text>
                   <Text style={styles.itemMeta}>
                     {item.brand ? `${item.brand.name} · ` : ''}{item.unit.name} × {item.quantity}
                   </Text>
                 </View>
+
+                {/* Price + status */}
                 <View style={styles.itemRight}>
                   {quote?.price != null ? (
                     <>
                       <Text style={styles.itemPrice}>TZS {quote.price.toLocaleString()}</Text>
-                      <Text style={[styles.quoteStatus, { color: getQuoteStatusColor(quote.status) }]}>
-                        {quote.status}
-                      </Text>
+                      {qBadge && (
+                        <View style={[styles.qsBadge, { backgroundColor: qBadge.bg }]}>
+                          <Text style={[styles.qsBadgeText, { color: qBadge.text }]}>
+                            {qBadge.label}
+                          </Text>
+                        </View>
+                      )}
                     </>
                   ) : (
                     <Text style={styles.noPriceText}>{t('order_detail.awaiting_quote')}</Text>
@@ -225,10 +372,9 @@ export default function OrderDetailScreen() {
           })}
         </View>
 
-        {/* ── Accept / Reject actions ── */}
-        {canActOnQuotation && (
+        {/* ── 7. Accept / Reject actions ── */}
+        {canAct && (
           <View style={styles.actionsCard}>
-            <Text style={styles.actionsNote}>{t('order_detail.actions_note')}</Text>
             <View style={styles.actionsRow}>
               <TouchableOpacity
                 style={[styles.rejectBtn, rejectMutation.isPending && styles.btnDisabled]}
@@ -239,6 +385,7 @@ export default function OrderDetailScreen() {
                 <HugeiconsIcon icon={CloseIcon} size={16} color='#EF4444' strokeWidth={2} />
                 <Text style={styles.rejectBtnText}>{t('order_detail.reject')}</Text>
               </TouchableOpacity>
+
               <TouchableOpacity
                 style={[styles.acceptBtn, acceptMutation.isPending && styles.btnDisabled]}
                 onPress={confirmAccept}
@@ -258,8 +405,13 @@ export default function OrderDetailScreen() {
         )}
       </ScrollView>
 
-      {/* Reject Modal */}
-      <Modal visible={rejectModalOpen} transparent animationType='slide' onRequestClose={() => setRejectModalOpen(false)}>
+      {/* ── Reject Modal ── */}
+      <Modal
+        visible={rejectModalOpen}
+        transparent
+        animationType='slide'
+        onRequestClose={() => setRejectModalOpen(false)}
+      >
         <Pressable style={styles.overlay} onPress={() => setRejectModalOpen(false)}>
           <Pressable style={styles.sheet} onPress={() => {}}>
             <View style={styles.sheetHandle} />
@@ -281,7 +433,10 @@ export default function OrderDetailScreen() {
               textAlignVertical='top'
             />
             <TouchableOpacity
-              style={[styles.rejectConfirmBtn, (rejectMutation.isPending || !rejectReason.trim()) && styles.btnDisabled]}
+              style={[
+                styles.rejectConfirmBtn,
+                (rejectMutation.isPending || !rejectReason.trim()) && styles.btnDisabled,
+              ]}
               onPress={handleReject}
               disabled={rejectMutation.isPending || !rejectReason.trim()}
               activeOpacity={0.88}
@@ -298,205 +453,325 @@ export default function OrderDetailScreen() {
   )
 }
 
-function Header({ onBack }: { onBack: () => void }) {
+// ── Header ────────────────────────────────────────────────────────────────────
+
+function ScreenHeader({ onBack, onRefresh }: { onBack: () => void; onRefresh?: () => void }) {
   const { t } = useTranslation()
-  const { rf, hp, isTablet } = useResponsive()
-  const btnSize   = isTablet ? 46 : 40
-  const btnRadius = isTablet ? 15 : 13
   return (
-    <View style={[styles.header, { paddingHorizontal: hp }]}>
-      <TouchableOpacity
-        onPress={onBack}
-        hitSlop={8}
-        activeOpacity={0.7}
-        style={[styles.backBtn, { width: btnSize, height: btnSize, borderRadius: btnRadius }]}
-      >
-        <HugeiconsIcon
-          icon={BackIcon}
-          size={isTablet ? 22 : 20}
-          color='#111827'
-          strokeWidth={2}
-        />
+    <View style={styles.header}>
+      <TouchableOpacity onPress={onBack} hitSlop={8} activeOpacity={0.7}>
+        <HugeiconsIcon icon={BackIcon} size={22} color='#374151' strokeWidth={2} />
       </TouchableOpacity>
-      <Text style={[styles.headerTitle, { fontSize: rf(17) }]} numberOfLines={1}>
-        {t('order_detail.header_title')}
-      </Text>
-      <View style={{ width: btnSize }} />
+      <Text style={styles.headerTitle}>{t('order_detail.header_title')}</Text>
+      {onRefresh ? (
+        <TouchableOpacity onPress={onRefresh} hitSlop={8} activeOpacity={0.7}>
+          <HugeiconsIcon icon={RefreshIcon} size={20} color='#374151' strokeWidth={1.5} />
+        </TouchableOpacity>
+      ) : (
+        <View style={{ width: 22 }} />
+      )}
     </View>
   )
 }
 
-function getQuoteStatusColor(status: string): string {
-  switch (status) {
-    case 'ACCEPTED': return '#059669'
-    case 'CLOSED':   return '#DC2626'
-    case 'PENDING':  return '#D97706'
-    default:         return '#6B7280'
-  }
-}
+// ── Styles ────────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   safe:   { flex: 1, backgroundColor: '#F8FAFC' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
-  scroll: { padding: 16, gap: 14, paddingBottom: 40 },
+  scroll: { paddingVertical: 16, gap: 14, paddingBottom: 48 },
 
+  // Header
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: 12,
-    paddingBottom: 8,
-    backgroundColor: '#fff',
+    flexDirection:     'row',
+    alignItems:        'center',
+    justifyContent:    'space-between',
+    paddingHorizontal: 16,
+    paddingVertical:   14,
+    backgroundColor:   '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#F3F4F6',
   },
-  backBtn: {
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.10,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  headerTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontFamily: 'Poppins-SemiBold',
-    color: '#111827',
-  },
+  headerTitle: { fontSize: 17, fontFamily: 'Poppins-SemiBold', color: '#111827' },
 
+  // ── Hero Card ──────────────────────────────────────────────────────────────
+  heroCard: {
+    backgroundColor: '#fff',
+    borderRadius:    18,
+    overflow:        'hidden',
+    borderWidth:     1,
+    borderColor:     '#F3F4F6',
+    shadowColor:     '#000',
+    shadowOffset:    { width: 0, height: 2 },
+    shadowOpacity:   0.05,
+    shadowRadius:    10,
+    elevation:       2,
+  },
+  heroBand: {
+    flexDirection:  'row',
+    alignItems:     'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 18,
+    paddingVertical:   16,
+  },
+  heroBandLeft: { gap: 4, flex: 1, marginRight: 12 },
+  heroOrderId: {
+    fontSize:   18,
+    fontFamily: 'Poppins-Bold',
+  },
+  heroDateRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  heroDate:    { fontSize: 12, fontFamily: 'Poppins-Regular' },
+
+  heroBody: {
+    paddingHorizontal: 18,
+    paddingVertical:   14,
+    gap:               10,
+  },
+  infoRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  infoText: { fontSize: 13, fontFamily: 'Poppins-Regular', color: '#374151', flex: 1 },
+  divider:  { height: 1, backgroundColor: '#F3F4F6' },
+
+  totalRow: {
+    flexDirection:  'row',
+    alignItems:     'center',
+    justifyContent: 'space-between',
+  },
+  totalLabel:    { fontSize: 13, fontFamily: 'Poppins-Regular', color: '#6B7280' },
+  totalValueWrap: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  totalValue:    { fontSize: 16, fontFamily: 'Poppins-Bold', color: '#CE4002' },
+
+  // ── Supplier Card ──────────────────────────────────────────────────────────
+  supplierCard: {
+    flexDirection:   'row',
+    alignItems:      'center',
+    gap:             12,
+    backgroundColor: '#fff',
+    borderRadius:    16,
+    padding:         16,
+    borderWidth:     1,
+    borderColor:     '#F3F4F6',
+    shadowColor:     '#000',
+    shadowOffset:    { width: 0, height: 1 },
+    shadowOpacity:   0.04,
+    shadowRadius:    6,
+    elevation:       1,
+  },
+  supplierIconWrap: {
+    width:           46,
+    height:          46,
+    borderRadius:    14,
+    backgroundColor: '#FEF0E6',
+    alignItems:      'center',
+    justifyContent:  'center',
+    flexShrink:      0,
+  },
+  supplierInfo: { flex: 1, gap: 3 },
+  supplierName: { fontSize: 14, fontFamily: 'Poppins-SemiBold', color: '#111827' },
+  supplierMeta: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  supplierMetaText: { fontSize: 12, fontFamily: 'Poppins-Regular', color: '#9CA3AF', flex: 1 },
+
+  // ── Quote banner ───────────────────────────────────────────────────────────
+  quoteBanner: {
+    flexDirection:   'row',
+    alignItems:      'flex-start',
+    gap:             12,
+    backgroundColor: '#FFFBEB',
+    borderRadius:    14,
+    padding:         14,
+    borderWidth:     1,
+    borderColor:     '#FDE68A',
+  },
+  quoteBannerIconWrap: {
+    width:           36,
+    height:          36,
+    borderRadius:    10,
+    backgroundColor: '#FEF3C7',
+    alignItems:      'center',
+    justifyContent:  'center',
+    flexShrink:      0,
+  },
+  quoteBannerText:  { flex: 1, gap: 3 },
+  quoteBannerTitle: { fontSize: 13, fontFamily: 'Poppins-SemiBold', color: '#92400E' },
+  quoteBannerBody:  { fontSize: 12, fontFamily: 'Poppins-Regular',  color: '#78350F', lineHeight: 18 },
+
+  // ── Rejection card ─────────────────────────────────────────────────────────
+  rejectionCard: {
+    backgroundColor: '#FFF5F5',
+    borderRadius:    14,
+    padding:         14,
+    borderWidth:     1,
+    borderColor:     '#FECACA',
+    gap:             8,
+  },
+  rejectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  rejectionTitle:  { fontSize: 14, fontFamily: 'Poppins-SemiBold', color: '#DC2626' },
+  rejectionReason: { fontSize: 13, fontFamily: 'Poppins-Regular',  color: '#7F1D1D', lineHeight: 20 },
+
+  // ── Card (shared) ──────────────────────────────────────────────────────────
   card: {
     backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#F3F4F6',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
-    gap: 10,
+    borderRadius:    16,
+    padding:         16,
+    borderWidth:     1,
+    borderColor:     '#F3F4F6',
+    shadowColor:     '#000',
+    shadowOffset:    { width: 0, height: 2 },
+    shadowOpacity:   0.04,
+    shadowRadius:    8,
+    elevation:       2,
+    gap:             14,
   },
   cardTitle: { fontSize: 15, fontFamily: 'Poppins-SemiBold', color: '#111827' },
 
-  orderTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  orderId: { fontSize: 16, fontFamily: 'Poppins-Bold', color: '#111827' },
-
-  infoRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  infoText: { fontSize: 13, fontFamily: 'Poppins-Regular', color: '#6B7280' },
-
-  totalRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
-    marginTop: 4,
-  },
-  totalLabel: { fontSize: 14, fontFamily: 'Poppins-Regular', color: '#6B7280' },
-  totalValue: { fontSize: 16, fontFamily: 'Poppins-Bold',    color: '#CE4002' },
-
-  // Timeline
-  timeline: { paddingLeft: 4, gap: 0 },
+  // ── Timeline ───────────────────────────────────────────────────────────────
+  timeline: { paddingLeft: 2 },
   timelineStep: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 14,
-    minHeight: 48,
+    alignItems:    'flex-start',
+    gap:           14,
+    minHeight:     52,
   },
   timelineLeft: {
     alignItems: 'center',
-    width: 24,
-  },
-  timelineDot: {
-    width: 24, height: 24,
-    borderRadius: 12,
-    backgroundColor: '#F3F4F6',
-    borderWidth: 2,
-    borderColor: '#E5E7EB',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  timelineDotDone:   { backgroundColor: '#9CA3AF', borderColor: '#9CA3AF' },
-  timelineDotActive: { backgroundColor: '#CE4002', borderColor: '#CE4002' },
-  timelineLine: {
-    width: 2, flex: 1,
-    backgroundColor: '#E5E7EB',
-    marginVertical: 2,
-  },
-  timelineLineDone: { backgroundColor: '#9CA3AF' },
-  timelineLabel: {
-    fontSize: 13,
-    fontFamily: 'Poppins-Regular',
-    color: '#9CA3AF',
-    paddingTop: 4,
-  },
-  timelineLabelActive: {
-    fontFamily: 'Poppins-SemiBold',
-    color: '#CE4002',
+    width:      28,
   },
 
-  // Items
+  // Active dot: outer ring + inner filled circle
+  timelineDotActiveOuter: {
+    width:          34,
+    height:         34,
+    borderRadius:   17,
+    backgroundColor: '#CE400222',
+    alignItems:     'center',
+    justifyContent: 'center',
+    marginLeft:     -3,
+  },
+  timelineDotActiveInner: {
+    width:          24,
+    height:         24,
+    borderRadius:   12,
+    backgroundColor: '#CE4002',
+    alignItems:     'center',
+    justifyContent: 'center',
+  },
+
+  // Normal dot
+  timelineDot: {
+    width:          28,
+    height:         28,
+    borderRadius:   14,
+    alignItems:     'center',
+    justifyContent: 'center',
+  },
+  timelineDotDone: {
+    backgroundColor: '#CE4002',
+  },
+  timelineDotPending: {
+    backgroundColor: '#F3F4F6',
+    borderWidth:     2,
+    borderColor:     '#E5E7EB',
+  },
+
+  timelineLine: {
+    width:           2,
+    flex:            1,
+    backgroundColor: '#E5E7EB',
+    marginVertical:  3,
+  },
+  timelineLineDone: { backgroundColor: '#CE4002' },
+
+  timelineLabelWrap: { flex: 1, paddingTop: 6 },
+  timelineLabel: {
+    fontSize:   13,
+    fontFamily: 'Poppins-Regular',
+    color:      '#D1D5DB',
+  },
+  timelineLabelDone: {
+    fontFamily: 'Poppins-Medium',
+    color:      '#6B7280',
+  },
+  timelineLabelActive: {
+    fontFamily: 'Poppins-Bold',
+    color:      '#CE4002',
+  },
+
+  // ── Items ──────────────────────────────────────────────────────────────────
   itemRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
+    flexDirection:  'row',
+    alignItems:     'center',
     paddingVertical: 12,
-    gap: 8,
+    gap:             10,
   },
   itemRowBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: '#F9FAFB',
+    borderBottomColor: '#F3F4F6',
+  },
+  itemIconWrap: {
+    width:           40,
+    height:          40,
+    borderRadius:    12,
+    backgroundColor: '#FEF0E6',
+    alignItems:      'center',
+    justifyContent:  'center',
+    flexShrink:      0,
   },
   itemLeft:  { flex: 1, gap: 3 },
-  itemRight: { alignItems: 'flex-end', gap: 3 },
-  itemName:  { fontSize: 14, fontFamily: 'Poppins-Medium',  color: '#111827' },
-  itemMeta:  { fontSize: 12, fontFamily: 'Poppins-Regular', color: '#6B7280' },
-  itemPrice: { fontSize: 14, fontFamily: 'Poppins-Bold',    color: '#CE4002' },
-  quoteStatus: { fontSize: 11, fontFamily: 'Poppins-SemiBold' },
-  noPriceText: { fontSize: 12, fontFamily: 'Poppins-Regular', color: '#9CA3AF' },
+  itemRight: { alignItems: 'flex-end', gap: 4, flexShrink: 0 },
+  itemName:  { fontSize: 13, fontFamily: 'Poppins-SemiBold', color: '#111827' },
+  itemMeta:  { fontSize: 11, fontFamily: 'Poppins-Regular',  color: '#9CA3AF' },
+  itemPrice: { fontSize: 13, fontFamily: 'Poppins-Bold',     color: '#CE4002' },
 
-  // Actions
+  qsBadge: {
+    paddingHorizontal: 7,
+    paddingVertical:   2,
+    borderRadius:      20,
+  },
+  qsBadgeText: { fontSize: 10, fontFamily: 'Poppins-SemiBold' },
+  noPriceText: { fontSize: 11, fontFamily: 'Poppins-Regular', color: '#9CA3AF' },
+
+  // ── Actions ────────────────────────────────────────────────────────────────
   actionsCard: {
     backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#F3F4F6',
-    gap: 14,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
+    borderRadius:    16,
+    padding:         16,
+    borderWidth:     1,
+    borderColor:     '#F3F4F6',
+    shadowColor:     '#000',
+    shadowOffset:    { width: 0, height: 2 },
+    shadowOpacity:   0.04,
+    shadowRadius:    8,
+    elevation:       2,
   },
-  actionsNote: { fontSize: 13, fontFamily: 'Poppins-Regular', color: '#6B7280', lineHeight: 20 },
-  actionsRow:  { flexDirection: 'row', gap: 10 },
+  actionsRow: { flexDirection: 'row', gap: 10 },
   rejectBtn: {
-    flex: 1, height: 48, borderRadius: 14,
+    flex: 1, height: 50, borderRadius: 14,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
     borderWidth: 1.5, borderColor: '#EF4444',
   },
   rejectBtnText: { fontSize: 14, fontFamily: 'Poppins-SemiBold', color: '#EF4444' },
   acceptBtn: {
-    flex: 2, height: 48, borderRadius: 14,
+    flex: 2, height: 50, borderRadius: 14,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
     backgroundColor: '#059669',
+    shadowColor: '#059669',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 2,
   },
   acceptBtnText: { fontSize: 14, fontFamily: 'Poppins-SemiBold', color: '#fff' },
-  btnDisabled: { opacity: 0.5 },
+  btnDisabled:   { opacity: 0.5 },
 
+  // ── Error / Retry ──────────────────────────────────────────────────────────
   errorText: { fontSize: 14, fontFamily: 'Poppins-Regular', color: '#6B7280' },
   retryBtn: {
-    paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12,
-    backgroundColor: '#CE4002',
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    paddingHorizontal: 20, paddingVertical: 10,
+    borderRadius: 12, borderWidth: 1.5, borderColor: '#CE4002',
   },
-  retryText: { fontSize: 14, fontFamily: 'Poppins-SemiBold', color: '#fff' },
+  retryText: { fontSize: 14, fontFamily: 'Poppins-SemiBold', color: '#CE4002' },
 
-  // Reject modal
+  // ── Reject Modal ───────────────────────────────────────────────────────────
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
   sheet: {
     backgroundColor: '#fff',

@@ -180,7 +180,15 @@
     "timeline_quoted": "Limenukuiwa",
     "timeline_accepted": "Limekubaliwa",
     "timeline_dispatched": "Limetumwa",
-    "timeline_delivered": "Limewasilishwa"
+    "timeline_delivered": "Limewasilishwa",
+    "items_one": "bidhaa {{count}}",
+    "items_other": "bidhaa {{count}}",
+    "supplier_section": "Msambazaji",
+    "browse_supplier": "Angalia Bidhaa",
+    "quote_banner_title": "Nukuu Ipo Tayari",
+    "quote_banner_body": "Msambazaji ametuma bei za bidhaa zako. Angalia bidhaa hapa chini kisha kubali au kataa.",
+    "rejection_section": "Sababu ya Kukataliwa",
+    "rejection_no_reason": "Hakuna sababu iliyotolewa."
   },
   "cart": {
     "title": "Kikapu Changu",
