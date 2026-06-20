@@ -4,15 +4,21 @@ import { SkeletonBox } from './Shimmer'
 export function NotificationRowSkeleton() {
   return (
     <View style={styles.row}>
-
       {/* Icon circle */}
-      <SkeletonBox width={40} height={40} borderRadius={12} style={styles.shrink0} />
+      <SkeletonBox width={46} height={46} borderRadius={14} style={styles.shrink0} />
 
-      {/* Message lines + timestamp */}
+      {/* Content */}
       <View style={styles.content}>
-        <SkeletonBox height={13} width='86%' borderRadius={5} />
-        <SkeletonBox height={13} width='62%' borderRadius={5} style={{ marginTop: 5 }} />
-        <SkeletonBox height={11} width={52}  borderRadius={4} style={{ marginTop: 6 }} />
+        {/* Title row + time */}
+        <View style={styles.titleRow}>
+          <SkeletonBox height={13} width='55%' borderRadius={5} />
+          <SkeletonBox height={11} width={40}  borderRadius={4} />
+        </View>
+        {/* Type badge */}
+        <SkeletonBox height={20} width={72} borderRadius={20} style={{ marginTop: 5 }} />
+        {/* Message lines */}
+        <SkeletonBox height={12} width='90%' borderRadius={4} style={{ marginTop: 7 }} />
+        <SkeletonBox height={12} width='68%' borderRadius={4} style={{ marginTop: 4 }} />
       </View>
     </View>
   )
@@ -22,14 +28,16 @@ const styles = StyleSheet.create({
   row: {
     flexDirection:   'row',
     alignItems:      'flex-start',
-    gap:             12,
+    gap:             13,
     backgroundColor: '#fff',
-    borderRadius:    14,
-    padding:         14,
+    borderRadius:    16,
+    padding:         16,
     borderWidth:     1,
+    borderLeftWidth: 3,
     borderColor:     '#F3F4F6',
-    marginBottom:    8,
+    borderLeftColor: '#F3F4F6',
   },
-  content: { flex: 1 },
-  shrink0: { flexShrink: 0 },
+  content:  { flex: 1 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  shrink0:  { flexShrink: 0 },
 })

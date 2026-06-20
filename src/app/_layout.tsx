@@ -77,7 +77,8 @@ export default function RootLayout() {
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="(routes)/onboarding/index" />
           <Stack.Screen name="subscription" options={{ animation: 'fade' }} />
-          <Stack.Screen name="notifications"    options={{ animation: 'slide_from_right' }} />
+          <Stack.Screen name="notifications"     options={{ animation: 'slide_from_right' }} />
+          <Stack.Screen name="notification/[id]" options={{ animation: 'slide_from_right' }} />
           <Stack.Screen name="supplier/[id]"  options={{ animation: 'slide_from_right' }} />
           <Stack.Screen name="order/[id]"     options={{ animation: 'slide_from_right' }} />
           <Stack.Screen name="checkout/success" options={{ animation: 'fade', gestureEnabled: false }} />

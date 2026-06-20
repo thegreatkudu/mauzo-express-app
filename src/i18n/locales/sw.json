@@ -240,6 +240,18 @@
     "empty_title": "Hakuna arifa bado",
     "empty_subtitle": "Utaarifiwa kuhusu masasisho ya maagizo na nukuu hapa"
   },
+  "notification_preview": {
+    "header_title": "Arifa",
+    "badge_new": "MPYA",
+    "message_label": "Ujumbe",
+    "status_label": "Hali",
+    "category_label": "Aina",
+    "status_new": "Mpya",
+    "status_read": "Imesomwa",
+    "view_order": "Angalia Maelezo ya Agizo",
+    "view_subscription": "Angalia Usajili",
+    "back": "Rudi kwa Arifa"
+  },
   "subscription": {
     "title": "Usajili wa Mauzo",
     "subtitle_expired": "Usajili wako umeisha. Jiandikishe kuendelea kuagiza.",

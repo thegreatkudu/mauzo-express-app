@@ -240,6 +240,18 @@
     "empty_title": "No notifications yet",
     "empty_subtitle": "You will be notified about order updates and quotations here"
   },
+  "notification_preview": {
+    "header_title": "Notification",
+    "badge_new": "NEW",
+    "message_label": "Message",
+    "status_label": "Status",
+    "category_label": "Category",
+    "status_new": "New",
+    "status_read": "Read",
+    "view_order": "View Order Details",
+    "view_subscription": "View Subscription",
+    "back": "Back to Notifications"
+  },
   "subscription": {
     "title": "Mauzo Subscription",
     "subtitle_expired": "Your subscription has expired. Subscribe to continue ordering.",

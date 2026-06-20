@@ -12,39 +12,66 @@ import { useTranslation } from 'react-i18next'
 import { useNotifications, useMarkNotificationsRead } from '@/hooks/useNotifications'
 import EmptyState from '@/components/ui/EmptyState'
 import { NotificationRowSkeleton } from '@/components/skeletons'
-import {
-  BackIcon, NotificationIcon, CheckCircleIcon,
-  OrdersIcon, InfoIcon, CrownIcon,
-} from '@/constants/icons'
+import { BackIcon, NotificationIcon, CheckCircleIcon, RefreshIcon } from '@/constants/icons'
 import { timeAgo } from '@/utils/date'
-import type { Notification, NotificationType } from '@/types'
+import { getNotifMeta } from '@/utils/notifications'
+import type { Notification } from '@/types'
 
-const NotificationRow = memo(function NotificationRow({ notification, onPress }: {
+// ── Card ─────────────────────────────────────────────────────────────────────
+
+const NotificationRow = memo(function NotificationRow({
+  notification,
+  onPress,
+}: {
   notification: Notification
   onPress: () => void
 }) {
-  const icon   = getNotifIcon(notification.type)
-  const color  = getNotifColor(notification.type)
+  const meta = getNotifMeta(notification.type, notification.message)
+  const unread = !notification.is_read
 
   return (
     <TouchableOpacity
-      style={[styles.row, !notification.is_read && styles.rowUnread]}
+      style={[
+        styles.row,
+        unread && styles.rowUnread,
+        unread && { borderLeftColor: meta.color },
+      ]}
       onPress={onPress}
       activeOpacity={0.8}
     >
-      <View style={[styles.iconWrap, { backgroundColor: color + '20' }]}>
-        <HugeiconsIcon icon={icon} size={18} color={color} strokeWidth={1.5} />
+      {/* Icon circle */}
+      <View style={[styles.iconWrap, { backgroundColor: meta.bgColor }]}>
+        <HugeiconsIcon icon={meta.icon as any} size={20} color={meta.color} strokeWidth={1.5} />
       </View>
-      <View style={styles.rowContent}>
-        <Text style={[styles.rowMessage, !notification.is_read && styles.rowMessageUnread]} numberOfLines={3}>
+
+      {/* Content */}
+      <View style={styles.content}>
+        {/* Title + time */}
+        <View style={styles.titleRow}>
+          <Text style={[styles.notifTitle, unread && styles.notifTitleUnread]} numberOfLines={1}>
+            {meta.title}
+          </Text>
+          <Text style={styles.time}>{timeAgo(notification.created_at)}</Text>
+        </View>
+
+        {/* Type badge */}
+        <View style={[styles.badge, { backgroundColor: meta.bgColor }]}>
+          <Text style={[styles.badgeText, { color: meta.color }]}>{meta.label}</Text>
+        </View>
+
+        {/* Message preview */}
+        <Text style={[styles.message, unread && styles.messageUnread]} numberOfLines={2}>
           {notification.message}
         </Text>
-        <Text style={styles.rowTime}>{timeAgo(notification.created_at)}</Text>
       </View>
-      {!notification.is_read && <View style={styles.unreadDot} />}
+
+      {/* Unread dot */}
+      {unread && <View style={[styles.unreadDot, { backgroundColor: meta.color }]} />}
     </TouchableOpacity>
   )
 })
+
+// ── Screen ────────────────────────────────────────────────────────────────────
 
 export default function NotificationsScreen() {
   const { t } = useTranslation()
@@ -54,14 +81,20 @@ export default function NotificationsScreen() {
   const unreadIds = (notifications ?? []).filter(n => !n.is_read).map(n => n.id)
 
   function handlePress(notification: Notification) {
-    // Mark as read
     if (!notification.is_read) {
       markRead.mutate([notification.id])
     }
-    // Navigate to order if applicable
-    if (notification.reference_id && notification.type !== 'subscription') {
-      router.push(`/order/${notification.reference_id}`)
-    }
+    router.push({
+      pathname: '/notification/[id]',
+      params: {
+        id:           notification.id,
+        message:      notification.message,
+        type:         notification.type,
+        is_read:      String(notification.is_read),
+        created_at:   notification.created_at,
+        reference_id: notification.reference_id != null ? String(notification.reference_id) : '',
+      },
+    })
   }
 
   function markAllRead() {
@@ -75,7 +108,7 @@ export default function NotificationsScreen() {
         <TouchableOpacity onPress={() => router.back()} hitSlop={8} activeOpacity={0.7}>
           <HugeiconsIcon icon={BackIcon} size={22} color='#374151' strokeWidth={2} />
         </TouchableOpacity>
-        <Text style={styles.title}>{t('notifications.title')}</Text>
+        <Text style={styles.headerTitle}>{t('notifications.title')}</Text>
         {unreadIds.length > 0 ? (
           <TouchableOpacity onPress={markAllRead} hitSlop={8} activeOpacity={0.7}>
             <HugeiconsIcon icon={CheckCircleIcon} size={22} color='#CE4002' strokeWidth={1.5} />
@@ -85,22 +118,30 @@ export default function NotificationsScreen() {
         )}
       </View>
 
+      {/* Unread banner */}
       {unreadIds.length > 0 && (
         <View style={styles.unreadBanner}>
           <Text style={styles.unreadBannerText}>
-            {t(unreadIds.length !== 1 ? 'notifications.unread_banner_other' : 'notifications.unread_banner_one', { count: unreadIds.length })}
+            {t(
+              unreadIds.length !== 1
+                ? 'notifications.unread_banner_other'
+                : 'notifications.unread_banner_one',
+              { count: unreadIds.length },
+            )}
           </Text>
         </View>
       )}
 
+      {/* Content */}
       {isLoading ? (
-        <View style={styles.list}>
+        <View style={styles.skeletonList}>
           {[1, 2, 3, 4].map(i => <NotificationRowSkeleton key={i} />)}
         </View>
       ) : isError ? (
         <View style={styles.center}>
           <Text style={styles.errorText}>{t('notifications.error_load')}</Text>
-          <TouchableOpacity style={styles.retryBtn} onPress={() => refetch()}>
+          <TouchableOpacity style={styles.retryBtn} onPress={() => refetch()} activeOpacity={0.8}>
+            <HugeiconsIcon icon={RefreshIcon} size={16} color='#CE4002' strokeWidth={2} />
             <Text style={styles.retryText}>{t('common.retry')}</Text>
           </TouchableOpacity>
         </View>
@@ -129,106 +170,110 @@ export default function NotificationsScreen() {
   )
 }
 
-function getNotifIcon(type: NotificationType) {
-  switch (type) {
-    case 'quotation': return OrdersIcon
-    case 'order':     return CheckCircleIcon
-    case 'subscription': return CrownIcon
-    default:          return InfoIcon
-  }
-}
-
-function getNotifColor(type: NotificationType): string {
-  switch (type) {
-    case 'quotation': return '#D97706'
-    case 'order':     return '#059669'
-    case 'subscription': return '#CE4002'
-    default:          return '#6366F1'
-  }
-}
-
 const styles = StyleSheet.create({
   safe:   { flex: 1, backgroundColor: '#F8FAFC' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
 
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    flexDirection:      'row',
+    alignItems:         'center',
+    justifyContent:     'space-between',
+    paddingHorizontal:  16,
+    paddingVertical:    14,
+    backgroundColor:    '#fff',
+    borderBottomWidth:  1,
+    borderBottomColor:  '#F3F4F6',
   },
-  title: { fontSize: 17, fontFamily: 'Poppins-SemiBold', color: '#111827' },
+  headerTitle: { fontSize: 17, fontFamily: 'Poppins-SemiBold', color: '#111827' },
 
   unreadBanner: {
-    backgroundColor: '#FEF0E6',
+    backgroundColor:   '#FEF0E6',
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical:   10,
     borderBottomWidth: 1,
     borderBottomColor: '#FDDCC7',
   },
-  unreadBannerText: {
-    fontSize: 12,
-    fontFamily: 'Poppins-Regular',
-    color: '#CE4002',
-  },
+  unreadBannerText: { fontSize: 12, fontFamily: 'Poppins-Regular', color: '#CE4002' },
 
-  list: { padding: 16, paddingBottom: 40, gap: 8 },
+  skeletonList: { padding: 16, paddingBottom: 40, gap: 14 },
+  list:         { padding: 16, paddingBottom: 40, gap: 14 },
 
   row: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: '#F3F4F6',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 4,
-    elevation: 1,
+    flexDirection:     'row',
+    alignItems:        'flex-start',
+    gap:               13,
+    backgroundColor:   '#fff',
+    borderRadius:      16,
+    padding:           16,
+    borderWidth:       1,
+    borderLeftWidth:   3,
+    borderColor:       '#F3F4F6',
+    borderLeftColor:   '#F3F4F6',
+    shadowColor:       '#000',
+    shadowOffset:      { width: 0, height: 1 },
+    shadowOpacity:     0.04,
+    shadowRadius:      6,
+    elevation:         1,
   },
   rowUnread: {
-    borderColor: '#FEF0E6',
     backgroundColor: '#FFFCFB',
   },
+
   iconWrap: {
-    width: 40, height: 40, borderRadius: 12,
-    alignItems: 'center', justifyContent: 'center',
-    flexShrink: 0,
+    width:           46,
+    height:          46,
+    borderRadius:    14,
+    alignItems:      'center',
+    justifyContent:  'center',
+    flexShrink:      0,
   },
-  rowContent: { flex: 1, gap: 4 },
-  rowMessage: {
-    fontSize: 13,
-    fontFamily: 'Poppins-Regular',
-    color: '#374151',
-    lineHeight: 20,
+
+  content: { flex: 1, gap: 5 },
+
+  titleRow: {
+    flexDirection:  'row',
+    alignItems:     'center',
+    justifyContent: 'space-between',
+    gap:            8,
   },
-  rowMessageUnread: {
-    fontFamily: 'Poppins-Medium',
-    color: '#111827',
+  notifTitle: {
+    flex:        1,
+    fontSize:    13,
+    fontFamily:  'Poppins-SemiBold',
+    color:       '#374151',
   },
-  rowTime: {
-    fontSize: 11,
-    fontFamily: 'Poppins-Regular',
-    color: '#9CA3AF',
+  notifTitleUnread: { color: '#111827' },
+  time: { fontSize: 11, fontFamily: 'Poppins-Regular', color: '#9CA3AF', flexShrink: 0 },
+
+  badge: {
+    alignSelf:         'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical:   2,
+    borderRadius:      20,
   },
+  badgeText: { fontSize: 10, fontFamily: 'Poppins-SemiBold' },
+
+  message:        { fontSize: 12, fontFamily: 'Poppins-Regular', color: '#6B7280', lineHeight: 18 },
+  messageUnread:  { color: '#374151' },
+
   unreadDot: {
-    width: 8, height: 8, borderRadius: 4,
-    backgroundColor: '#CE4002',
-    marginTop: 4,
-    flexShrink: 0,
+    width:       8,
+    height:      8,
+    borderRadius: 4,
+    marginTop:   4,
+    flexShrink:  0,
   },
 
   errorText: { fontSize: 14, fontFamily: 'Poppins-Regular', color: '#6B7280' },
   retryBtn: {
-    paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12,
-    backgroundColor: '#CE4002',
+    flexDirection:     'row',
+    alignItems:        'center',
+    gap:               6,
+    paddingHorizontal: 20,
+    paddingVertical:   10,
+    borderRadius:      12,
+    borderWidth:       1.5,
+    borderColor:       '#CE4002',
   },
-  retryText: { fontSize: 14, fontFamily: 'Poppins-SemiBold', color: '#fff' },
+  retryText: { fontSize: 14, fontFamily: 'Poppins-SemiBold', color: '#CE4002' },
 })

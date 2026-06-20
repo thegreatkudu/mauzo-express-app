@@ -25,6 +25,14 @@ export function daysRemaining(iso: string | null): number {
   return Math.max(0, Math.ceil(diff / 86_400_000))
 }
 
+/** "Jun 20, 2026 · 2:30 PM" */
+export function formatDateTime(iso: string): string {
+  const d = new Date(iso)
+  const date = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+  return `${date} · ${time}`
+}
+
 /** Format #ORD-XXXX from raw UUID (first 8 chars uppercased) */
 export function formatOrderId(uuid: string): string {
   return '#ORD-' + uuid.replace(/-/g, '').slice(0, 8).toUpperCase()
