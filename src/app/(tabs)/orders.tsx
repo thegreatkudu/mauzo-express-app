@@ -197,7 +197,7 @@ export default function OrdersScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: '#F6F6F4' },
+  safe:   { flex: 1, backgroundColor: '#F8FAFC' },
 
   header: { paddingTop: 16, paddingBottom: 4 },
   title:    { fontFamily: 'Poppins-Bold',    color: '#111827' },

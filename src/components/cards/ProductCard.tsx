@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
     backgroundColor: C.surface,
     borderRadius: R.sm,       // Snapcart uses ~8px radius
     overflow: 'hidden',
-    ...shadowStyles.product,  // rgba(0,0,0,0.05) 0px 1px 2px 0px
+    ...shadowStyles.product,
   },
   cardInner: { flex: 1 },
 

@@ -15,13 +15,13 @@ const ios = (color: string, w: number, h: number, opacity: number, radius: numbe
   shadowRadius: radius,
 })
 
-// Snapcart's shadows are deliberately very soft — almost border-like.
-// On Android we use minimal elevation values to match that subtlety.
+// Unified card shadow: rgba(0, 0, 0, 0.04) 0px 2px 5px
+// Applied consistently to all cards, containers, and panels.
 export const shadowStyles = {
-  // rgba(0, 0, 0, 0.05) 0px 0px 0px 1px  — subtle outline / boundary
+  // Standard card shadow — used for all cards, list items, containers
   card: Platform.select({
-    ios:     { ...ios('#000000', 0, 0, 0.05, 1), borderWidth: 0 },
-    android: { elevation: 1 },
+    ios:     ios('#000000', 0, 2, 0.04, 5),
+    android: { elevation: 2 },
   })!,
 
   // rgba(27, 31, 35, 0.04) 0px 1px 0px  — feather-light lift (button/chip)
@@ -30,9 +30,9 @@ export const shadowStyles = {
     android: { elevation: 1 },
   })!,
 
-  // rgba(0, 0, 0, 0.05) 0px 1px 2px 0px  — clean product card depth
+  // Product/vendor cards — same standard shadow as card
   product: Platform.select({
-    ios:     ios('#000000', 0, 1, 0.05, 2),
+    ios:     ios('#000000', 0, 2, 0.04, 5),
     android: { elevation: 2 },
   })!,
 

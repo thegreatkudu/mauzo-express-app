@@ -166,7 +166,7 @@ function PlanCard({ plan, selected, onSelect }: {
 }
 
 const styles = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: '#F6F6F4' },
+  safe:   { flex: 1, backgroundColor: '#F8FAFC' },
   scroll: { paddingHorizontal: 16, paddingBottom: 40 },
 
   header: {
@@ -226,13 +226,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 16,
     padding: 16,
-    borderWidth: 2,
-    borderColor: '#E8E8E8',
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
     gap: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
-    shadowRadius: 8,
+    shadowRadius: 5,
     elevation: 2,
     position: 'relative',
   },
@@ -266,7 +266,7 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
-    shadowRadius: 8,
+    shadowRadius: 5,
     elevation: 2,
   },
   featuresTitle: { fontSize: 15, fontFamily: 'Poppins-SemiBold', color: '#111827', marginBottom: 4 },

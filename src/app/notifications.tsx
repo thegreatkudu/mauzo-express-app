@@ -171,7 +171,7 @@ export default function NotificationsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: '#F6F6F4' },
+  safe:   { flex: 1, backgroundColor: '#F8FAFC' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
 
   header: {
@@ -211,10 +211,10 @@ const styles = StyleSheet.create({
     borderColor:       '#F0F0F0',
     borderLeftColor:   '#F0F0F0',
     shadowColor:       '#000',
-    shadowOffset:      { width: 0, height: 1 },
+    shadowOffset:      { width: 0, height: 2 },
     shadowOpacity:     0.04,
-    shadowRadius:      6,
-    elevation:         1,
+    shadowRadius:      5,
+    elevation:         2,
   },
   rowUnread: {
     backgroundColor: '#FFFCFB',

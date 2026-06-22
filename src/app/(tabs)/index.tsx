@@ -141,7 +141,7 @@ export default function HomeScreen() {
           {/* ── Tablet two-column layout ── */}
           {twoColLayout ? (
             <View style={styles.twoColRow}>
-              {/* Left column: Stats + Quick Actions */}
+              {/* Left column: Stats + Banner + Quick Actions */}
               <View style={styles.twoColLeft}>
                 <StatsSection
                   summaryLoading={summaryLoading}
@@ -315,7 +315,7 @@ function getGreeting() {
 }
 
 const styles = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: '#F6F6F4' },
+  safe:   { flex: 1, backgroundColor: '#F8FAFC' },
   scroll: {},
 
   header: {
@@ -345,7 +345,7 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
-    shadowRadius: 4,
+    shadowRadius: 5,
     elevation: 2,
   },
   notifBtnTablet: {
@@ -402,8 +402,8 @@ const styles = StyleSheet.create({
     borderColor: '#F0F0F0',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 6,
+    shadowOpacity: 0.04,
+    shadowRadius: 5,
     elevation: 2,
     alignItems: 'center',
     gap: 4,
@@ -432,8 +432,8 @@ const styles = StyleSheet.create({
     borderColor: '#F0F0F0',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 6,
+    shadowOpacity: 0.04,
+    shadowRadius: 5,
     elevation: 2,
     gap: 8,
   },

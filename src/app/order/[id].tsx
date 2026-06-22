@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import {
-  ActivityIndicator, Alert, Modal, Pressable, RefreshControl,
+  ActivityIndicator, Modal, Pressable, RefreshControl,
   ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next'
 import { useOrderDetail, useAcceptOrder, useRejectOrder } from '@/hooks/useOrders'
 import { OrderDetailSkeleton } from '@/components/skeletons'
 import StatusBadge from '@/components/ui/StatusBadge'
+import { useAppAlert } from '@/components/ui/AppAlert/AppAlertProvider'
 import { formatDate, formatOrderId } from '@/utils/date'
 import { useResponsive } from '@/hooks/useResponsive'
 import {
@@ -67,6 +68,7 @@ export default function OrderDetailScreen() {
   const acceptMutation = useAcceptOrder()
   const rejectMutation = useRejectOrder()
   const { hp } = useResponsive()
+  const { showAlert } = useAppAlert()
 
   const [rejectModalOpen, setRejectModalOpen] = useState(false)
   const [rejectReason,    setRejectReason]    = useState('')
@@ -80,25 +82,21 @@ export default function OrderDetailScreen() {
   ]
 
   function confirmAccept() {
-    Alert.alert(
-      t('order_detail.confirm_accept_title'),
-      t('order_detail.confirm_accept_message'),
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        {
-          text: t('order_detail.accept'),
-          style: 'default',
-          onPress: async () => {
-            try {
-              await acceptMutation.mutateAsync(orderId)
-              toast.success(t('order_detail.accept_success'))
-            } catch {
-              toast.error(t('order_detail.accept_error'))
-            }
-          },
-        },
-      ],
-    )
+    showAlert({
+      title:       t('order_detail.confirm_accept_title'),
+      message:     t('order_detail.confirm_accept_message'),
+      variant:     'success',
+      confirmText: t('order_detail.accept'),
+      cancelText:  t('common.cancel'),
+      onConfirm:   async () => {
+        try {
+          await acceptMutation.mutateAsync(orderId)
+          toast.success(t('order_detail.accept_success'))
+        } catch {
+          toast.error(t('order_detail.accept_error'))
+        }
+      },
+    })
   }
 
   async function handleReject() {
@@ -477,7 +475,7 @@ function ScreenHeader({ onBack, onRefresh }: { onBack: () => void; onRefresh?: (
 // ── Styles ────────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: '#F6F6F4' },
+  safe:   { flex: 1, backgroundColor: '#F8FAFC' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
   scroll: { paddingVertical: 16, gap: 14, paddingBottom: 48 },
 
@@ -503,8 +501,8 @@ const styles = StyleSheet.create({
     borderColor:     '#F0F0F0',
     shadowColor:     '#000',
     shadowOffset:    { width: 0, height: 2 },
-    shadowOpacity:   0.05,
-    shadowRadius:    10,
+    shadowOpacity:   0.04,
+    shadowRadius:    5,
     elevation:       2,
   },
   heroBand: {
@@ -551,10 +549,10 @@ const styles = StyleSheet.create({
     borderWidth:     1,
     borderColor:     '#F0F0F0',
     shadowColor:     '#000',
-    shadowOffset:    { width: 0, height: 1 },
+    shadowOffset:    { width: 0, height: 2 },
     shadowOpacity:   0.04,
-    shadowRadius:    6,
-    elevation:       1,
+    shadowRadius:    5,
+    elevation:       2,
   },
   supplierIconWrap: {
     width:           46,
@@ -617,7 +615,7 @@ const styles = StyleSheet.create({
     shadowColor:     '#000',
     shadowOffset:    { width: 0, height: 2 },
     shadowOpacity:   0.04,
-    shadowRadius:    8,
+    shadowRadius:    5,
     elevation:       2,
     gap:             14,
   },
@@ -739,7 +737,7 @@ const styles = StyleSheet.create({
     shadowColor:     '#000',
     shadowOffset:    { width: 0, height: 2 },
     shadowOpacity:   0.04,
-    shadowRadius:    8,
+    shadowRadius:    5,
     elevation:       2,
   },
   actionsRow: { flexDirection: 'row', gap: 10 },

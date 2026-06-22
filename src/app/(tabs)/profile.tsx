@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import {
-  ActivityIndicator, Alert, ScrollView, StyleSheet,
+  ActivityIndicator, ScrollView, StyleSheet,
   Text, TextInput, type TextInputProps, TouchableOpacity, View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -14,6 +14,7 @@ import { changePassword } from '@/api/auth'
 import { extractApiError } from '@/api/client'
 import { useResponsive } from '@/hooks/useResponsive'
 import LanguageSelector from '@/components/LanguageSelector'
+import { useAppAlert } from '@/components/ui/AppAlert/AppAlertProvider'
 import { maskPhone } from '@/utils/phone'
 import { daysRemaining } from '@/utils/date'
 import {
@@ -40,6 +41,7 @@ export default function ProfileScreen() {
 
   const { hp, rf, isTablet, isLandscape, contentMaxWidth } = useResponsive()
   const { t } = useTranslation()
+  const { showAlert } = useAppAlert()
 
   const sub      = profile?.subscription
   const daysLeft = daysRemaining(sub?.expires_at ?? null)
@@ -79,10 +81,14 @@ export default function ProfileScreen() {
   }
 
   function confirmLogout() {
-    Alert.alert(t('profile.sign_out_confirm_title'), t('profile.sign_out_confirm_message'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      { text: t('profile.sign_out'), style: 'destructive', onPress: () => logout() },
-    ])
+    showAlert({
+      title:       t('profile.sign_out_confirm_title'),
+      message:     t('profile.sign_out_confirm_message'),
+      variant:     'danger',
+      confirmText: t('profile.sign_out'),
+      cancelText:  t('common.cancel'),
+      onConfirm:   logout,
+    })
   }
 
   const avatarSize = isTablet ? 80 : 64
@@ -424,7 +430,7 @@ function PasswordSection({
 }
 
 const styles = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: '#F6F6F4' },
+  safe:   { flex: 1, backgroundColor: '#F8FAFC' },
   scroll: {},
 
   header: {
@@ -460,8 +466,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 8,
+    shadowOpacity: 0.04,
+    shadowRadius: 5,
     elevation: 2,
   },
 
@@ -536,8 +542,8 @@ const styles = StyleSheet.create({
     borderColor: '#F0F0F0',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 8,
+    shadowOpacity: 0.04,
+    shadowRadius: 5,
     elevation: 2,
   },
   subLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },

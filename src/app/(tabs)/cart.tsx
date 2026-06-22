@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
-  ActivityIndicator, Alert, RefreshControl,
+  ActivityIndicator, RefreshControl,
   StyleSheet, Text, TouchableOpacity, View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -17,6 +17,7 @@ import { placeOrder } from '@/api/orders'
 import { extractApiError } from '@/api/client'
 import { useResponsive } from '@/hooks/useResponsive'
 import EmptyState from '@/components/ui/EmptyState'
+import { useAppAlert } from '@/components/ui/AppAlert/AppAlertProvider'
 import { AddIcon, MinusIcon, TrashIcon, CartIcon, SuppliersNavIcon } from '@/constants/icons'
 import type { CartItem, Supplier } from '@/types'
 
@@ -36,6 +37,7 @@ export default function CartScreen() {
   const insets = useSafeAreaInsets()
   const { hp, rf, isTablet, contentMaxWidth } = useResponsive()
   const { t } = useTranslation()
+  const { showAlert } = useAppAlert()
 
   useEffect(() => { fetchCart() }, [])
 
@@ -65,14 +67,14 @@ export default function CartScreen() {
   }
 
   function confirmPlaceOrder() {
-    Alert.alert(
-      t('cart.confirm_title'),
-      t(groups.length !== 1 ? 'cart.confirm_message_other' : 'cart.confirm_message_one', { count: groups.length }),
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        { text: t('cart.place_order'), style: 'default', onPress: doPlaceOrder },
-      ]
-    )
+    showAlert({
+      title:       t('cart.confirm_title'),
+      message:     t(groups.length !== 1 ? 'cart.confirm_message_other' : 'cart.confirm_message_one', { count: groups.length }),
+      variant:     'default',
+      confirmText: t('cart.place_order'),
+      cancelText:  t('common.cancel'),
+      onConfirm:   doPlaceOrder,
+    })
   }
 
   async function doPlaceOrder() {
@@ -272,7 +274,7 @@ function CartItemRow({ item, onRemove, onUpdateQty, onProductPress, rf }: {
 }
 
 const styles = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: '#F6F6F4' },
+  safe:   { flex: 1, backgroundColor: '#F8FAFC' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
   header: { paddingTop: 16, paddingBottom: 8 },
@@ -290,8 +292,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 8,
+    shadowOpacity: 0.04,
+    shadowRadius: 5,
     elevation: 2,
   },
   supplierHeader: {
@@ -346,7 +348,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#F6F6F4',
+    backgroundColor: '#F8FAFC',
   },
   supplierTotalLabel: { fontFamily: 'Poppins-Regular', color: '#6B7280' },
   supplierTotalValue: { fontFamily: 'Poppins-Bold',    color: '#111827' },
