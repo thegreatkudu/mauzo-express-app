@@ -1,11 +1,13 @@
 import '@/i18n'
 import { useEffect, useRef, useState } from 'react'
+import type { ReactNode } from 'react'
 import { Stack, router, useSegments } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
-import { StyleSheet } from 'react-native'
+import { Appearance, StyleSheet } from 'react-native'
 import { useFonts } from 'expo-font'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { LinearGradient } from 'expo-linear-gradient'
+import * as SystemUI from 'expo-system-ui'
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -19,8 +21,23 @@ import { useUiStore } from '@/store/ui.store'
 import { ShimmerProvider } from '@/components/skeletons'
 import SplashOverlay from '@/components/SplashOverlay'
 import { ThemeProvider, useTheme } from '@/providers/ThemeProvider'
+import { lightColors, darkColors } from '@/theme/palette'
 
 import "../../global.css";
+
+// ── Root-view background (module level) ───────────────────────────────────────
+//
+// Called once when the JS bundle evaluates — before React mounts — to paint the
+// native root view with the correct theme background. Without this call the OS
+// default (white on both platforms) shows through during the very first frame
+// and during native-stack screen transitions while the incoming screen's JS
+// content is still being painted.
+//
+// We derive the colour from the current system scheme so it is correct even
+// before the user's saved ThemeMode is loaded from SecureStore.
+SystemUI.setBackgroundColorAsync(
+  Appearance.getColorScheme() === 'dark' ? darkColors.background : lightColors.background
+)
 
 // ── SplashCover ───────────────────────────────────────────────────────────────
 //
@@ -33,8 +50,8 @@ import "../../global.css";
 //      home screen (see HomeScreen's setHomeReady call).
 //   3. Fades to transparent over 500 ms once homeReady flips to true, then
 //      removes itself from the tree entirely.
-//   4. Resets (and re-shows next time) when the user leaves (tabs) — e.g.
-//      after sign-out, the next sign-in gets a fresh cover.
+//   4. Resets only when navigating to (auth) — i.e. actual sign-out.
+//      Sub-screen navigation (product, order, etc.) does NOT reset it.
 //
 // The gradient colours match the splash screen exactly so the transition is
 // visually seamless: splash plays → cover holds the orange → home fades in.
@@ -51,20 +68,26 @@ function SplashCover() {
   // Guard: prevent starting the fade animation more than once per visit.
   const isFadingRef = useRef(false)
 
-  // Show when entering (tabs); reset when leaving so re-login gets a fresh cover.
+  // Show on first entry into (tabs); only reset on sign-out (going to auth).
+  // Sub-screen navigation (product/[id], order/[id], etc.) no longer resets
+  // isFadingRef, so the cover does not reappear on every back-navigation.
+  const segment0 = segments[0] as string | undefined
   useEffect(() => {
     if (inTabs) {
-      opacity.value = 1          // ensure full opacity (resets after a re-login)
-      setVisible(true)
-    } else {
-      // Leaving tabs (sign-out) — reset everything silently for next session.
+      if (!isFadingRef.current) {
+        opacity.value = 1
+        setVisible(true)
+      }
+    } else if (segment0 === '(auth)') {
+      // Actual sign-out — reset for the next login session.
       setVisible(false)
       opacity.value = 1
       isFadingRef.current = false
       setHomeReady(false)
     }
+    // All other segments (product, order, vendor, etc.) — do nothing.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [inTabs])
+  }, [inTabs, segment0])
 
   // Fade out once the home screen signals its data is ready.
   //
@@ -176,13 +199,43 @@ function ThemeAwareStack() {
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="(routes)/onboarding/index" />
-      <Stack.Screen name="subscription" options={{ animation: 'fade' }} />
+      <Stack.Screen name="product/[id]"   options={{ animation: 'slide_from_right' }} />
+      <Stack.Screen name="vendor/[id]"    options={{ animation: 'slide_from_right' }} />
+      <Stack.Screen name="checkout/index" options={{ animation: 'slide_from_right' }} />
+      <Stack.Screen name="subscription"   options={{ animation: 'fade' }} />
       <Stack.Screen name="notifications"     options={{ animation: 'slide_from_right' }} />
       <Stack.Screen name="notification/[id]" options={{ animation: 'slide_from_right' }} />
       <Stack.Screen name="supplier/[id]"     options={{ animation: 'slide_from_right' }} />
       <Stack.Screen name="order/[id]"        options={{ animation: 'slide_from_right' }} />
       <Stack.Screen name="checkout/success"  options={{ animation: 'fade', gestureEnabled: false }} />
     </Stack>
+  )
+}
+
+// ── ThemedRoot ────────────────────────────────────────────────────────────────
+// Wraps GestureHandlerRootView with the active theme background on BOTH the
+// React layer (backgroundColor style) and the native layer (expo-system-ui).
+//
+// By moving GestureHandlerRootView inside ThemeProvider, this component can
+// read useTheme() and keep the outermost React container colour in sync.
+// Without this, GestureHandlerRootView had no background, so the OS default
+// (white) was visible through the native-stack transition container whenever
+// two screens were simultaneously in-flight during an animation.
+
+function ThemedRoot({ children }: { children: ReactNode }) {
+  const { theme } = useTheme()
+
+  // Keep the native root-view background in sync whenever the user switches
+  // themes. This covers the layer below all React content and is what the
+  // native stack transition container renders against.
+  useEffect(() => {
+    SystemUI.setBackgroundColorAsync(theme.colors.background)
+  }, [theme.colors.background])
+
+  return (
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      {children}
+    </GestureHandlerRootView>
   )
 }
 
@@ -209,24 +262,24 @@ export default function RootLayout() {
   if (!loaded) return null
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <ThemeProvider>
-      <ShimmerProvider>
-      <Providers>
-        <NavigationGuard />
-        <ThemeAwareStack />
-        {/* SplashCover: covers the home screen on re-login while data loads. */}
-        <SplashCover />
-        <ThemeStatusBar />
-        {/* SplashOverlay: initial app launch only — renders above everything,
-            navigates to the destination while it's still visible, then fades out
-            once the destination screen is ready. Eliminates the background flash
-            that occurs when a route-based splash exits before the next screen renders. */}
-        <SplashOverlay />
-      </Providers>
-      </ShimmerProvider>
-      </ThemeProvider>
-    </GestureHandlerRootView>
+    <ThemeProvider>
+      <ThemedRoot>
+        <ShimmerProvider>
+        <Providers>
+          <NavigationGuard />
+          <ThemeAwareStack />
+          {/* SplashCover: covers the home screen on re-login while data loads. */}
+          <SplashCover />
+          <ThemeStatusBar />
+          {/* SplashOverlay: initial app launch only — renders above everything,
+              navigates to the destination while it's still visible, then fades out
+              once the destination screen is ready. Eliminates the background flash
+              that occurs when a route-based splash exits before the next screen renders. */}
+          <SplashOverlay />
+        </Providers>
+        </ShimmerProvider>
+      </ThemedRoot>
+    </ThemeProvider>
   )
 }
 

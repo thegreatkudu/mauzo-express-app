@@ -540,7 +540,7 @@ export default function AnalyticsScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={PRIMARY} />
+          <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={theme.colors.primary} />
         }
         contentContainerStyle={[styles.scroll, { paddingHorizontal: hp, paddingBottom: 40 }]}
       >

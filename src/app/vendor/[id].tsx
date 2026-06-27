@@ -12,17 +12,21 @@ import { useTranslation } from 'react-i18next'
 
 import { useSuppliers, useSupplierProducts } from '@/hooks/useSuppliers'
 import { useResponsive } from '@/hooks/useResponsive'
+import { useTheme, useThemeStyles } from '@/hooks/use-theme'
 import EmptyState from '@/components/ui/EmptyState'
 import {
   BackIcon, BuildingIcon, LocationIcon,
   PackageIcon, ChevronRightIcon,
 } from '@/constants/icons'
+import type { AppTheme } from '@/hooks/use-theme'
 
 export default function SupplierProfileScreen() {
   const { t } = useTranslation()
   const { id } = useLocalSearchParams<{ id: string }>()
   const supplierId = Number(id)
   const { rf, hp, isTablet } = useResponsive()
+  const { theme } = useTheme()
+  const styles = useThemeStyles(makeStyles)
 
   const {
     data: suppliers,
@@ -55,7 +59,7 @@ export default function SupplierProfileScreen() {
       <SafeAreaView style={styles.safe} edges={['top']}>
         <ScreenHeader onBack={() => router.back()} rf={rf} hp={hp} isTablet={isTablet} />
         <View style={styles.center}>
-          <ActivityIndicator color='#CE4002' size='large' />
+          <ActivityIndicator color={theme.colors.primary} size='large' />
         </View>
       </SafeAreaView>
     )
@@ -84,25 +88,25 @@ export default function SupplierProfileScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.scroll, { paddingHorizontal: hp }]}
         refreshControl={
-          <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor='#CE4002' />
+          <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={theme.colors.primary} />
         }
       >
         {/* ── Profile hero ── */}
         <View style={styles.heroCard}>
           <View style={[styles.heroIconWrap, { width: isTablet ? 88 : 72, height: isTablet ? 88 : 72, borderRadius: isTablet ? 26 : 22 }]}>
-            <HugeiconsIcon icon={BuildingIcon} size={isTablet ? 44 : 34} color='#CE4002' strokeWidth={1.5} />
+            <HugeiconsIcon icon={BuildingIcon} size={isTablet ? 44 : 34} color={theme.colors.primary} strokeWidth={1.5} />
           </View>
 
           <Text style={[styles.heroName, { fontSize: rf(20) }]}>{supplier.business_name}</Text>
 
           <View style={styles.heroMeta}>
             <View style={styles.metaItem}>
-              <HugeiconsIcon icon={LocationIcon} size={13} color='#9CA3AF' strokeWidth={1.5} />
+              <HugeiconsIcon icon={LocationIcon} size={13} color={theme.colors.textMuted} strokeWidth={1.5} />
               <Text style={[styles.metaText, { fontSize: rf(13) }]}>{supplier.location}</Text>
             </View>
             <View style={styles.metaDivider} />
             <View style={styles.metaItem}>
-              <HugeiconsIcon icon={PackageIcon} size={13} color='#9CA3AF' strokeWidth={1.5} />
+              <HugeiconsIcon icon={PackageIcon} size={13} color={theme.colors.textMuted} strokeWidth={1.5} />
               <Text style={[styles.metaText, { fontSize: rf(13) }]}>
                 {t(
                   supplier.product_count !== 1
@@ -180,24 +184,52 @@ function ScreenHeader({ onBack, rf, hp, isTablet }: {
   isTablet: boolean
 }) {
   const { t } = useTranslation()
+  const { theme } = useTheme()
   const btnSize   = isTablet ? 46 : 40
   const btnRadius = isTablet ? 15 : 13
   return (
-    <View style={[styles.header, { paddingHorizontal: hp }]}>
+    <View style={{
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingTop: 12,
+      paddingBottom: 8,
+      paddingHorizontal: hp,
+      backgroundColor: theme.colors.card,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.divider,
+    }}>
       <TouchableOpacity
         onPress={onBack}
         hitSlop={8}
         activeOpacity={0.7}
-        style={[styles.backBtn, { width: btnSize, height: btnSize, borderRadius: btnRadius }]}
+        style={{
+          width: btnSize,
+          height: btnSize,
+          borderRadius: btnRadius,
+          backgroundColor: theme.colors.card,
+          alignItems: 'center',
+          justifyContent: 'center',
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.10,
+          shadowRadius: 6,
+          elevation: 4,
+        }}
       >
         <HugeiconsIcon
           icon={BackIcon}
           size={isTablet ? 22 : 20}
-          color='#111827'
+          color={theme.colors.text}
           strokeWidth={2}
         />
       </TouchableOpacity>
-      <Text style={[styles.headerTitle, { fontSize: rf(17) }]} numberOfLines={1}>
+      <Text style={{
+        flex: 1,
+        textAlign: 'center',
+        fontFamily: 'Poppins-SemiBold',
+        color: theme.colors.text,
+        fontSize: rf(17),
+      }} numberOfLines={1}>
         {t('supplier_profile.header_title')}
       </Text>
       <View style={{ width: btnSize }} />
@@ -205,132 +237,107 @@ function ScreenHeader({ onBack, rf, hp, isTablet }: {
   )
 }
 
-const styles = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: '#F8FAFC' },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+function makeStyles({ colors }: AppTheme) {
+  return StyleSheet.create({
+    safe:   { flex: 1, backgroundColor: colors.background },
+    center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
-  // ── Header ───────────────────────────────────────────────────────────────────
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: 12,
-    paddingBottom: 8,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-  },
-  backBtn: {
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.10,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  headerTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontFamily: 'Poppins-SemiBold',
-    color: '#111827',
-  },
+    scroll: { paddingTop: 18, paddingBottom: 32, gap: 14 },
 
-  scroll: { paddingTop: 18, paddingBottom: 32, gap: 14 },
+    // ── Hero card ────────────────────────────────────────────────────────────────
+    heroCard: {
+      backgroundColor: colors.card,
+      borderRadius: 20,
+      padding: 24,
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: colors.divider,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.04,
+      shadowRadius: 5,
+      elevation: 2,
+      gap: 10,
+    },
+    heroIconWrap: {
+      backgroundColor: colors.primaryLight,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 4,
+    },
+    heroName: {
+      fontFamily: 'Poppins-Bold',
+      color: colors.text,
+      textAlign: 'center',
+      lineHeight: 28,
+    },
+    heroMeta: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      flexWrap: 'wrap',
+      justifyContent: 'center',
+    },
+    metaItem:   { flexDirection: 'row', alignItems: 'center', gap: 5 },
+    metaText:   { fontFamily: 'Poppins-Regular', color: colors.textSub },
+    metaDivider: { width: 1, height: 14, backgroundColor: colors.border },
 
-  // ── Hero card ────────────────────────────────────────────────────────────────
-  heroCard: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 24,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#F0F0F0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 5,
-    elevation: 2,
-    gap: 10,
-  },
-  heroIconWrap: {
-    backgroundColor: '#FEF0E6',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 4,
-  },
-  heroName: {
-    fontFamily: 'Poppins-Bold',
-    color: '#111827',
-    textAlign: 'center',
-    lineHeight: 28,
-  },
-  heroMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-  },
-  metaItem:   { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  metaText:   { fontFamily: 'Poppins-Regular', color: '#6B7280' },
-  metaDivider: { width: 1, height: 14, backgroundColor: '#E8E8E8' },
+    categoryChip: {
+      backgroundColor: colors.infoBg,
+      paddingHorizontal: 14,
+      paddingVertical: 6,
+      borderRadius: 20,
+    },
+    categoryText: { fontFamily: 'Poppins-SemiBold', color: colors.info },
 
-  categoryChip: {
-    backgroundColor: '#EFF6FF',
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  categoryText: { fontFamily: 'Poppins-SemiBold', color: '#3B82F6' },
+    // ── Card ─────────────────────────────────────────────────────────────────────
+    card: {
+      backgroundColor: colors.card,
+      borderRadius: 16,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: colors.divider,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.04,
+      shadowRadius: 5,
+      elevation: 2,
+      gap: 2,
+    },
+    cardTitle: { fontFamily: 'Poppins-SemiBold', color: colors.text, marginBottom: 8 },
 
-  // ── Card ─────────────────────────────────────────────────────────────────────
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#F0F0F0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 5,
-    elevation: 2,
-    gap: 2,
-  },
-  cardTitle: { fontFamily: 'Poppins-SemiBold', color: '#111827', marginBottom: 8 },
+    // ── Product rows ─────────────────────────────────────────────────────────────
+    productRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: 10,
+      gap: 10,
+    },
+    productRowBorder: { borderTopWidth: 1, borderTopColor: colors.divider },
+    productLeft:  { flex: 1, gap: 2 },
+    productName:  { fontFamily: 'Poppins-Medium', color: colors.text },
+    productMeta:  { fontFamily: 'Poppins-Regular', color: colors.textMuted },
+    availDot:     { width: 8, height: 8, borderRadius: 4, flexShrink: 0 },
+    availDotIn:   { backgroundColor: '#10B981' },
+    availDotOut:  { backgroundColor: '#EF4444' },
 
-  // ── Product rows ─────────────────────────────────────────────────────────────
-  productRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 10,
-    gap: 10,
-  },
-  productRowBorder: { borderTopWidth: 1, borderTopColor: '#F4F4F4' },
-  productLeft:  { flex: 1, gap: 2 },
-  productName:  { fontFamily: 'Poppins-Medium', color: '#111827' },
-  productMeta:  { fontFamily: 'Poppins-Regular', color: '#9CA3AF' },
-  availDot:     { width: 8, height: 8, borderRadius: 4, flexShrink: 0 },
-  availDotIn:   { backgroundColor: '#10B981' },
-  availDotOut:  { backgroundColor: '#EF4444' },
-
-  // ── Browse CTA ───────────────────────────────────────────────────────────────
-  browseBtn: {
-    backgroundColor: '#CE4002',
-    height: 54,
-    borderRadius: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    paddingHorizontal: 20,
-    shadowColor: '#CE4002',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.30,
-    shadowRadius: 10,
-    elevation: 6,
-  },
-  browseBtnText: { fontFamily: 'Poppins-Bold', color: '#fff', flex: 1, textAlign: 'center' },
-})
+    // ── Browse CTA ───────────────────────────────────────────────────────────────
+    browseBtn: {
+      backgroundColor: colors.primary,
+      height: 54,
+      borderRadius: 16,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 10,
+      paddingHorizontal: 20,
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.30,
+      shadowRadius: 10,
+      elevation: 6,
+    },
+    browseBtnText: { fontFamily: 'Poppins-Bold', color: '#fff', flex: 1, textAlign: 'center' },
+  })
+}

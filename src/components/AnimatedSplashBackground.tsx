@@ -294,7 +294,7 @@ const styles = StyleSheet.create({
     flex: 1,
     // Solid fallback visible for ~1 frame before the gradient paints.
     // Matches the midpoint of BASE_COLORS so no perceptible difference.
-    backgroundColor: '#CE4002',
+    // backgroundColor: '#CE4002',
   },
 
   orb: { position: 'absolute' },

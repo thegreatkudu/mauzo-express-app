@@ -16,11 +16,13 @@ import { useCartStore } from '@/store/cart.store'
 import { placeOrder } from '@/api/orders'
 import { extractApiError } from '@/api/client'
 import { useResponsive } from '@/hooks/useResponsive'
+import { useTheme, useThemeStyles } from '@/hooks/use-theme'
 import EmptyState from '@/components/ui/EmptyState'
 import { useAppAlert } from '@/components/ui/AppAlert/AppAlertProvider'
 import {
   BackIcon, CartIcon, BuildingIcon, PackageIcon, CheckCircleIcon, AlertCircleIcon,
 } from '@/constants/icons'
+import type { AppTheme } from '@/hooks/use-theme'
 import type { CartItem, Supplier } from '@/types'
 
 type SupplierGroup = {
@@ -37,6 +39,8 @@ export default function OrderReviewScreen() {
   const { rf, hp, isTablet } = useResponsive()
   const insets = useSafeAreaInsets()
   const { showAlert } = useAppAlert()
+  const { theme } = useTheme()
+  const styles = useThemeStyles(makeStyles)
 
   const groups = useMemo<SupplierGroup[]>(() => {
     const map = new Map<number, SupplierGroup>()
@@ -100,7 +104,7 @@ export default function OrderReviewScreen() {
       <SafeAreaView style={styles.safe} edges={['top']}>
         <ScreenHeader onBack={() => router.back()} rf={rf} hp={hp} isTablet={isTablet} />
         <View style={styles.center}>
-          <ActivityIndicator color='#CE4002' size='large' />
+          <ActivityIndicator color={theme.colors.primary} size='large' />
         </View>
       </SafeAreaView>
     )
@@ -132,12 +136,12 @@ export default function OrderReviewScreen() {
           { paddingHorizontal: hp, paddingBottom: bottomBarH + 16 },
         ]}
         refreshControl={
-          <RefreshControl refreshing={false} onRefresh={fetchCart} tintColor='#CE4002' />
+          <RefreshControl refreshing={false} onRefresh={fetchCart} tintColor={theme.colors.primary} />
         }
       >
         {/* ── Quote-flow info banner ── */}
         <View style={styles.infoBanner}>
-          <HugeiconsIcon icon={AlertCircleIcon} size={18} color='#2563EB' strokeWidth={1.5} />
+          <HugeiconsIcon icon={AlertCircleIcon} size={18} color={theme.colors.info} strokeWidth={1.5} />
           <Text style={[styles.infoBannerText, { fontSize: rf(13) }]}>
             {t('order_review.quote_info')}
           </Text>
@@ -148,7 +152,7 @@ export default function OrderReviewScreen() {
           <View key={group.supplier.id} style={styles.card}>
             <View style={styles.supplierHeader}>
               <View style={styles.supplierIconWrap}>
-                <HugeiconsIcon icon={BuildingIcon} size={14} color='#CE4002' strokeWidth={1.5} />
+                <HugeiconsIcon icon={BuildingIcon} size={14} color={theme.colors.primary} strokeWidth={1.5} />
               </View>
               <Text style={[styles.supplierName, { fontSize: rf(14) }]} numberOfLines={1}>
                 {group.supplier.business_name}
@@ -158,7 +162,7 @@ export default function OrderReviewScreen() {
             {group.items.map((item, i) => (
               <View key={item.id} style={[styles.itemRow, i > 0 && styles.itemRowBorder]}>
                 <View style={styles.itemIconWrap}>
-                  <HugeiconsIcon icon={PackageIcon} size={16} color='#9CA3AF' strokeWidth={1.5} />
+                  <HugeiconsIcon icon={PackageIcon} size={16} color={theme.colors.textMuted} strokeWidth={1.5} />
                 </View>
                 <View style={styles.itemInfo}>
                   <Text style={[styles.itemName, { fontSize: rf(14) }]} numberOfLines={2}>
@@ -198,7 +202,7 @@ export default function OrderReviewScreen() {
           </View>
           <View style={styles.totalDivider} />
           <View style={styles.totalNoteRow}>
-            <HugeiconsIcon icon={CheckCircleIcon} size={13} color='#9CA3AF' strokeWidth={1.5} />
+            <HugeiconsIcon icon={CheckCircleIcon} size={13} color={theme.colors.textMuted} strokeWidth={1.5} />
             <Text style={[styles.totalNote, { fontSize: rf(12) }]}>
               {t('order_review.total_note')}
             </Text>
@@ -215,7 +219,7 @@ export default function OrderReviewScreen() {
             value={notes}
             onChangeText={setNotes}
             placeholder={t('order_review.notes_placeholder')}
-            placeholderTextColor='#9CA3AF'
+            placeholderTextColor={theme.colors.placeholder}
             multiline
             numberOfLines={3}
             textAlignVertical='top'
@@ -265,24 +269,52 @@ function ScreenHeader({ onBack, rf, hp, isTablet }: {
   isTablet: boolean
 }) {
   const { t } = useTranslation()
+  const { theme } = useTheme()
   const btnSize   = isTablet ? 46 : 40
   const btnRadius = isTablet ? 15 : 13
   return (
-    <View style={[styles.header, { paddingHorizontal: hp }]}>
+    <View style={{
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingTop: 12,
+      paddingBottom: 8,
+      paddingHorizontal: hp,
+      backgroundColor: theme.colors.card,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.divider,
+    }}>
       <TouchableOpacity
         onPress={onBack}
         hitSlop={8}
         activeOpacity={0.7}
-        style={[styles.backBtn, { width: btnSize, height: btnSize, borderRadius: btnRadius }]}
+        style={{
+          width: btnSize,
+          height: btnSize,
+          borderRadius: btnRadius,
+          backgroundColor: theme.colors.card,
+          alignItems: 'center',
+          justifyContent: 'center',
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.10,
+          shadowRadius: 6,
+          elevation: 4,
+        }}
       >
         <HugeiconsIcon
           icon={BackIcon}
           size={isTablet ? 22 : 20}
-          color='#111827'
+          color={theme.colors.text}
           strokeWidth={2}
         />
       </TouchableOpacity>
-      <Text style={[styles.headerTitle, { fontSize: rf(17) }]} numberOfLines={1}>
+      <Text style={{
+        flex: 1,
+        textAlign: 'center',
+        fontFamily: 'Poppins-SemiBold',
+        color: theme.colors.text,
+        fontSize: rf(17),
+      }} numberOfLines={1}>
         {t('order_review.header_title')}
       </Text>
       <View style={{ width: btnSize }} />
@@ -290,193 +322,168 @@ function ScreenHeader({ onBack, rf, hp, isTablet }: {
   )
 }
 
-const styles = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: '#F8FAFC' },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+function makeStyles({ colors }: AppTheme) {
+  return StyleSheet.create({
+    safe:   { flex: 1, backgroundColor: colors.background },
+    center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
-  // ── Header ───────────────────────────────────────────────────────────────────
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: 12,
-    paddingBottom: 8,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-  },
-  backBtn: {
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.10,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  headerTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontFamily: 'Poppins-SemiBold',
-    color: '#111827',
-  },
+    scroll: { paddingTop: 14, gap: 12 },
 
-  scroll: { paddingTop: 14, gap: 12 },
+    // ── Info banner ──────────────────────────────────────────────────────────────
+    infoBanner: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: 10,
+      backgroundColor: colors.infoBg,
+      borderRadius: 14,
+      padding: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    infoBannerText: {
+      flex: 1,
+      fontFamily: 'Poppins-Regular',
+      color: colors.info,
+      lineHeight: 20,
+    },
 
-  // ── Info banner ──────────────────────────────────────────────────────────────
-  infoBanner: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-    backgroundColor: '#EFF6FF',
-    borderRadius: 14,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: '#BFDBFE',
-  },
-  infoBannerText: {
-    flex: 1,
-    fontFamily: 'Poppins-Regular',
-    color: '#1D4ED8',
-    lineHeight: 20,
-  },
+    // ── Supplier card ────────────────────────────────────────────────────────────
+    card: {
+      backgroundColor: colors.card,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: colors.divider,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.04,
+      shadowRadius: 5,
+      elevation: 2,
+      overflow: 'hidden',
+    },
+    supplierHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      backgroundColor: colors.primaryLight,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.divider,
+    },
+    supplierIconWrap: {
+      width: 28, height: 28, borderRadius: 8,
+      backgroundColor: colors.card,
+      alignItems: 'center', justifyContent: 'center',
+    },
+    supplierName: { fontFamily: 'Poppins-SemiBold', color: colors.primary, flex: 1 },
 
-  // ── Supplier card ────────────────────────────────────────────────────────────
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#F0F0F0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 5,
-    elevation: 2,
-    overflow: 'hidden',
-  },
-  supplierHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#FEF0E6',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-  },
-  supplierIconWrap: {
-    width: 28, height: 28, borderRadius: 8,
-    backgroundColor: '#fff',
-    alignItems: 'center', justifyContent: 'center',
-  },
-  supplierName: { fontFamily: 'Poppins-SemiBold', color: '#CE4002', flex: 1 },
+    // ── Item rows ────────────────────────────────────────────────────────────────
+    itemRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: 10,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+    },
+    itemRowBorder:   { borderTopWidth: 1, borderTopColor: colors.divider },
+    itemIconWrap: {
+      width: 32, height: 32, borderRadius: 8,
+      backgroundColor: colors.cardAlt,
+      alignItems: 'center', justifyContent: 'center',
+      marginTop: 1, flexShrink: 0,
+    },
+    itemInfo:     { flex: 1, gap: 3 },
+    itemName:     { fontFamily: 'Poppins-Medium',  color: colors.text },
+    itemMeta:     { fontFamily: 'Poppins-Regular', color: colors.textSub },
+    itemSubtotal: { fontFamily: 'Poppins-Bold',    color: colors.textSub, marginTop: 3 },
 
-  // ── Item rows ────────────────────────────────────────────────────────────────
-  itemRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  itemRowBorder:   { borderTopWidth: 1, borderTopColor: '#F4F4F4' },
-  itemIconWrap: {
-    width: 32, height: 32, borderRadius: 8,
-    backgroundColor: '#F4F4F4',
-    alignItems: 'center', justifyContent: 'center',
-    marginTop: 1, flexShrink: 0,
-  },
-  itemInfo:     { flex: 1, gap: 3 },
-  itemName:     { fontFamily: 'Poppins-Medium',  color: '#111827' },
-  itemMeta:     { fontFamily: 'Poppins-Regular', color: '#6B7280' },
-  itemSubtotal: { fontFamily: 'Poppins-Bold',    color: '#374151', marginTop: 3 },
+    // ── Group subtotal row ───────────────────────────────────────────────────────
+    groupTotalRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      backgroundColor: colors.cardAlt,
+      borderTopWidth: 1,
+      borderTopColor: colors.divider,
+    },
+    groupTotalLabel: { fontFamily: 'Poppins-Regular', color: colors.textSub },
+    groupTotalValue: { fontFamily: 'Poppins-Bold',    color: colors.textSub },
 
-  // ── Group subtotal row ───────────────────────────────────────────────────────
-  groupTotalRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#F4F4F4',
-    borderTopWidth: 1,
-    borderTopColor: '#F0F0F0',
-  },
-  groupTotalLabel: { fontFamily: 'Poppins-Regular', color: '#6B7280' },
-  groupTotalValue: { fontFamily: 'Poppins-Bold',    color: '#374151' },
+    // ── Estimated total card ─────────────────────────────────────────────────────
+    totalCard: {
+      backgroundColor: colors.card,
+      borderRadius: 16,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: colors.divider,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.04,
+      shadowRadius: 5,
+      elevation: 2,
+      gap: 12,
+    },
+    totalRow:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    totalLabel:  { fontFamily: 'Poppins-SemiBold', color: colors.text },
+    totalValue:  { fontFamily: 'Poppins-Bold',     color: colors.primary },
+    totalDivider: { height: 1, backgroundColor: colors.divider },
+    totalNoteRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
+    totalNote:    { flex: 1, fontFamily: 'Poppins-Regular', color: colors.textMuted, lineHeight: 18 },
 
-  // ── Estimated total card ─────────────────────────────────────────────────────
-  totalCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#F0F0F0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 5,
-    elevation: 2,
-    gap: 12,
-  },
-  totalRow:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  totalLabel:  { fontFamily: 'Poppins-SemiBold', color: '#111827' },
-  totalValue:  { fontFamily: 'Poppins-Bold',     color: '#CE4002' },
-  totalDivider: { height: 1, backgroundColor: '#F0F0F0' },
-  totalNoteRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
-  totalNote:    { flex: 1, fontFamily: 'Poppins-Regular', color: '#9CA3AF', lineHeight: 18 },
+    // ── Notes card ───────────────────────────────────────────────────────────────
+    notesCard: {
+      backgroundColor: colors.card,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: colors.divider,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.04,
+      shadowRadius: 5,
+      elevation: 2,
+      paddingTop: 16,
+      paddingHorizontal: 16,
+      paddingBottom: 12,
+      gap: 8,
+    },
+    notesLabel: { fontFamily: 'Poppins-SemiBold', color: colors.text },
+    notesInput: {
+      padding: 12,
+      backgroundColor: colors.inputBg,
+      borderWidth: 1.5,
+      borderColor: colors.inputBorder,
+      borderRadius: 12,
+      fontFamily: 'Poppins-Regular',
+      color: colors.text,
+      minHeight: 80,
+    },
 
-  // ── Notes card ───────────────────────────────────────────────────────────────
-  notesCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#F0F0F0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 5,
-    elevation: 2,
-    paddingTop: 16,
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    gap: 8,
-  },
-  notesLabel: { fontFamily: 'Poppins-SemiBold', color: '#111827' },
-  notesInput: {
-    padding: 12,
-    backgroundColor: '#F4F4F4',
-    borderWidth: 1.5,
-    borderColor: '#E8E8E8',
-    borderRadius: 12,
-    fontFamily: 'Poppins-Regular',
-    color: '#111827',
-    minHeight: 80,
-  },
-
-  // ── Bottom action bar ─────────────────────────────────────────────────────────
-  bottomBar: {
-    position: 'absolute',
-    bottom: 0, left: 0, right: 0,
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#F0F0F0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 12,
-  },
-  placeBtn: {
-    backgroundColor: '#CE4002',
-    height: 52,
-    borderRadius: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  placeBtnTablet:   { height: 58, borderRadius: 16 },
-  placeBtnDisabled: { backgroundColor: '#E8A07A' },
-  placeBtnText:     { fontFamily: 'Poppins-Bold', color: '#fff' },
-})
+    // ── Bottom action bar ─────────────────────────────────────────────────────────
+    bottomBar: {
+      position: 'absolute',
+      bottom: 0, left: 0, right: 0,
+      backgroundColor: colors.card,
+      borderTopWidth: 1,
+      borderTopColor: colors.divider,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: -4 },
+      shadowOpacity: 0.08,
+      shadowRadius: 12,
+      elevation: 12,
+    },
+    placeBtn: {
+      backgroundColor: colors.primary,
+      height: 52,
+      borderRadius: 14,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+    },
+    placeBtnTablet:   { height: 58, borderRadius: 16 },
+    placeBtnDisabled: { backgroundColor: colors.primaryMuted },
+    placeBtnText:     { fontFamily: 'Poppins-Bold', color: '#fff' },
+  })
+}
