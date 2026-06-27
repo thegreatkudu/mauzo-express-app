@@ -16,6 +16,8 @@ import { useSupplierProducts, useProductBrands, useProductUnits } from '@/hooks/
 import { addToCart } from '@/api/cart'
 import { useCartStore } from '@/store/cart.store'
 import { extractApiError } from '@/api/client'
+import { useTheme, useThemeStyles } from '@/hooks/use-theme'
+import type { AppTheme } from '@/hooks/use-theme'
 import { useResponsive } from '@/hooks/useResponsive'
 import { ProductCardSkeleton } from '@/components/skeletons'
 import EmptyState from '@/components/ui/EmptyState'
@@ -34,6 +36,8 @@ function ProductCard({ product, supplierId, compact, onAddToCart }: {
   onAddToCart: (product: Product) => void
 }) {
   const { t } = useTranslation()
+  const { theme } = useTheme()
+  const styles = useThemeStyles(getStyles)
   const imgH = compact ? 120 : 150
 
   return (
@@ -60,7 +64,7 @@ function ProductCard({ product, supplierId, compact, onAddToCart }: {
             <HugeiconsIcon
               icon={PackageIcon}
               size={compact ? 24 : 32}
-              color='#D1D5DB'
+              color={theme.colors.textDisabled}
               strokeWidth={1.5}
             />
           </View>
@@ -137,6 +141,8 @@ function AddToCartModal({ product, supplierId, onClose }: {
   const { data: brands, isLoading: brandsLoading } = useProductBrands(supplierId, product?.id ?? 0)
   const { data: units,  isLoading: unitsLoading  } = useProductUnits(supplierId, product?.id ?? 0)
   const { fetchCart } = useCartStore()
+  const { theme } = useTheme()
+  const styles = useThemeStyles(getStyles)
 
   const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null)
   const [selectedUnit,  setSelectedUnit]  = useState<Unit | null>(null)
@@ -191,12 +197,12 @@ function AddToCartModal({ product, supplierId, onClose }: {
           <View style={styles.sheetHeader}>
             <Text style={styles.sheetTitle} numberOfLines={2}>{product.name}</Text>
             <TouchableOpacity onPress={onClose} hitSlop={8}>
-              <HugeiconsIcon icon={CloseIcon} size={20} color='#6B7280' strokeWidth={1.5} />
+              <HugeiconsIcon icon={CloseIcon} size={20} color={theme.colors.textSub} strokeWidth={1.5} />
             </TouchableOpacity>
           </View>
 
           {isLoading ? (
-            <ActivityIndicator color='#CE4002' style={{ marginVertical: 32 }} />
+            <ActivityIndicator color={theme.colors.primary} style={{ marginVertical: 32 }} />
           ) : (
             <ScrollView showsVerticalScrollIndicator={false}>
               {/* Brand picker */}
@@ -210,7 +216,7 @@ function AddToCartModal({ product, supplierId, onClose }: {
                   <Text style={[styles.pickerText, !selectedBrand && styles.pickerPlaceholder]}>
                     {selectedBrand?.name ?? t('supplier_products.brand_placeholder')}
                   </Text>
-                  <HugeiconsIcon icon={ChevronDownIcon} size={18} color='#9CA3AF' strokeWidth={1.5} />
+                  <HugeiconsIcon icon={ChevronDownIcon} size={18} color={theme.colors.textMuted} strokeWidth={1.5} />
                 </TouchableOpacity>
               </View>
 
@@ -227,7 +233,7 @@ function AddToCartModal({ product, supplierId, onClose }: {
                       ? `${selectedUnit.name} — TZS ${selectedUnit.price.toLocaleString()}`
                       : t('supplier_products.unit_placeholder')}
                   </Text>
-                  <HugeiconsIcon icon={ChevronDownIcon} size={18} color='#9CA3AF' strokeWidth={1.5} />
+                  <HugeiconsIcon icon={ChevronDownIcon} size={18} color={theme.colors.textMuted} strokeWidth={1.5} />
                 </TouchableOpacity>
               </View>
 
@@ -240,7 +246,7 @@ function AddToCartModal({ product, supplierId, onClose }: {
                     onPress={() => setQuantity(q => Math.max(product.min_order_quantity, q - 1))}
                     hitSlop={8}
                   >
-                    <HugeiconsIcon icon={MinusIcon} size={18} color='#374151' strokeWidth={2} />
+                    <HugeiconsIcon icon={MinusIcon} size={18} color={theme.colors.text} strokeWidth={2} />
                   </TouchableOpacity>
                   <TextInput
                     style={styles.qtyInput}
@@ -257,7 +263,7 @@ function AddToCartModal({ product, supplierId, onClose }: {
                     onPress={() => setQuantity(q => q + 1)}
                     hitSlop={8}
                   >
-                    <HugeiconsIcon icon={AddIcon} size={18} color='#374151' strokeWidth={2} />
+                    <HugeiconsIcon icon={AddIcon} size={18} color={theme.colors.text} strokeWidth={2} />
                   </TouchableOpacity>
                 </View>
                 <Text style={styles.minQtyHint}>
@@ -367,6 +373,8 @@ function AddToCartModal({ product, supplierId, onClose }: {
 
 export default function SupplierProductsScreen() {
   const { t } = useTranslation()
+  const { theme } = useTheme()
+  const styles = useThemeStyles(getStyles)
   const { id, name, productId } = useLocalSearchParams<{ id: string; name?: string; productId?: string }>()
   const supplierId = Number(id)
   const supplierName = name ?? `Supplier #${supplierId}`
@@ -405,7 +413,7 @@ export default function SupplierProductsScreen() {
       {/* ── Screen header ── */}
       <View style={styles.screenHeader}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={8} activeOpacity={0.7}>
-          <HugeiconsIcon icon={BackIcon} size={22} color='#374151' strokeWidth={2} />
+          <HugeiconsIcon icon={BackIcon} size={22} color={theme.colors.text} strokeWidth={2} />
         </TouchableOpacity>
         <View style={styles.screenHeaderText}>
           <Text style={[styles.screenTitle, { fontSize: rf(17) }]} numberOfLines={1}>
@@ -420,11 +428,11 @@ export default function SupplierProductsScreen() {
       {/* ── Search bar ── */}
       <View style={[styles.searchWrap, { paddingHorizontal: hp }]}>
         <View style={styles.searchBar}>
-          <HugeiconsIcon icon={SearchIcon} size={18} color='#9CA3AF' strokeWidth={1.5} />
+          <HugeiconsIcon icon={SearchIcon} size={18} color={theme.colors.textMuted} strokeWidth={1.5} />
           <TextInput
             style={[styles.searchInput, { fontSize: rf(14) }]}
             placeholder={t('supplier_products.search_placeholder')}
-            placeholderTextColor='#9CA3AF'
+            placeholderTextColor={theme.colors.placeholder}
             value={search}
             onChangeText={setSearch}
             returnKeyType='search'
@@ -432,7 +440,7 @@ export default function SupplierProductsScreen() {
           />
           {search.length > 0 && (
             <TouchableOpacity onPress={() => setSearch('')} hitSlop={8}>
-              <HugeiconsIcon icon={CloseIcon} size={16} color='#9CA3AF' strokeWidth={1.5} />
+              <HugeiconsIcon icon={CloseIcon} size={16} color={theme.colors.textMuted} strokeWidth={1.5} />
             </TouchableOpacity>
           )}
         </View>
@@ -509,7 +517,7 @@ export default function SupplierProductsScreen() {
           contentContainerStyle={{ ...styles.list, paddingHorizontal: hp }}
           showsVerticalScrollIndicator={false}
           refreshControl={
-            <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor='#CE4002' />
+            <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={theme.colors.primary} />
           }
           ListEmptyComponent={
             <EmptyState
@@ -532,252 +540,131 @@ export default function SupplierProductsScreen() {
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F8FAFC' },
+function getStyles(theme: AppTheme) {
+  return StyleSheet.create({
+    safe: { flex: 1, backgroundColor: theme.colors.background },
 
-  // Screen header
-  screenHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 12,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-  },
-  screenHeaderText: { flex: 1 },
-  screenTitle:    { fontFamily: 'Poppins-SemiBold', color: '#111827' },
-  screenSubtitle: { fontFamily: 'Poppins-Regular',  color: '#6B7280', marginTop: 1 },
+    screenHeader: {
+      flexDirection: 'row', alignItems: 'center', gap: 12,
+      paddingHorizontal: 16, paddingTop: 12, paddingBottom: 12,
+      backgroundColor: theme.colors.card,
+      borderBottomWidth: 1, borderBottomColor: theme.colors.divider,
+    },
+    screenHeaderText: { flex: 1 },
+    screenTitle:    { fontFamily: 'Poppins-SemiBold', color: theme.colors.text },
+    screenSubtitle: { fontFamily: 'Poppins-Regular',  color: theme.colors.textSub, marginTop: 1 },
 
-  // Search bar
-  searchWrap: { paddingVertical: 12 },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: '#F4F4F2',
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
-  searchInput: {
-    flex: 1,
-    fontFamily: 'Poppins-Regular',
-    color: '#111827',
-    padding: 0,
-  },
+    searchWrap: { paddingVertical: 12 },
+    searchBar: {
+      flexDirection: 'row', alignItems: 'center', gap: 10,
+      backgroundColor: theme.colors.cardAlt, borderRadius: 14,
+      paddingHorizontal: 14, paddingVertical: 12,
+    },
+    searchInput: { flex: 1, fontFamily: 'Poppins-Regular', color: theme.colors.text, padding: 0 },
 
-  // Section header row
-  sectionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 14,
-    marginTop: 4,
-  },
-  sectionLabel: { fontFamily: 'Poppins-Bold',    color: '#111827' },
-  sectionCount: { fontFamily: 'Poppins-Regular', color: '#6B7280' },
+    sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, marginTop: 4 },
+    sectionLabel: { fontFamily: 'Poppins-Bold',    color: theme.colors.text },
+    sectionCount: { fontFamily: 'Poppins-Regular', color: theme.colors.textSub },
 
-  // Skeleton grid
-  skeletonGrid: { paddingVertical: 8, gap: 10 },
-  skeletonRow:  { flexDirection: 'row' },
+    skeletonGrid: { paddingVertical: 8, gap: 10 },
+    skeletonRow:  { flexDirection: 'row' },
 
-  // List / grid
-  list:     { paddingBottom: 32, paddingTop: 12 },
-  gridItem: { flex: 1, paddingBottom: 12 },
+    list:     { paddingBottom: 32, paddingTop: 12 },
+    gridItem: { flex: 1, paddingBottom: 12 },
 
-  // ── Product Card ────────────────────────────────────────────────────────────
-  productCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#F0F0F0',
-    overflow: 'hidden',
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 5,
-    elevation: 2,
-  },
-  productCardCompact: {
-    marginBottom: 0,
-  },
-  productUnavailable: { opacity: 0.55 },
+    productCard: {
+      backgroundColor: theme.colors.card,
+      borderRadius: 16, borderWidth: 1, borderColor: theme.colors.divider,
+      overflow: 'hidden', marginBottom: 12,
+      shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.04, shadowRadius: 5, elevation: 2,
+    },
+    productCardCompact: { marginBottom: 0 },
+    productUnavailable: { opacity: 0.55 },
 
-  productImage: { width: '100%', backgroundColor: '#F4F4F4' },
-  productImagePlaceholder: {
-    width: '100%',
-    backgroundColor: '#F4F4F4',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+    productImage:            { width: '100%', backgroundColor: theme.colors.cardAlt },
+    productImagePlaceholder: { width: '100%', backgroundColor: theme.colors.cardAlt, alignItems: 'center', justifyContent: 'center' },
 
-  // Availability badge — absolutely positioned on image
-  availBadge: {
-    position: 'absolute',
-    top: 8,
-    left: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 20,
-  },
-  availBadgeIn:  { backgroundColor: 'rgba(209,250,229,0.95)' },
-  availBadgeOut: { backgroundColor: 'rgba(254,226,226,0.95)' },
-  availText:     { fontSize: 10, fontFamily: 'Poppins-SemiBold' },
-  availTextIn:   { color: '#059669' },
-  availTextOut:  { color: '#DC2626' },
+    availBadge:    { position: 'absolute', top: 8, left: 8, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 },
+    availBadgeIn:  { backgroundColor: 'rgba(209,250,229,0.95)' },
+    availBadgeOut: { backgroundColor: 'rgba(254,226,226,0.95)' },
+    availText:     { fontSize: 10, fontFamily: 'Poppins-SemiBold' },
+    availTextIn:   { color: '#059669' },
+    availTextOut:  { color: '#DC2626' },
 
-  productBody:        { padding: 12, gap: 6 },
-  productBodyCompact: { padding: 10, gap: 4 },
+    productBody:        { padding: 12, gap: 6 },
+    productBodyCompact: { padding: 10, gap: 4 },
 
-  productName:        { fontSize: 14, fontFamily: 'Poppins-SemiBold', color: '#111827' },
-  productNameCompact: { fontSize: 13 },
-  productDesc: {
-    fontSize: 12,
-    fontFamily: 'Poppins-Regular',
-    color: '#6B7280',
-    lineHeight: 18,
-  },
+    productName:        { fontSize: 14, fontFamily: 'Poppins-SemiBold', color: theme.colors.text },
+    productNameCompact: { fontSize: 13 },
+    productDesc:        { fontSize: 12, fontFamily: 'Poppins-Regular', color: theme.colors.textSub, lineHeight: 18 },
 
-  productFooter: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    marginTop: 2,
-  },
-  productPrice:        { fontSize: 15, fontFamily: 'Poppins-Bold',    color: '#111827' },
-  productPriceCompact: { fontSize: 13 },
-  minQty: { fontSize: 10, fontFamily: 'Poppins-Regular', color: '#9CA3AF', marginTop: 2 },
+    productFooter:       { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 2 },
+    productPrice:        { fontSize: 15, fontFamily: 'Poppins-Bold',    color: theme.colors.text },
+    productPriceCompact: { fontSize: 13 },
+    minQty:              { fontSize: 10, fontFamily: 'Poppins-Regular', color: theme.colors.textMuted, marginTop: 2 },
 
-  // Add button — pill (single column) or circle (grid)
-  addBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: '#CE4002',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 12,
-  },
-  addBtnCircle: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: '#CE4002',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  addBtnDisabled: { backgroundColor: '#D1D5DB' },
-  addBtnText:     { fontSize: 13, fontFamily: 'Poppins-SemiBold', color: '#fff' },
+    addBtn: {
+      flexDirection: 'row', alignItems: 'center', gap: 4,
+      backgroundColor: theme.colors.primary, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12,
+    },
+    addBtnCircle: {
+      width: 34, height: 34, borderRadius: 17,
+      backgroundColor: theme.colors.primary, alignItems: 'center', justifyContent: 'center',
+    },
+    addBtnDisabled: { backgroundColor: theme.colors.textDisabled },
+    addBtnText:     { fontSize: 13, fontFamily: 'Poppins-SemiBold', color: '#fff' },
 
-  // ── Modal / bottom sheet ────────────────────────────────────────────────────
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
-  sheet: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: 20,
-    paddingBottom: 36,
-    paddingTop: 12,
-    maxHeight: '85%',
-  },
-  sheetHandle: {
-    width: 40, height: 4, borderRadius: 2,
-    backgroundColor: '#E8E8E8',
-    alignSelf: 'center',
-    marginBottom: 16,
-  },
-  sheetHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: 12,
-    marginBottom: 20,
-  },
-  sheetTitle: {
-    fontSize: 17,
-    fontFamily: 'Poppins-SemiBold',
-    color: '#111827',
-    flex: 1,
-  },
+    overlay: { flex: 1, backgroundColor: theme.colors.overlay, justifyContent: 'flex-end' },
+    sheet: {
+      backgroundColor: theme.colors.card, borderTopLeftRadius: 24, borderTopRightRadius: 24,
+      paddingHorizontal: 20, paddingBottom: 36, paddingTop: 12, maxHeight: '85%',
+    },
+    sheetHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: theme.colors.border, alignSelf: 'center', marginBottom: 16 },
+    sheetHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 20 },
+    sheetTitle:  { fontSize: 17, fontFamily: 'Poppins-SemiBold', color: theme.colors.text, flex: 1 },
 
-  fieldGroup: { marginBottom: 18 },
-  fieldLabel: { fontSize: 13, fontFamily: 'Poppins-Medium', color: '#374151', marginBottom: 8 },
-  picker: {
-    height: 52,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 14,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: '#E8E8E8',
-    backgroundColor: '#F4F4F4',
-  },
-  pickerText:        { fontSize: 14, fontFamily: 'Poppins-Regular', color: '#111827' },
-  pickerPlaceholder: { color: '#9CA3AF' },
+    fieldGroup: { marginBottom: 18 },
+    fieldLabel: { fontSize: 13, fontFamily: 'Poppins-Medium', color: theme.colors.text, marginBottom: 8 },
+    picker: {
+      height: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+      paddingHorizontal: 14, borderRadius: 14, borderWidth: 1.5,
+      borderColor: theme.colors.inputBorder, backgroundColor: theme.colors.inputBg,
+    },
+    pickerText:        { fontSize: 14, fontFamily: 'Poppins-Regular', color: theme.colors.text },
+    pickerPlaceholder: { color: theme.colors.placeholder },
 
-  qtyRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  qtyBtn: {
-    width: 44, height: 44,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: '#E8E8E8',
-    backgroundColor: '#F4F4F4',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  qtyInput: {
-    flex: 1, height: 44,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: '#E8E8E8',
-    backgroundColor: '#F4F4F4',
-    fontSize: 16,
-    fontFamily: 'Poppins-Bold',
-    color: '#111827',
-  },
-  minQtyHint: { fontSize: 11, fontFamily: 'Poppins-Regular', color: '#9CA3AF', marginTop: 6 },
+    qtyRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    qtyBtn: {
+      width: 44, height: 44, borderRadius: 12, borderWidth: 1.5,
+      borderColor: theme.colors.inputBorder, backgroundColor: theme.colors.inputBg,
+      alignItems: 'center', justifyContent: 'center',
+    },
+    qtyInput: {
+      flex: 1, height: 44, borderRadius: 12, borderWidth: 1.5,
+      borderColor: theme.colors.inputBorder, backgroundColor: theme.colors.inputBg,
+      fontSize: 16, fontFamily: 'Poppins-Bold', color: theme.colors.text,
+    },
+    minQtyHint: { fontSize: 11, fontFamily: 'Poppins-Regular', color: theme.colors.textMuted, marginTop: 6 },
 
-  pricePreview: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#FEF0E6',
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 20,
-  },
-  pricePreviewLabel: { fontSize: 14, fontFamily: 'Poppins-Regular', color: '#6B7280' },
-  pricePreviewValue: { fontSize: 18, fontFamily: 'Poppins-Bold', color: '#CE4002' },
+    pricePreview: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+      backgroundColor: theme.colors.primaryLight, borderRadius: 14, padding: 16, marginBottom: 20,
+    },
+    pricePreviewLabel: { fontSize: 14, fontFamily: 'Poppins-Regular', color: theme.colors.textSub },
+    pricePreviewValue: { fontSize: 18, fontFamily: 'Poppins-Bold',    color: theme.colors.primary },
 
-  confirmBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: '#CE4002',
-    height: 54,
-    borderRadius: 14,
-    marginBottom: 4,
-  },
-  confirmBtnDisabled: { backgroundColor: '#E8A07A' },
-  confirmBtnText: { fontSize: 16, fontFamily: 'Poppins-Bold', color: '#fff' },
+    confirmBtn: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+      backgroundColor: theme.colors.primary, height: 54, borderRadius: 14, marginBottom: 4,
+    },
+    confirmBtnDisabled: { backgroundColor: theme.colors.primaryMuted },
+    confirmBtnText:     { fontSize: 16, fontFamily: 'Poppins-Bold', color: '#fff' },
 
-  pickerOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 14,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    marginBottom: 4,
-  },
-  pickerOptionActive:     { backgroundColor: '#FEF0E6' },
-  pickerOptionText:       { fontSize: 15, fontFamily: 'Poppins-Regular', color: '#374151' },
-  pickerOptionTextActive: { fontFamily: 'Poppins-SemiBold', color: '#CE4002' },
-  unitPrice:              { fontSize: 13, fontFamily: 'Poppins-SemiBold', color: '#6B7280' },
-})
+    pickerOption:           { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14, paddingHorizontal: 12, borderRadius: 12, marginBottom: 4 },
+    pickerOptionActive:     { backgroundColor: theme.colors.primaryLight },
+    pickerOptionText:       { fontSize: 15, fontFamily: 'Poppins-Regular', color: theme.colors.text },
+    pickerOptionTextActive: { fontFamily: 'Poppins-SemiBold', color: theme.colors.primary },
+    unitPrice:              { fontSize: 13, fontFamily: 'Poppins-SemiBold', color: theme.colors.textSub },
+  })
+}

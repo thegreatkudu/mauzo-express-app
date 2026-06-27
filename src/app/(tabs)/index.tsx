@@ -58,7 +58,8 @@ import { useTranslation } from 'react-i18next'
 import { HomeStatsSkeleton } from '@/components/skeletons'
 import { useAuthStore } from '@/store/auth.store'
 import { useCartStore } from '@/store/cart.store'
-import { useTheme } from '@/hooks/use-theme'
+import { useTheme, useThemeStyles } from '@/hooks/use-theme'
+import type { AppTheme } from '@/hooks/use-theme'
 import { useOrders, useOrderSummary } from '@/hooks/useOrders'
 import { useNotifications, useNotificationPolling } from '@/hooks/useNotifications'
 import { useResponsive } from '@/hooks/useResponsive'
@@ -152,6 +153,7 @@ export default function HomeScreen() {
   const { hp, rf, vgap, gap, isTablet, isLandscape, contentMaxWidth } = useResponsive()
   const { t } = useTranslation()
   const { theme } = useTheme()
+  const styles = useThemeStyles(getStyles)
 
   const setHomeReady = useUiStore(s => s.setHomeReady)
 
@@ -228,7 +230,7 @@ export default function HomeScreen() {
         refreshControl={
           // `refreshing` is intentionally false — the individual query states control
           // their own loading indicators rather than a single global spinner.
-          <RefreshControl refreshing={false} onRefresh={onRefresh} tintColor='#CE4002' />
+          <RefreshControl refreshing={false} onRefresh={onRefresh} tintColor={theme.colors.primary} />
         }
       >
         {/* Constrain content width on large tablets to prevent cards stretching too wide. */}
@@ -256,7 +258,7 @@ export default function HomeScreen() {
             <View style={styles.headerActions}>
               <SpringPressable onPress={() => router.push('/(tabs)/cart')}>
                 <View style={[styles.notifBtn, isTablet && styles.notifBtnTablet]}>
-                  <HugeiconsIcon icon={CartIcon} size={isTablet ? 24 : 22} color='#374151' strokeWidth={1.5} />
+                  <HugeiconsIcon icon={CartIcon} size={isTablet ? 24 : 22} color={theme.colors.text} strokeWidth={1.5} />
                   {cartCount > 0 && (
                     <View style={styles.notifBadge}>
                       <Text style={styles.notifBadgeText}>{cartCount > 9 ? '9+' : cartCount}</Text>
@@ -267,7 +269,7 @@ export default function HomeScreen() {
 
               <SpringPressable onPress={() => router.push('/notifications')}>
                 <View style={[styles.notifBtn, isTablet && styles.notifBtnTablet]}>
-                  <HugeiconsIcon icon={NotificationIcon} size={isTablet ? 24 : 22} color='#374151' strokeWidth={1.5} />
+                  <HugeiconsIcon icon={NotificationIcon} size={isTablet ? 24 : 22} color={theme.colors.text} strokeWidth={1.5} />
                   {unreadCount > 0 && (
                     <View style={styles.notifBadge}>
                       <Text style={styles.notifBadgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
@@ -394,6 +396,7 @@ function DashboardSection({
   vgap: number; rf: (s: number) => number
 }) {
   const { t } = useTranslation()
+  const styles = useThemeStyles(getStyles)
 
   return (
     <View style={{ marginTop: vgap }}>
@@ -447,6 +450,7 @@ function ActionsSection({
   cartCount: number; vgap: number; rf: (s: number) => number; gap: number
 }) {
   const { t } = useTranslation()
+  const styles = useThemeStyles(getStyles)
 
   return (
     <View style={{ marginTop: vgap }}>
@@ -523,6 +527,7 @@ function ActionsSection({
  */
 function StatusGuideSection({ vgap, rf }: { vgap: number; rf: (s: number) => number }) {
   const { t } = useTranslation()
+  const styles = useThemeStyles(getStyles)
 
   /** Ordered steps that mirror the actual order lifecycle progression. */
   const STATUS_STEPS = [
@@ -579,6 +584,7 @@ function RecentOrdersSection({
   rf: (s: number) => number
 }) {
   const { t } = useTranslation()
+  const styles = useThemeStyles(getStyles)
 
   // Don't render an empty section for new accounts with no orders.
   if (!ordersLoading && orders.length === 0) return null
@@ -680,6 +686,7 @@ function QuickAction({
   color: string; bg: string; onPress: () => void
   rf: (s: number) => number
 }) {
+  const styles    = useThemeStyles(getStyles)
   const scale     = useSharedValue(1)
   const pressStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -738,192 +745,136 @@ function getGreeting(): 'morning' | 'afternoon' | 'evening' {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: '#F8FAFC' },
-  scroll: {},
+function getStyles(theme: AppTheme) {
+  return StyleSheet.create({
+    safe:   { flex: 1, backgroundColor: theme.colors.background },
+    scroll: {},
 
-  // ── Header ────────────────────────────────────────────────────────────────
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  headerLeft:    { flex: 1, marginRight: 12 },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  greeting: {
-    fontFamily: 'Poppins-Regular',
-    color: '#6B7280',
-  },
-  bizName: {
-    fontFamily: 'Poppins-Bold',
-    color: '#111827',
-  },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    headerLeft:    { flex: 1, marginRight: 12 },
+    headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    greeting: { fontFamily: 'Poppins-Regular', color: theme.colors.textSub },
+    bizName:  { fontFamily: 'Poppins-Bold',    color: theme.colors.text },
 
-  /** Icon button shell for Cart and Notifications header actions. */
-  notifBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#F0F0F0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 5,
-    elevation: 2,
-  },
-  notifBtnTablet: {
-    width: 50,
-    height: 50,
-    borderRadius: 14,
-  },
-  /** Red badge overlaid on the icon buttons; capped at "9+" via JS. */
-  notifBadge: {
-    position: 'absolute',
-    top: 6,
-    right: 6,
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: '#EF4444',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 3,
-    borderWidth: 1.5,
-    borderColor: '#fff',
-  },
-  notifBadgeText: {
-    color: '#fff',
-    fontSize: 9,
-    fontFamily: 'Poppins-Bold',
-  },
+    notifBtn: {
+      width: 44,
+      height: 44,
+      borderRadius: 12,
+      backgroundColor: theme.colors.card,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
+      borderColor: theme.colors.divider,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.04,
+      shadowRadius: 5,
+      elevation: 2,
+    },
+    notifBtnTablet: { width: 50, height: 50, borderRadius: 14 },
+    notifBadge: {
+      position: 'absolute',
+      top: 6,
+      right: 6,
+      minWidth: 16,
+      height: 16,
+      borderRadius: 8,
+      backgroundColor: theme.colors.danger,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 3,
+      borderWidth: 1.5,
+      borderColor: theme.colors.card,
+    },
+    notifBadgeText: { color: '#fff', fontSize: 9, fontFamily: 'Poppins-Bold' },
 
-  // ── Trial banner ──────────────────────────────────────────────────────────
-  trialBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 4,
-  },
-  trialText: { flex: 1, fontFamily: 'Poppins-Regular', color: '#92400E' },
-  trialLink: { fontFamily: 'Poppins-Bold', color: '#D97706', textDecorationLine: 'underline' },
+    trialBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
+    trialText:   { flex: 1, fontFamily: 'Poppins-Regular', color: '#92400E' },
+    trialLink:   { fontFamily: 'Poppins-Bold', color: '#D97706', textDecorationLine: 'underline' },
 
-  // ── Shared section header ─────────────────────────────────────────────────
-  sectionTitle: {
-    fontFamily: 'Poppins-Bold',
-    color: '#111827',
-    marginBottom: 12,
-  },
+    sectionTitle: { fontFamily: 'Poppins-Bold', color: theme.colors.text, marginBottom: 12 },
 
-  // ── Quick Actions grid ────────────────────────────────────────────────────
-  actionsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  /** 47.5% width creates two columns; the remaining ~5% is distributed as gap. */
-  actionWrapper: { width: '47.5%' },
-  actionCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#F0F0F0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 5,
-    elevation: 2,
-    gap: 8,
-  },
-  actionIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  actionLabel: { fontFamily: 'Poppins-SemiBold', color: '#111827' },
-  actionSub:   { fontFamily: 'Poppins-Regular',  color: '#9CA3AF' },
+    actionsGrid:    { flexDirection: 'row', flexWrap: 'wrap' },
+    actionWrapper:  { width: '47.5%' },
+    actionCard: {
+      backgroundColor: theme.colors.card,
+      borderRadius: 16,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: theme.colors.divider,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.04,
+      shadowRadius: 5,
+      elevation: 2,
+      gap: 8,
+    },
+    actionIcon:  { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+    actionLabel: { fontFamily: 'Poppins-SemiBold', color: theme.colors.text },
+    actionSub:   { fontFamily: 'Poppins-Regular',  color: theme.colors.textMuted },
 
-  // ── Status guide ──────────────────────────────────────────────────────────
-  statusGuide: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#F0F0F0',
-    gap: 14,
-    marginBottom: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 5,
-    elevation: 2,
-  },
-  statusRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-  },
-  statusText:  { flex: 1, gap: 2 },
-  statusLabel: { fontFamily: 'Poppins-SemiBold', color: '#111827' },
-  statusDesc:  { fontFamily: 'Poppins-Regular',  color: '#6B7280' },
+    statusGuide: {
+      backgroundColor: theme.colors.card,
+      borderRadius: 16,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: theme.colors.divider,
+      gap: 14,
+      marginBottom: 8,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.04,
+      shadowRadius: 5,
+      elevation: 2,
+    },
+    statusRow:   { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+    statusText:  { flex: 1, gap: 2 },
+    statusLabel: { fontFamily: 'Poppins-SemiBold', color: theme.colors.text },
+    statusDesc:  { fontFamily: 'Poppins-Regular',  color: theme.colors.textSub },
 
-  // ── Tablet two-column layout ──────────────────────────────────────────────
-  twoColRow:   { flexDirection: 'row', gap: 20 },
-  twoColLeft:  { flex: 3 },
-  twoColRight: { flex: 2 },
+    twoColRow:   { flexDirection: 'row', gap: 20 },
+    twoColLeft:  { flex: 3 },
+    twoColRight: { flex: 2 },
 
-  // ── Recent Orders section ─────────────────────────────────────────────────
-  recentHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 0,
-  },
-  recentViewAll: {
-    fontFamily: 'Poppins-SemiBold',
-    color: '#CE4002',
-  },
-  recentCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#F0F0F0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 5,
-    elevation: 2,
-    overflow: 'hidden',
-  },
-  recentRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    gap: 12,
-  },
-  /** Bottom border separates rows; omitted on the last row to avoid a double border with the card. */
-  recentRowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#F4F4F4',
-  },
-  recentLeft:     { flex: 1, gap: 2 },
-  recentRight:    { alignItems: 'flex-end', gap: 4 },
-  recentId:       { fontFamily: 'Poppins-Bold',    color: '#111827' },
-  recentSupplier: { fontFamily: 'Poppins-Regular', color: '#6B7280' },
-  recentDate:     { fontFamily: 'Poppins-Regular', color: '#9CA3AF' },
-  recentAmount:   { fontFamily: 'Poppins-SemiBold', color: '#CE4002' },
+    recentHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 0,
+    },
+    recentViewAll: { fontFamily: 'Poppins-SemiBold', color: theme.colors.primary },
+    recentCard: {
+      backgroundColor: theme.colors.card,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: theme.colors.divider,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.04,
+      shadowRadius: 5,
+      elevation: 2,
+      overflow: 'hidden',
+    },
+    recentRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      gap: 12,
+    },
+    recentRowBorder: { borderBottomWidth: 1, borderBottomColor: theme.colors.borderLight },
+    recentLeft:      { flex: 1, gap: 2 },
+    recentRight:     { alignItems: 'flex-end', gap: 4 },
+    recentId:        { fontFamily: 'Poppins-Bold',    color: theme.colors.text },
+    recentSupplier:  { fontFamily: 'Poppins-Regular', color: theme.colors.textSub },
+    recentDate:      { fontFamily: 'Poppins-Regular', color: theme.colors.textMuted },
+    recentAmount:    { fontFamily: 'Poppins-SemiBold', color: theme.colors.primary },
 
-  /** Shared skeleton shimmer block used for loading placeholders within rows. */
-  skeletonLine: {
-    height: 12,
-    backgroundColor: '#F0F0F0',
-    borderRadius: 6,
-  },
-})
+    skeletonLine: { height: 12, backgroundColor: theme.colors.skeleton, borderRadius: 6 },
+  })
+}

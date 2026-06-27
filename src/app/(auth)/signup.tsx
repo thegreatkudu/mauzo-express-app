@@ -15,6 +15,8 @@ import { useTranslation } from 'react-i18next'
 import { getCategories, register } from '@/api/auth'
 import { isValidTanzaniaPhone, toApiPhone } from '@/utils/phone'
 import { extractApiError } from '@/api/client'
+import { useTheme, useThemeStyles } from '@/hooks/use-theme'
+import type { AppTheme } from '@/hooks/use-theme'
 import FormField from '@/components/forms/FormField'
 import PasswordInput from '@/components/forms/PasswordInput'
 import { StorefrontIcon, PhoneIcon, LocationIcon, ChevronDownIcon } from '@/constants/icons'
@@ -35,6 +37,8 @@ type FormData = z.infer<typeof schema>
 
 export default function SignUpScreen() {
   const { t } = useTranslation()
+  const { theme } = useTheme()
+  const styles = useThemeStyles(getStyles)
   const [categories, setCategories]       = useState<Category[]>([])
   const [catLoading, setCatLoading]       = useState(true)
   const [catError, setCatError]           = useState(false)
@@ -98,7 +102,7 @@ export default function SignUpScreen() {
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.logoWrap}>
-              <HugeiconsIcon icon={StorefrontIcon} size={40} color='#CE4002' strokeWidth={1.5} />
+              <HugeiconsIcon icon={StorefrontIcon} size={40} color={theme.colors.primary} strokeWidth={1.5} />
             </View>
             <Text style={styles.title}>{t('auth.signup.title')}</Text>
             <Text style={styles.subtitle}>{t('auth.signup.subtitle')}</Text>
@@ -111,7 +115,7 @@ export default function SignUpScreen() {
                 name='business_name'
                 render={({ field: { onChange, onBlur, value } }) => (
                   <View style={[styles.inputRow, errors.business_name && styles.inputError]}>
-                    <HugeiconsIcon icon={StorefrontIcon} size={18} color='#9CA3AF' strokeWidth={1.5} />
+                    <HugeiconsIcon icon={StorefrontIcon} size={18} color={theme.colors.textMuted} strokeWidth={1.5} />
                     <TextInput
                       style={styles.input}
                       placeholder={t('auth.signup.business_name_placeholder')}
@@ -137,7 +141,7 @@ export default function SignUpScreen() {
                 name='phone'
                 render={({ field: { onChange, onBlur, value } }) => (
                   <View style={[styles.inputRow, errors.phone && styles.inputError]}>
-                    <HugeiconsIcon icon={PhoneIcon} size={18} color='#9CA3AF' strokeWidth={1.5} />
+                    <HugeiconsIcon icon={PhoneIcon} size={18} color={theme.colors.textMuted} strokeWidth={1.5} />
                     <Text style={styles.dialCode}>+255</Text>
                     <View style={styles.dialDivider} />
                     <TextInput
@@ -173,19 +177,19 @@ export default function SignUpScreen() {
                 activeOpacity={0.8}
               >
                 {catLoading
-                  ? <ActivityIndicator size='small' color='#9CA3AF' style={{ flex: 1 }} />
+                  ? <ActivityIndicator size='small' color={theme.colors.textMuted} style={{ flex: 1 }} />
                   : catError
                   ? <>
-                      <Text style={[styles.input, { color: '#EF4444' }]}>{t('auth.signup.category_not_loaded')}</Text>
+                      <Text style={[styles.input, { color: theme.colors.danger }]}>{t('auth.signup.category_not_loaded')}</Text>
                       <TouchableOpacity onPress={loadCategories} hitSlop={8}>
                         <Text style={styles.retryText}>{t('common.retry')}</Text>
                       </TouchableOpacity>
                     </>
                   : <>
-                      <Text style={[styles.input, !selectedCat && { color: '#9CA3AF' }]}>
+                      <Text style={[styles.input, !selectedCat && { color: theme.colors.textMuted }]}>
                         {selectedCat ? selectedCat.name : t('auth.signup.category_placeholder')}
                       </Text>
-                      <HugeiconsIcon icon={ChevronDownIcon} size={18} color='#9CA3AF' strokeWidth={1.5} />
+                      <HugeiconsIcon icon={ChevronDownIcon} size={18} color={theme.colors.textMuted} strokeWidth={1.5} />
                     </>
                 }
               </TouchableOpacity>
@@ -197,7 +201,7 @@ export default function SignUpScreen() {
                 name='business_location'
                 render={({ field: { onChange, onBlur, value } }) => (
                   <View style={[styles.inputRow, errors.business_location && styles.inputError]}>
-                    <HugeiconsIcon icon={LocationIcon} size={18} color='#9CA3AF' strokeWidth={1.5} />
+                    <HugeiconsIcon icon={LocationIcon} size={18} color={theme.colors.textMuted} strokeWidth={1.5} />
                     <TextInput
                       ref={locationRef}
                       style={styles.input}
@@ -311,49 +315,51 @@ export default function SignUpScreen() {
   )
 }
 
-const styles = StyleSheet.create({
-  root:   { flex: 1, backgroundColor: '#fff' },
-  scroll: { paddingHorizontal: 24, paddingBottom: 40 },
+function getStyles(theme: AppTheme) {
+  return StyleSheet.create({
+    root:   { flex: 1, backgroundColor: theme.colors.surface },
+    scroll: { paddingHorizontal: 24, paddingBottom: 40 },
 
-  header: { alignItems: 'center', paddingTop: 32, paddingBottom: 24, gap: 8 },
-  logoWrap: {
-    width: 72, height: 72, borderRadius: 20,
-    backgroundColor: '#FEF0E6', alignItems: 'center', justifyContent: 'center', marginBottom: 4,
-  },
-  title:    { fontSize: 24, fontFamily: 'Poppins-Bold',    color: '#111827' },
-  subtitle: { fontSize: 14, fontFamily: 'Poppins-Regular', color: '#6B7280', textAlign: 'center' },
+    header: { alignItems: 'center', paddingTop: 32, paddingBottom: 24, gap: 8 },
+    logoWrap: {
+      width: 72, height: 72, borderRadius: 20,
+      backgroundColor: theme.colors.primaryLight, alignItems: 'center', justifyContent: 'center', marginBottom: 4,
+    },
+    title:    { fontSize: 24, fontFamily: 'Poppins-Bold',    color: theme.colors.text },
+    subtitle: { fontSize: 14, fontFamily: 'Poppins-Regular', color: theme.colors.textSub, textAlign: 'center' },
 
-  form: { gap: 14 },
+    form: { gap: 14 },
 
-  inputRow: {
-    height: 56, flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 14, borderRadius: 16, gap: 8,
-    borderWidth: 1.5, borderColor: '#E8E8E8', backgroundColor: '#F9FAFB',
-  },
-  inputError:  { borderColor: '#EF4444' },
-  dialCode:    { fontSize: 14, fontFamily: 'Poppins-SemiBold', color: '#374151' },
-  dialDivider: { width: 1, height: 20, backgroundColor: '#E8E8E8' },
-  input:       { flex: 1, fontSize: 14, fontFamily: 'Poppins-Regular', color: '#111827' },
+    inputRow: {
+      height: 56, flexDirection: 'row', alignItems: 'center',
+      paddingHorizontal: 14, borderRadius: 16, gap: 8,
+      borderWidth: 1.5, borderColor: theme.colors.inputBorder, backgroundColor: theme.colors.inputBg,
+    },
+    inputError:  { borderColor: theme.colors.danger },
+    dialCode:    { fontSize: 14, fontFamily: 'Poppins-SemiBold', color: theme.colors.text },
+    dialDivider: { width: 1, height: 20, backgroundColor: theme.colors.inputBorder },
+    input:       { flex: 1, fontSize: 14, fontFamily: 'Poppins-Regular', color: theme.colors.text },
 
-  retryText:         { fontSize: 13, fontFamily: 'Poppins-SemiBold', color: '#CE4002' },
+    retryText: { fontSize: 13, fontFamily: 'Poppins-SemiBold', color: theme.colors.primary },
 
-  submitBtn:         { height: 56, borderRadius: 16, backgroundColor: '#CE4002', alignItems: 'center', justifyContent: 'center', marginTop: 6 },
-  submitBtnDisabled: { backgroundColor: '#E8A07A' },
-  submitBtnText:     { fontSize: 16, fontFamily: 'Poppins-Bold', color: '#fff' },
+    submitBtn:         { height: 56, borderRadius: 16, backgroundColor: theme.colors.primary, alignItems: 'center', justifyContent: 'center', marginTop: 6 },
+    submitBtnDisabled: { backgroundColor: theme.colors.primaryMuted },
+    submitBtnText:     { fontSize: 16, fontFamily: 'Poppins-Bold', color: '#fff' },
 
-  signinRow:    { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 24 },
-  signinPrompt: { fontSize: 14, fontFamily: 'Poppins-Regular', color: '#6B7280' },
-  signinLink:   { fontSize: 14, fontFamily: 'Poppins-Bold',    color: '#CE4002' },
+    signinRow:    { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 24 },
+    signinPrompt: { fontSize: 14, fontFamily: 'Poppins-Regular', color: theme.colors.textSub },
+    signinLink:   { fontSize: 14, fontFamily: 'Poppins-Bold',    color: theme.colors.primary },
 
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
-  sheet: {
-    backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24,
-    paddingHorizontal: 20, paddingBottom: 36, paddingTop: 12, maxHeight: '70%',
-  },
-  sheetHandle:       { width: 40, height: 4, borderRadius: 2, backgroundColor: '#E8E8E8', alignSelf: 'center', marginBottom: 16 },
-  sheetTitle:        { fontSize: 17, fontFamily: 'Poppins-SemiBold', color: '#111827', marginBottom: 12 },
-  sheetItem:         { paddingVertical: 14, paddingHorizontal: 12, borderRadius: 12, marginBottom: 4 },
-  sheetItemActive:   { backgroundColor: '#FEF0E6' },
-  sheetItemText:     { fontSize: 15, fontFamily: 'Poppins-Regular', color: '#374151' },
-  sheetItemTextActive: { fontFamily: 'Poppins-SemiBold', color: '#CE4002' },
-})
+    overlay: { flex: 1, backgroundColor: theme.colors.overlay, justifyContent: 'flex-end' },
+    sheet: {
+      backgroundColor: theme.colors.card, borderTopLeftRadius: 24, borderTopRightRadius: 24,
+      paddingHorizontal: 20, paddingBottom: 36, paddingTop: 12, maxHeight: '70%',
+    },
+    sheetHandle:         { width: 40, height: 4, borderRadius: 2, backgroundColor: theme.colors.border, alignSelf: 'center', marginBottom: 16 },
+    sheetTitle:          { fontSize: 17, fontFamily: 'Poppins-SemiBold', color: theme.colors.text, marginBottom: 12 },
+    sheetItem:           { paddingVertical: 14, paddingHorizontal: 12, borderRadius: 12, marginBottom: 4 },
+    sheetItemActive:     { backgroundColor: theme.colors.primaryLight },
+    sheetItemText:       { fontSize: 15, fontFamily: 'Poppins-Regular', color: theme.colors.text },
+    sheetItemTextActive: { fontFamily: 'Poppins-SemiBold', color: theme.colors.primary },
+  })
+}

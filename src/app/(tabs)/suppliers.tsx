@@ -56,8 +56,8 @@ export default function SuppliersScreen() {
         {/* ── Page header ── */}
         <View style={[styles.pageHeader, { paddingHorizontal: hp, paddingTop: vgap }]}>
           <View>
-            <Text style={[styles.title, { fontSize: rf(22) }]}>{t('suppliers.title')}</Text>
-            <Text style={[styles.titleSub, { fontSize: rf(13) }]}>
+            <Text style={[{ fontFamily: 'Poppins-Bold', color: theme.colors.text }, { fontSize: rf(22) }]}>{t('suppliers.title')}</Text>
+            <Text style={[{ fontFamily: 'Poppins-Regular', color: theme.colors.textSub, marginTop: 2 }, { fontSize: rf(13) }]}>
               {isLoading
                 ? t('suppliers.loading')
                 : t(
@@ -72,13 +72,13 @@ export default function SuppliersScreen() {
         </View>
 
         {/* ── Search bar ── */}
-        <View style={[styles.searchWrap, { paddingHorizontal: hp }]}>
-          <View style={styles.searchBar}>
-            <HugeiconsIcon icon={SearchIcon} size={18} color='#9CA3AF' strokeWidth={1.5} />
+        <View style={{ paddingVertical: 10, paddingHorizontal: hp }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: theme.colors.cardAlt, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12 }}>
+            <HugeiconsIcon icon={SearchIcon} size={18} color={theme.colors.textMuted} strokeWidth={1.5} />
             <TextInput
-              style={[styles.searchInput, { fontSize: rf(14) }]}
+              style={[{ flex: 1, fontFamily: 'Poppins-Regular', color: theme.colors.text, padding: 0 }, { fontSize: rf(14) }]}
               placeholder={t('suppliers.search_placeholder')}
-              placeholderTextColor='#9CA3AF'
+              placeholderTextColor={theme.colors.placeholder}
               value={search}
               onChangeText={setSearch}
               returnKeyType='search'
@@ -86,7 +86,7 @@ export default function SuppliersScreen() {
             />
             {search.length > 0 && (
               <TouchableOpacity onPress={() => setSearch('')} hitSlop={8}>
-                <HugeiconsIcon icon={CloseIcon} size={16} color='#9CA3AF' strokeWidth={1.5} />
+                <HugeiconsIcon icon={CloseIcon} size={16} color={theme.colors.textMuted} strokeWidth={1.5} />
               </TouchableOpacity>
             )}
           </View>
@@ -110,10 +110,14 @@ export default function SuppliersScreen() {
           </View>
         ) : isError ? (
           <View style={styles.errorWrap}>
-            <Text style={[styles.errorText, { fontSize: rf(14) }]}>{t('suppliers.error_load')}</Text>
-            <TouchableOpacity style={styles.retryBtn} onPress={() => refetch()} activeOpacity={0.8}>
-              <HugeiconsIcon icon={RefreshIcon} size={16} color='#CE4002' strokeWidth={2} />
-              <Text style={[styles.retryText, { fontSize: rf(14) }]}>{t('common.retry')}</Text>
+            <Text style={[{ fontFamily: 'Poppins-Regular', color: theme.colors.textSub }, { fontSize: rf(14) }]}>{t('suppliers.error_load')}</Text>
+            <TouchableOpacity
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 12, borderWidth: 1.5, borderColor: theme.colors.primary }}
+              onPress={() => refetch()}
+              activeOpacity={0.8}
+            >
+              <HugeiconsIcon icon={RefreshIcon} size={16} color={theme.colors.primary} strokeWidth={2} />
+              <Text style={[{ fontFamily: 'Poppins-SemiBold', color: theme.colors.primary }, { fontSize: rf(14) }]}>{t('common.retry')}</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -143,11 +147,11 @@ export default function SuppliersScreen() {
               )
             }}
             ListHeaderComponent={
-              <View style={styles.sectionRow}>
-                <Text style={[styles.sectionLabel, { fontSize: rf(15) }]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, marginTop: 4 }}>
+                <Text style={[{ fontFamily: 'Poppins-Bold', color: theme.colors.text }, { fontSize: rf(15) }]}>
                   {t('suppliers.title')}
                 </Text>
-                <Text style={[styles.sectionCount, { fontSize: rf(13) }]}>
+                <Text style={[{ fontFamily: 'Poppins-Regular', color: theme.colors.textSub }, { fontSize: rf(13) }]}>
                   {t(
                     filtered.length !== 1
                       ? 'suppliers.count_in_category_other'
@@ -157,13 +161,13 @@ export default function SuppliersScreen() {
                 </Text>
               </View>
             }
-            contentContainerStyle={{ ...styles.list, paddingHorizontal: hp }}
+            contentContainerStyle={{ paddingBottom: 32, paddingTop: 12, paddingHorizontal: hp }}
             showsVerticalScrollIndicator={false}
             refreshControl={
               <RefreshControl
                 refreshing={isRefetching}
                 onRefresh={refetch}
-                tintColor='#CE4002'
+                tintColor={theme.colors.primary}
               />
             }
             ListEmptyComponent={
@@ -185,7 +189,7 @@ export default function SuppliersScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F8FAFC' },
+  safe: { flex: 1 },
 
   pageHeader: {
     paddingBottom: 8,
@@ -193,35 +197,6 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     justifyContent: 'space-between',
   },
-  title:    { fontFamily: 'Poppins-Bold',    color: '#111827' },
-  titleSub: { fontFamily: 'Poppins-Regular', color: '#6B7280', marginTop: 2 },
-
-  searchWrap: { paddingVertical: 10 },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: '#F4F4F2',
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
-  searchInput: {
-    flex: 1,
-    fontFamily: 'Poppins-Regular',
-    color: '#111827',
-    padding: 0,
-  },
-
-  sectionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 14,
-    marginTop: 4,
-  },
-  sectionLabel: { fontFamily: 'Poppins-Bold',    color: '#111827' },
-  sectionCount: { fontFamily: 'Poppins-Regular', color: '#6B7280' },
 
   skeletonGrid: { paddingVertical: 8, gap: 10 },
   skeletonRow:  { flexDirection: 'row' },
@@ -229,22 +204,5 @@ const styles = StyleSheet.create({
   list:     { paddingBottom: 32, paddingTop: 12 },
   gridItem: { flex: 1, paddingBottom: 12 },
 
-  errorWrap: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-  },
-  errorText: { fontFamily: 'Poppins-Regular', color: '#6B7280' },
-  retryBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: '#CE4002',
-  },
-  retryText: { fontFamily: 'Poppins-SemiBold', color: '#CE4002' },
+  errorWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
 })

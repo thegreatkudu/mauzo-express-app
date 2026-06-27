@@ -6,6 +6,8 @@ import {
 } from '@/constants/icons'
 import { useResponsive } from '@/hooks/useResponsive'
 import { useTranslation } from 'react-i18next'
+import { useTheme, useThemeStyles } from '@/hooks/use-theme'
+import type { AppTheme } from '@/hooks/use-theme'
 import type { Supplier } from '@/types'
 
 interface SupplierCardProps {
@@ -15,13 +17,8 @@ interface SupplierCardProps {
   compact?: boolean
 }
 
-// Category → accent colour mapping for the header bands
+// Category → accent colour mapping for the header bands (empty → falls back to brand orange)
 const ACCENT_COLORS: Record<string, { bg: string; icon: string; text: string }> = {}
-const DEFAULT_ACCENT = { bg: '#FEF0E6', icon: '#CE4002', text: '#CE4002' }
-
-function getAccent(categoryName: string) {
-  return ACCENT_COLORS[categoryName] ?? DEFAULT_ACCENT
-}
 
 const SupplierCard = memo(function SupplierCard({
   supplier,
@@ -30,7 +27,14 @@ const SupplierCard = memo(function SupplierCard({
 }: SupplierCardProps) {
   const { rf } = useResponsive()
   const { t } = useTranslation()
-  const accent = getAccent(supplier.category.name)
+  const { theme } = useTheme()
+  const styles = useThemeStyles(getStyles)
+
+  const accent = ACCENT_COLORS[supplier.category.name] ?? {
+    bg:   theme.colors.primaryLight,
+    icon: theme.colors.primary,
+    text: theme.colors.primary,
+  }
 
   // Header band height scales with compact mode (mirrors product image sizing)
   const bandHeight = compact ? 90 : 110
@@ -64,7 +68,7 @@ const SupplierCard = memo(function SupplierCard({
 
         {/* Product count badge — bottom-right */}
         <View style={styles.productBadge}>
-          <HugeiconsIcon icon={PackageIcon} size={10} color='#6B7280' strokeWidth={1.5} />
+          <HugeiconsIcon icon={PackageIcon} size={10} color={theme.colors.textSub} strokeWidth={1.5} />
           <Text style={[styles.productBadgeText, { fontSize: rf(10) }]}>
             {t(
               supplier.product_count !== 1
@@ -88,7 +92,7 @@ const SupplierCard = memo(function SupplierCard({
 
         {/* Location row */}
         <View style={styles.locationRow}>
-          <HugeiconsIcon icon={LocationIcon} size={12} color='#9CA3AF' strokeWidth={1.5} />
+          <HugeiconsIcon icon={LocationIcon} size={12} color={theme.colors.textMuted} strokeWidth={1.5} />
           <Text
             style={[styles.location, { fontSize: rf(11) }]}
             numberOfLines={1}
@@ -111,108 +115,90 @@ const SupplierCard = memo(function SupplierCard({
 
 export default SupplierCard
 
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#F0F0F0',
-    overflow: 'hidden',
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 5,
-    elevation: 2,
-  },
-  cardCompact: { marginBottom: 0 },
+function getStyles(theme: AppTheme) {
+  return StyleSheet.create({
+    card: {
+      backgroundColor: theme.colors.card,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: theme.colors.divider,
+      overflow: 'hidden',
+      marginBottom: 12,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.04,
+      shadowRadius: 5,
+      elevation: 2,
+    },
+    cardCompact: { marginBottom: 0 },
 
-  // Header colour band
-  band: {
-    width: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-  },
+    band: {
+      width: '100%',
+      justifyContent: 'center',
+      alignItems: 'center',
+      position: 'relative',
+    },
 
-  // Category chip — top-left corner of band
-  categoryChip: {
-    position: 'absolute',
-    top: 8,
-    left: 8,
-    backgroundColor: 'rgba(255,255,255,0.90)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 20,
-  },
-  categoryChipText: { fontFamily: 'Poppins-SemiBold', color: '#CE4002' },
+    categoryChip: {
+      position: 'absolute',
+      top: 8,
+      left: 8,
+      backgroundColor: theme.isDark ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.90)',
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 20,
+    },
+    categoryChipText: { fontFamily: 'Poppins-SemiBold', color: theme.colors.primary },
 
-  // Centred icon
-  bandIconWrap: { alignItems: 'center', justifyContent: 'center' },
-  bandIconCircle: {
-    width: 56, height: 56, borderRadius: 28,
-    backgroundColor: '#fff',
-    alignItems: 'center', justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  bandIconCircleCompact: { width: 44, height: 44, borderRadius: 22 },
+    bandIconWrap: { alignItems: 'center', justifyContent: 'center' },
+    bandIconCircle: {
+      width: 56, height: 56, borderRadius: 28,
+      backgroundColor: theme.colors.card,
+      alignItems: 'center', justifyContent: 'center',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.08,
+      shadowRadius: 6,
+      elevation: 3,
+    },
+    bandIconCircleCompact: { width: 44, height: 44, borderRadius: 22 },
 
-  // Product count — bottom-right corner of band
-  productBadge: {
-    position: 'absolute',
-    bottom: 8,
-    right: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(255,255,255,0.90)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 20,
-  },
-  productBadgeText: { fontFamily: 'Poppins-Regular', color: '#6B7280' },
+    productBadge: {
+      position: 'absolute',
+      bottom: 8,
+      right: 8,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      backgroundColor: theme.isDark ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.90)',
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 20,
+    },
+    productBadgeText: { fontFamily: 'Poppins-Regular', color: theme.colors.textSub },
 
-  // Body
-  body:        { padding: 12, gap: 5 },
-  bodyCompact: { padding: 10, gap: 4 },
+    body:        { padding: 12, gap: 5 },
+    bodyCompact: { padding: 10, gap: 4 },
 
-  name: {
-    fontFamily: 'Poppins-SemiBold',
-    color: '#111827',
-  },
-  nameCompact: {},
+    name:        { fontFamily: 'Poppins-SemiBold', color: theme.colors.text },
+    nameCompact: {},
 
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  location: {
-    fontFamily: 'Poppins-Regular',
-    color: '#9CA3AF',
-    flex: 1,
-  },
+    locationRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    location:    { fontFamily: 'Poppins-Regular', color: theme.colors.textMuted, flex: 1 },
 
-  // Browse CTA row
-  cta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-    borderWidth: 1.5,
-    borderColor: '#CE4002',
-    borderRadius: 10,
-    paddingVertical: 8,
-    marginTop: 4,
-    backgroundColor: 'transparent',
-  },
-  ctaCompact: { paddingVertical: 6, marginTop: 2 },
-  ctaText: {
-    fontFamily: 'Poppins-SemiBold',
-    color: '#CE4002',
-  },
-})
+    cta: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 4,
+      borderWidth: 1.5,
+      borderColor: theme.colors.primary,
+      borderRadius: 10,
+      paddingVertical: 8,
+      marginTop: 4,
+      backgroundColor: 'transparent',
+    },
+    ctaCompact: { paddingVertical: 6, marginTop: 2 },
+    ctaText:    { fontFamily: 'Poppins-SemiBold', color: theme.colors.primary },
+  })
+}

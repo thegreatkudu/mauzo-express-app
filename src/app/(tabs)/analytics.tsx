@@ -52,7 +52,8 @@ import { useTranslation } from 'react-i18next'
 
 import { useOrders } from '@/hooks/useOrders'
 import { useResponsive } from '@/hooks/useResponsive'
-import { useTheme } from '@/hooks/use-theme'
+import { useTheme, useThemeStyles } from '@/hooks/use-theme'
+import type { AppTheme } from '@/hooks/use-theme'
 import { spring, listStagger } from '@/constants/animations'
 import { OrdersIcon, PackageIcon, CheckCircleIcon, ClockIcon, RefreshIcon } from '@/constants/icons'
 import StatusBadge from '@/components/ui/StatusBadge'
@@ -98,20 +99,24 @@ interface ChartData {
 }
 
 // ─── Chart colour tokens ──────────────────────────────────────────────────────
-//
-// "Active" colours highlight the current/most-recent entity (today, this week,
-// this month). "Dim" colours style all other bars to create contrast.
 
-/** Brand orange — active bar fill for the Orders Count chart. */
-const PRIMARY     = '#CE4002'
-/** Pale orange — inactive bar fill for the Orders Count chart. */
-const PRIMARY_DIM = '#F4A882'
-/** Amber — active bar fill for the Total Amount chart. */
-const AMOUNT_HI   = '#D97706'
-/** Pale amber — inactive bar fill for the Total Amount chart. */
-const AMOUNT_DIM  = '#FCD34D'
-/** Off-white background applied to both chart bodies for visual containment. */
-const CHART_BG    = '#F8FAFC'
+interface ChartColors {
+  primary:    string
+  primaryDim: string
+  amountHi:   string
+  amountDim:  string
+  chartBg:    string
+}
+
+function getChartColors(theme: AppTheme): ChartColors {
+  return {
+    primary:    theme.colors.primary,
+    primaryDim: theme.colors.primaryMuted,
+    amountHi:   theme.colors.warning,
+    amountDim:  theme.isDark ? '#78460A' : '#FCD34D',
+    chartBg:    theme.colors.background,
+  }
+}
 
 // ─── Client-side data builders ────────────────────────────────────────────────
 //
@@ -137,19 +142,17 @@ const CHART_BG    = '#F8FAFC'
  * @param orders - Full list of orders from the `useOrders()` cache.
  * @returns `ChartData` with 7 entries per array, oldest day on the left.
  */
-function buildWeeklyData(orders: Order[]): ChartData {
+function buildWeeklyData(orders: Order[], colors: ChartColors): ChartData {
   const DAYS  = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
   const now   = new Date()
 
-  // Build 7 slots representing the last 7 calendar days (oldest first).
   const slots = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(now)
-    d.setDate(now.getDate() - (6 - i)) // i=0 → 6 days ago, i=6 → today
-    d.setHours(0, 0, 0, 0)             // Normalise to midnight for key comparison
+    d.setDate(now.getDate() - (6 - i))
+    d.setHours(0, 0, 0, 0)
     return { key: d.getTime(), label: DAYS[d.getDay()], count: 0, amount: 0, isToday: i === 6 }
   })
 
-  // Accumulate order counts and amounts into their matching day slot.
   orders.forEach(o => {
     const t = new Date(o.created_at)
     t.setHours(0, 0, 0, 0)
@@ -162,12 +165,12 @@ function buildWeeklyData(orders: Order[]): ChartData {
     countBars:  slots.map(s => ({
       value:      s.count,
       label:      s.label,
-      frontColor: s.isToday ? PRIMARY    : PRIMARY_DIM,
+      frontColor: s.isToday ? colors.primary    : colors.primaryDim,
     })),
     amountBars: slots.map(s => ({
-      value:      Math.round(s.amount / 1_000), // normalise to K TZS
+      value:      Math.round(s.amount / 1_000),
       label:      s.label,
-      frontColor: s.isToday ? AMOUNT_HI : AMOUNT_DIM,
+      frontColor: s.isToday ? colors.amountHi : colors.amountDim,
     })),
   }
 }
@@ -187,10 +190,9 @@ function buildWeeklyData(orders: Order[]): ChartData {
  * @param orders - Full list of orders from the `useOrders()` cache.
  * @returns `ChartData` with 4 entries per array, oldest week on the left.
  */
-function buildMonthlyData(orders: Order[]): ChartData {
+function buildMonthlyData(orders: Order[], colors: ChartColors): ChartData {
   const now = new Date()
 
-  // Fixed 4-week buckets with half-open day-range boundaries.
   const slots = [
     { label: 'Wk 1', count: 0, amount: 0, start: 28, end: 21 },
     { label: 'Wk 2', count: 0, amount: 0, start: 21, end: 14 },
@@ -199,7 +201,6 @@ function buildMonthlyData(orders: Order[]): ChartData {
   ]
 
   orders.forEach(o => {
-    // Integer day difference: 0 = today, 1 = yesterday, etc.
     const diff = Math.floor((now.getTime() - new Date(o.created_at).getTime()) / 86_400_000)
     const s = slots.find(sl => diff < sl.start && diff >= sl.end)
     if (s) { s.count++; s.amount += o.total_quoted_amount ?? 0 }
@@ -210,12 +211,12 @@ function buildMonthlyData(orders: Order[]): ChartData {
     countBars:  slots.map((s, i) => ({
       value:      s.count,
       label:      s.label,
-      frontColor: i === 3 ? PRIMARY    : PRIMARY_DIM, // Wk 4 = current
+      frontColor: i === 3 ? colors.primary    : colors.primaryDim,
     })),
     amountBars: slots.map((s, i) => ({
       value:      Math.round(s.amount / 1_000),
       label:      s.label,
-      frontColor: i === 3 ? AMOUNT_HI : AMOUNT_DIM,
+      frontColor: i === 3 ? colors.amountHi : colors.amountDim,
     })),
   }
 }
@@ -234,14 +235,11 @@ function buildMonthlyData(orders: Order[]): ChartData {
  * @param orders - Full list of orders from the `useOrders()` cache.
  * @returns `ChartData` with 12 entries per array, oldest month on the left.
  */
-function buildYearlyData(orders: Order[]): ChartData {
+function buildYearlyData(orders: Order[], colors: ChartColors): ChartData {
   const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
   const now    = new Date()
 
-  // Build slots for the last 12 calendar months, accounting for year wrap-around.
   const slots = Array.from({ length: 12 }, (_, i) => {
-    // `new Date(year, month, 1)` handles negative month values automatically
-    // (e.g. month -1 resolves to December of the previous year).
     const d = new Date(now.getFullYear(), now.getMonth() - (11 - i), 1)
     return { yr: d.getFullYear(), mo: d.getMonth(), label: MONTHS[d.getMonth()], count: 0, amount: 0 }
   })
@@ -257,12 +255,12 @@ function buildYearlyData(orders: Order[]): ChartData {
     countBars:  slots.map((s, i) => ({
       value:      s.count,
       label:      s.label,
-      frontColor: i === 11 ? PRIMARY    : PRIMARY_DIM, // last slot = current month
+      frontColor: i === 11 ? colors.primary    : colors.primaryDim,
     })),
     amountBars: slots.map((s, i) => ({
       value:      Math.round(s.amount / 1_000),
       label:      s.label,
-      frontColor: i === 11 ? AMOUNT_HI : AMOUNT_DIM,
+      frontColor: i === 11 ? colors.amountHi : colors.amountDim,
     })),
   }
 }
@@ -315,35 +313,35 @@ const PeriodToggle = memo(function PeriodToggle({
   rf: (s: number) => number
 }) {
   const { t } = useTranslation()
+  const { theme } = useTheme()
   const opts: { key: Period; label: string }[] = [
     { key: 'weekly',  label: t('analytics.period_weekly')  },
     { key: 'monthly', label: t('analytics.period_monthly') },
     { key: 'yearly',  label: t('analytics.period_yearly')  },
   ]
   return (
-    <View style={segStyles.wrap}>
+    <View style={{ flexDirection: 'row', backgroundColor: theme.colors.divider, borderRadius: 12, padding: 3 }}>
       {opts.map(o => (
         <TouchableOpacity
           key={o.key}
-          style={[segStyles.btn, value === o.key && segStyles.btnActive]}
+          style={[
+            { flex: 1, paddingVertical: 8, borderRadius: 10, alignItems: 'center' },
+            value === o.key && { backgroundColor: theme.colors.card, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 },
+          ]}
           onPress={() => onChange(o.key)}
           activeOpacity={0.8}
         >
-          <Text style={[segStyles.text, { fontSize: rf(13) }, value === o.key && segStyles.textActive]}>
+          <Text style={[
+            { fontFamily: 'Poppins-Medium', color: theme.colors.textMuted },
+            { fontSize: rf(13) },
+            value === o.key && { color: theme.colors.text, fontFamily: 'Poppins-SemiBold' },
+          ]}>
             {o.label}
           </Text>
         </TouchableOpacity>
       ))}
     </View>
   )
-})
-
-const segStyles = StyleSheet.create({
-  wrap:       { flexDirection: 'row', backgroundColor: '#F0F0F0', borderRadius: 12, padding: 3 },
-  btn:        { flex: 1, paddingVertical: 8, borderRadius: 10, alignItems: 'center' },
-  btnActive:  { backgroundColor: '#fff', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 },
-  text:       { fontFamily: 'Poppins-Medium', color: '#9CA3AF' },
-  textActive: { color: '#111827', fontFamily: 'Poppins-SemiBold' },
 })
 
 /**
@@ -367,40 +365,26 @@ const SummaryCard = memo(function SummaryCard({
   icon: any; label: string; value: number
   color: string; bg: string; rf: (s: number) => number; delay: number
 }) {
+  const { theme } = useTheme()
   return (
     <Animated.View
       entering={FadeInDown.delay(delay).springify().damping(spring.list.damping).stiffness(spring.list.stiffness)}
-      style={[sumStyles.card, { borderTopColor: color }]}
+      style={{
+        flex: 1, backgroundColor: theme.colors.card, borderRadius: 14, padding: 14,
+        borderTopWidth: 3, borderTopColor: color,
+        borderWidth: 1, borderColor: theme.colors.divider,
+        shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.04, shadowRadius: 5, elevation: 2,
+        alignItems: 'center', gap: 6,
+      }}
     >
-      <View style={[sumStyles.iconWrap, { backgroundColor: bg }]}>
+      <View style={{ width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: bg }}>
         <HugeiconsIcon icon={icon} size={16} color={color} strokeWidth={1.5} />
       </View>
-      <Text style={[sumStyles.value, { fontSize: rf(24), color }]}>{value}</Text>
-      <Text style={[sumStyles.label, { fontSize: rf(11) }]}>{label}</Text>
+      <Text style={{ fontFamily: 'Poppins-Bold', color, fontSize: rf(24) }}>{value}</Text>
+      <Text style={{ fontFamily: 'Poppins-Regular', color: theme.colors.textSub, textAlign: 'center', fontSize: rf(11) }}>{label}</Text>
     </Animated.View>
   )
-})
-
-const sumStyles = StyleSheet.create({
-  card: {
-    flex: 1,
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    padding: 14,
-    borderTopWidth: 3,
-    borderWidth: 1,
-    borderColor: '#F0F0F0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 5,
-    elevation: 2,
-    alignItems: 'center',
-    gap: 6,
-  },
-  iconWrap: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  value:    { fontFamily: 'Poppins-Bold', color: '#111827' },
-  label:    { fontFamily: 'Poppins-Regular', color: '#6B7280', textAlign: 'center' },
 })
 
 /**
@@ -424,6 +408,7 @@ const RecentOrderItem = memo(function RecentOrderItem({
   index: number
   rf: (s: number) => number
 }) {
+  const { theme } = useTheme()
   return (
     <Animated.View
       entering={FadeInDown
@@ -433,22 +418,21 @@ const RecentOrderItem = memo(function RecentOrderItem({
         .stiffness(spring.list.stiffness)}
     >
       <TouchableOpacity
-        style={recentStyles.row}
+        style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: theme.colors.borderLight, gap: 12 }}
         onPress={() => router.push(`/order/${order.order_id}`)}
         activeOpacity={0.85}
       >
-        <View style={recentStyles.left}>
-          <Text style={[recentStyles.id, { fontSize: rf(13) }]}>{formatOrderId(order.order_id)}</Text>
-          <Text style={[recentStyles.supplier, { fontSize: rf(12) }]} numberOfLines={1}>
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text style={{ fontFamily: 'Poppins-Bold', color: theme.colors.text, fontSize: rf(13) }}>{formatOrderId(order.order_id)}</Text>
+          <Text style={{ fontFamily: 'Poppins-Regular', color: theme.colors.textSub, fontSize: rf(12) }} numberOfLines={1}>
             {order.supplier.business_name}
           </Text>
-          <Text style={[recentStyles.date, { fontSize: rf(11) }]}>{formatDate(order.created_at)}</Text>
+          <Text style={{ fontFamily: 'Poppins-Regular', color: theme.colors.textMuted, fontSize: rf(11) }}>{formatDate(order.created_at)}</Text>
         </View>
-        <View style={recentStyles.right}>
+        <View style={{ alignItems: 'flex-end', gap: 4 }}>
           <StatusBadge status={order.status} size='sm' />
-          {/* Only show amount once the supplier has submitted a quotation. */}
           {order.total_quoted_amount != null && (
-            <Text style={[recentStyles.amount, { fontSize: rf(12) }]}>
+            <Text style={{ fontFamily: 'Poppins-SemiBold', color: theme.colors.primary, fontSize: rf(12) }}>
               TZS {order.total_quoted_amount.toLocaleString()}
             </Text>
           )}
@@ -456,24 +440,6 @@ const RecentOrderItem = memo(function RecentOrderItem({
       </TouchableOpacity>
     </Animated.View>
   )
-})
-
-const recentStyles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F4F4F4',
-    gap: 12,
-  },
-  left:     { flex: 1, gap: 2 },
-  right:    { alignItems: 'flex-end', gap: 4 },
-  id:       { fontFamily: 'Poppins-Bold', color: '#111827' },
-  supplier: { fontFamily: 'Poppins-Regular', color: '#6B7280' },
-  date:     { fontFamily: 'Poppins-Regular', color: '#9CA3AF' },
-  amount:   { fontFamily: 'Poppins-SemiBold', color: '#CE4002' },
 })
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
@@ -511,6 +477,8 @@ export default function AnalyticsScreen() {
   const { width: screenWidth } = useWindowDimensions()
   const { t } = useTranslation()
   const { theme } = useTheme()
+  const styles = useThemeStyles(getStyles)
+  const chartColors = getChartColors(theme)
 
   // Trigger a background refetch each time this tab becomes visible.
   // `useCallback` with an empty dep array is required by useFocusEffect's contract.
@@ -521,11 +489,11 @@ export default function AnalyticsScreen() {
   const chartData = useMemo<ChartData>(() => {
     if (!orders?.length) return { countBars: [], amountBars: [], labels: [] }
     switch (period) {
-      case 'weekly':  return buildWeeklyData(orders)
-      case 'monthly': return buildMonthlyData(orders)
-      case 'yearly':  return buildYearlyData(orders)
+      case 'weekly':  return buildWeeklyData(orders, chartColors)
+      case 'monthly': return buildMonthlyData(orders, chartColors)
+      case 'yearly':  return buildYearlyData(orders, chartColors)
     }
-  }, [orders, period])
+  }, [orders, period, chartColors.primary])
 
   // ── Derived counts for the summary row ─────────────────────────────────────
   // Single-pass accumulation over the orders array for the status breakdown grid.
@@ -589,7 +557,7 @@ export default function AnalyticsScreen() {
               <Text style={[styles.subtitle, { fontSize: rf(13) }]}>{t('analytics.subtitle')}</Text>
             </View>
             {/* Inline spinner during the initial load; replaced by the RefreshControl on pull-to-refresh. */}
-            {isLoading && <ActivityIndicator size='small' color={PRIMARY} />}
+            {isLoading && <ActivityIndicator size='small' color={theme.colors.primary} />}
           </Animated.View>
 
           {/* ── Error state ── */}
@@ -597,7 +565,7 @@ export default function AnalyticsScreen() {
             <View style={styles.errorWrap}>
               <Text style={[styles.errorText, { fontSize: rf(14) }]}>{t('analytics.error_load')}</Text>
               <TouchableOpacity style={styles.retryBtn} onPress={() => refetch()} activeOpacity={0.8}>
-                <HugeiconsIcon icon={RefreshIcon} size={16} color={PRIMARY} strokeWidth={2} />
+                <HugeiconsIcon icon={RefreshIcon} size={16} color={theme.colors.primary} strokeWidth={2} />
                 <Text style={[styles.retryText, { fontSize: rf(14) }]}>{t('common.retry')}</Text>
               </TouchableOpacity>
             </View>
@@ -605,9 +573,9 @@ export default function AnalyticsScreen() {
             <>
               {/* ── 2. Summary cards (total / pending / completed) ── */}
               <View style={[styles.summaryRow, { gap, marginTop: 20 }]}>
-                <SummaryCard icon={PackageIcon}     label={t('analytics.total_orders')}     value={totalOrders}    color='#CE4002' bg='#FEF0E6' rf={rf} delay={50}  />
-                <SummaryCard icon={ClockIcon}       label={t('analytics.pending_orders')}   value={pendingCount}   color='#D97706' bg='#FEF3C7' rf={rf} delay={110} />
-                <SummaryCard icon={CheckCircleIcon} label={t('analytics.completed_orders')} value={completedCount} color='#059669' bg='#D1FAE5' rf={rf} delay={170} />
+                <SummaryCard icon={PackageIcon}     label={t('analytics.total_orders')}     value={totalOrders}    color={theme.colors.primary} bg={theme.colors.primaryLight} rf={rf} delay={50}  />
+                <SummaryCard icon={ClockIcon}       label={t('analytics.pending_orders')}   value={pendingCount}   color={theme.colors.warning}  bg={theme.colors.warningBg}   rf={rf} delay={110} />
+                <SummaryCard icon={CheckCircleIcon} label={t('analytics.completed_orders')} value={completedCount} color={theme.colors.success}  bg={theme.colors.successBg}   rf={rf} delay={170} />
               </View>
 
               {/* ── 3. Chart card ── */}
@@ -618,7 +586,7 @@ export default function AnalyticsScreen() {
                 {/* Chart header: section title + period toggle */}
                 <View style={styles.chartHeader}>
                   <View style={styles.chartTitleRow}>
-                    <HugeiconsIcon icon={OrdersIcon} size={16} color={PRIMARY} strokeWidth={1.5} />
+                    <HugeiconsIcon icon={OrdersIcon} size={16} color={theme.colors.primary} strokeWidth={1.5} />
                     <Text style={[styles.chartTitle, { fontSize: rf(15) }]}>{t('analytics.chart_title')}</Text>
                   </View>
                   <PeriodToggle value={period} onChange={setPeriod} rf={rf} />
@@ -635,7 +603,7 @@ export default function AnalyticsScreen() {
                     </View>
                   ) : !hasData ? (
                     <View style={styles.chartEmpty}>
-                      <HugeiconsIcon icon={OrdersIcon} size={32} color='#D1D5DB' strokeWidth={1} />
+                      <HugeiconsIcon icon={OrdersIcon} size={32} color={theme.colors.textDisabled} strokeWidth={1} />
                       <Text style={[styles.chartEmptyText, { fontSize: rf(13) }]}>
                         {t('analytics.chart_empty')}
                       </Text>
@@ -648,7 +616,7 @@ export default function AnalyticsScreen() {
 
                       {/* Mini-chart 1: Total Orders (count) */}
                       <View style={styles.miniChartLegend}>
-                        <View style={[styles.legendDot, { backgroundColor: PRIMARY }]} />
+                        <View style={[styles.legendDot, { backgroundColor: theme.colors.primary }]} />
                         <Text style={[styles.legendLabel, { fontSize: rf(12) }]}>
                           {t('analytics.legend_orders')}
                         </Text>
@@ -670,14 +638,14 @@ export default function AnalyticsScreen() {
                         noOfSections={4}
                         isAnimated
                         animationDuration={800}
-                        backgroundColor={CHART_BG}
+                        backgroundColor={chartColors.chartBg}
                       />
 
                       <View style={styles.miniChartDivider} />
 
                       {/* Mini-chart 2: Total Amount (K TZS) */}
                       <View style={styles.miniChartLegend}>
-                        <View style={[styles.legendDot, { backgroundColor: AMOUNT_HI }]} />
+                        <View style={[styles.legendDot, { backgroundColor: theme.colors.warning }]} />
                         <Text style={[styles.legendLabel, { fontSize: rf(12) }]}>
                           {t('analytics.legend_amount')}
                         </Text>
@@ -699,7 +667,7 @@ export default function AnalyticsScreen() {
                         noOfSections={4}
                         isAnimated
                         animationDuration={800}
-                        backgroundColor={CHART_BG}
+                        backgroundColor={chartColors.chartBg}
                       />
                     </View>
                   )}
@@ -723,9 +691,9 @@ export default function AnalyticsScreen() {
                       .map(([status, count]) => {
                         const cfg = STATUS_CFG[status]
                         return (
-                          <View key={status} style={[statusStyles.pill, { backgroundColor: cfg.bg }]}>
-                            <Text style={[statusStyles.count, { color: cfg.color, fontSize: rf(15) }]}>{count}</Text>
-                            <Text style={[statusStyles.label, { color: cfg.color, fontSize: rf(10) }]}>{cfg.label}</Text>
+                          <View key={status} style={[styles.statusPill, { backgroundColor: cfg.bg }]}>
+                            <Text style={[styles.statusCount, { color: cfg.color, fontSize: rf(15) }]}>{count}</Text>
+                            <Text style={[styles.statusLabel, { color: cfg.color, fontSize: rf(10) }]}>{cfg.label}</Text>
                           </View>
                         )
                       })}
@@ -773,7 +741,7 @@ export default function AnalyticsScreen() {
                   entering={FadeInDown.delay(100).springify().damping(spring.hero.damping).stiffness(spring.hero.stiffness)}
                   style={styles.emptyWrap}
                 >
-                  <HugeiconsIcon icon={OrdersIcon} size={48} color='#D1D5DB' strokeWidth={1} />
+                  <HugeiconsIcon icon={OrdersIcon} size={48} color={theme.colors.textDisabled} strokeWidth={1} />
                   <Text style={[styles.emptyTitle, { fontSize: rf(16) }]}>{t('analytics.no_orders')}</Text>
                   <Text style={[styles.emptySub,   { fontSize: rf(13) }]}>{t('analytics.no_orders_sub')}</Text>
                 </Animated.View>
@@ -788,153 +756,78 @@ export default function AnalyticsScreen() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const statusStyles = StyleSheet.create({
-  /** Each pill's background colour is set inline from `STATUS_CFG`. */
-  pill:  { alignItems: 'center', padding: 10, borderRadius: 12, minWidth: 80, gap: 2 },
-  count: { fontFamily: 'Poppins-Bold' },
-  label: { fontFamily: 'Poppins-Regular', textAlign: 'center' },
-})
+function getStyles(theme: AppTheme) {
+  return StyleSheet.create({
+    safe:   { flex: 1, backgroundColor: theme.colors.background },
+    scroll: { paddingTop: 16 },
 
-const styles = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: '#F8FAFC' },
-  scroll: { paddingTop: 16 },
+    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
+    title:    { fontFamily: 'Poppins-Bold',    color: theme.colors.text },
+    subtitle: { fontFamily: 'Poppins-Regular', color: theme.colors.textSub, marginTop: 2 },
 
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
-  title:    { fontFamily: 'Poppins-Bold', color: '#111827' },
-  subtitle: { fontFamily: 'Poppins-Regular', color: '#6B7280', marginTop: 2 },
+    summaryRow: { flexDirection: 'row' },
 
-  summaryRow: { flexDirection: 'row' },
+    chartCard: {
+      backgroundColor: theme.colors.card,
+      borderRadius: 18,
+      borderWidth: 1,
+      borderColor: theme.colors.divider,
+      overflow: 'hidden',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.04,
+      shadowRadius: 6,
+      elevation: 2,
+    },
+    chartHeader:   { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12, gap: 12 },
+    chartTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    chartTitle:    { fontFamily: 'Poppins-SemiBold', color: theme.colors.text },
+    chartBody: {
+      paddingHorizontal: 8,
+      paddingBottom: 16,
+      minHeight: 180,
+      justifyContent: 'center',
+      backgroundColor: theme.colors.background,
+    },
 
-  // ── Chart card ─────────────────────────────────────────────────────────────
-  chartCard: {
-    backgroundColor: '#fff',
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: '#F0F0F0',
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  chartHeader: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 12,
-    gap: 12,
-  },
-  chartTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  chartTitle: {
-    fontFamily: 'Poppins-SemiBold',
-    color: '#111827',
-  },
-  chartBody: {
-    paddingHorizontal: 8,
-    paddingBottom: 16,
-    minHeight: 180,
-    justifyContent: 'center',
-    backgroundColor: CHART_BG,
-  },
+    dualChartWrap:    { gap: 0 },
+    miniChartLegend:  { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 8, paddingTop: 10, paddingBottom: 2 },
+    legendDot:        { width: 8, height: 8, borderRadius: 4 },
+    legendLabel:      { fontFamily: 'Poppins-Medium', color: theme.colors.text },
+    miniChartDivider: { height: 1, backgroundColor: theme.colors.divider, marginHorizontal: 8, marginTop: 4 },
+    chartLoading:     { padding: 16, gap: 12 },
+    chartEmpty:       { alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 40 },
+    chartEmptyText:   { fontFamily: 'Poppins-Regular', color: theme.colors.textMuted },
+    axisText:         { color: theme.colors.textMuted, fontFamily: 'Poppins-Regular', fontSize: 10 },
 
-  // ── Dual mini-chart layout ─────────────────────────────────────────────────
-  dualChartWrap: { gap: 0 },
-  miniChartLegend: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 8,
-    paddingTop: 10,
-    paddingBottom: 2,
-  },
-  legendDot:   { width: 8, height: 8, borderRadius: 4 },
-  legendLabel: { fontFamily: 'Poppins-Medium', color: '#374151' },
-  miniChartDivider: {
-    height: 1,
-    backgroundColor: '#F0F0F0',
-    marginHorizontal: 8,
-    marginTop: 4,
-  },
-  chartLoading: { padding: 16, gap: 12 },
-  chartEmpty: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    paddingVertical: 40,
-  },
-  chartEmptyText: {
-    fontFamily: 'Poppins-Regular',
-    color: '#9CA3AF',
-  },
-  /** Shared axis label style applied to both the X and Y axis text of the BarCharts. */
-  axisText: {
-    color: '#9CA3AF',
-    fontFamily: 'Poppins-Regular',
-    fontSize: 10,
-  },
+    sectionCard: {
+      backgroundColor: theme.colors.card,
+      borderRadius: 18,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: theme.colors.divider,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.04,
+      shadowRadius: 6,
+      elevation: 2,
+    },
+    sectionTitle: { fontFamily: 'Poppins-SemiBold', color: theme.colors.text, marginBottom: 12 },
+    statusGrid:   { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+    statusPill:   { alignItems: 'center', padding: 10, borderRadius: 12, minWidth: 80, gap: 2 },
+    statusCount:  { fontFamily: 'Poppins-Bold' },
+    statusLabel:  { fontFamily: 'Poppins-Regular', textAlign: 'center' },
 
-  // ── Section card (status breakdown + recent orders) ────────────────────────
-  sectionCard: {
-    backgroundColor: '#fff',
-    borderRadius: 18,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#F0F0F0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  sectionTitle: {
-    fontFamily: 'Poppins-SemiBold',
-    color: '#111827',
-    marginBottom: 12,
-  },
-  statusGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
+    viewAllBtn:  { marginTop: 12, paddingVertical: 10, borderRadius: 10, borderWidth: 1.5, borderColor: theme.colors.primary, alignItems: 'center' },
+    viewAllText: { fontFamily: 'Poppins-SemiBold', color: theme.colors.primary },
 
-  viewAllBtn: {
-    marginTop: 12,
-    paddingVertical: 10,
-    borderRadius: 10,
-    borderWidth: 1.5,
-    borderColor: '#CE4002',
-    alignItems: 'center',
-  },
-  viewAllText: {
-    fontFamily: 'Poppins-SemiBold',
-    color: '#CE4002',
-  },
+    emptyWrap:  { alignItems: 'center', justifyContent: 'center', paddingVertical: 60, gap: 12 },
+    emptyTitle: { fontFamily: 'Poppins-SemiBold', color: theme.colors.text },
+    emptySub:   { fontFamily: 'Poppins-Regular',  color: theme.colors.textMuted, textAlign: 'center', paddingHorizontal: 32 },
 
-  // ── Empty / error states ───────────────────────────────────────────────────
-  emptyWrap: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
-    gap: 12,
-  },
-  emptyTitle: { fontFamily: 'Poppins-SemiBold', color: '#374151' },
-  emptySub:   { fontFamily: 'Poppins-Regular',  color: '#9CA3AF', textAlign: 'center', paddingHorizontal: 32 },
-
-  errorWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 60, gap: 12 },
-  errorText: { fontFamily: 'Poppins-Regular', color: '#6B7280' },
-  retryBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    paddingHorizontal: 20, paddingVertical: 10,
-    borderRadius: 12, borderWidth: 1.5, borderColor: '#CE4002',
-  },
-  retryText: { fontFamily: 'Poppins-SemiBold', color: '#CE4002' },
-})
+    errorWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 60, gap: 12 },
+    errorText: { fontFamily: 'Poppins-Regular', color: theme.colors.textSub },
+    retryBtn:  { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 12, borderWidth: 1.5, borderColor: theme.colors.primary },
+    retryText: { fontFamily: 'Poppins-SemiBold', color: theme.colors.primary },
+  })
+}
