@@ -70,6 +70,7 @@ import {
   ChevronUpIcon,
   Coins01Icon,
   Globe02Icon,
+  Analytics01Icon,
 } from '@hugeicons/core-free-icons'
 
 export type IconSvgElement = Parameters<typeof import('@hugeicons/react-native').HugeiconsIcon>[0]['icon']
@@ -180,6 +181,7 @@ export {
   InformationCircleIcon as InfoIcon,
   Coins01Icon as CoinsIcon,
   Globe02Icon as GlobeIcon,
+  Analytics01Icon as AnalyticsIcon,
 }
 
 // ── Category icon map — maps Ionicons names (in mock data) to Hugeicons ───────

@@ -11,7 +11,30 @@
     "suppliers": "Wasambazaji",
     "orders": "Maagizo",
     "cart": "Kikapu",
-    "profile": "Wasifu"
+    "profile": "Wasifu",
+    "analytics": "Takwimu"
+  },
+  "analytics": {
+    "title": "Takwimu",
+    "subtitle": "Mwenendo wa maagizo",
+    "active_workload": "Mzigo wa Sasa",
+    "orders_in_progress": "Maagizo yanayoendelea",
+    "period_weekly": "Wiki",
+    "period_monthly": "Mwezi",
+    "period_yearly": "Mwaka",
+    "chart_title": "Idadi ya Maagizo",
+    "chart_empty": "Hakuna maagizo katika kipindi hiki",
+    "chart_loading": "Inapakia takwimu…",
+    "status_breakdown": "Mgawanyo wa Hali",
+    "recent_orders": "Maagizo ya Hivi Karibuni",
+    "no_orders": "Hakuna maagizo bado",
+    "no_orders_sub": "Maagizo yako yataonekana hapa mara tu utakapoanza kuyaweka.",
+    "total_orders": "Jumla ya Maagizo",
+    "completed_orders": "Zilizokamilika",
+    "pending_orders": "Zinazongojea",
+    "error_load": "Imeshindwa kupakia takwimu",
+    "legend_orders": "Jumla ya Maagizo",
+    "legend_amount": "Jumla ya Kiasi (K TZS)"
   },
   "onboarding": {
     "skip": "Ruka",
@@ -118,7 +141,13 @@
     "status_dispatched": "Imetumwa",
     "status_dispatched_desc": "Agizo liko njiani",
     "status_delivered": "Imewasilishwa",
-    "status_delivered_desc": "Agizo limepokelewa kwa mafanikio"
+    "status_delivered_desc": "Agizo limepokelewa kwa mafanikio",
+    "total_spent": "Jumla Iliyotumika",
+    "amount_period_day": "Leo",
+    "amount_period_month": "Mwezi",
+    "amount_period_year": "Mwaka",
+    "recent_orders": "Maagizo ya Hivi Karibuni",
+    "view_all": "Tazama Yote"
   },
   "suppliers": {
     "title": "Wasambazaji",
@@ -191,7 +220,24 @@
     "quote_banner_title": "Nukuu Ipo Tayari",
     "quote_banner_body": "Msambazaji ametuma bei za bidhaa zako. Angalia bidhaa hapa chini kisha kubali au kataa.",
     "rejection_section": "Sababu ya Kukataliwa",
-    "rejection_no_reason": "Hakuna sababu iliyotolewa."
+    "rejection_no_reason": "Hakuna sababu iliyotolewa.",
+    "dispatch_banner_title": "Agizo Liko Njiani",
+    "dispatch_banner_body": "Agizo lako limetumwa na msambazaji. Thibitisha kupokea mara linapofika.",
+    "delivery_actions_note": "Je, agizo hili limewasilishwa kwako?",
+    "mark_delivered": "Thibitisha Kupokea",
+    "not_delivered": "Haijawasilishwa",
+    "confirm_delivered_title": "Thibitisha Utoaji",
+    "confirm_delivered_message": "Thibitisha kuwa umepokea agizo hili?",
+    "confirm_delivered_btn": "Ndiyo, Nimepokea",
+    "delivered_success": "Agizo limewekwa kama limewasilishwa",
+    "delivered_error": "Haikuweza kuthibitisha utoaji",
+    "issue_modal_title": "Ripoti Tatizo la Utoaji",
+    "issue_modal_subtitle": "Elezea tatizo la utoaji huu:",
+    "issue_reason_placeholder": "mf. Agizo halijakuja, bidhaa zisizo sahihi…",
+    "issue_reason_required": "Tafadhali elezea tatizo",
+    "issue_submit": "Wasilisha Ripoti",
+    "issue_success": "Tatizo limeripotiwa",
+    "issue_error": "Haikuweza kuwasilisha ripoti"
   },
   "cart": {
     "title": "Kikapu Changu",

@@ -154,12 +154,12 @@ export default function OrdersScreen() {
             numColumns={ordersColumns}
             renderItem={({ item, index }) => {
               if (!isMultiCol) {
-                return <OrderCard order={item} onPress={() => router.push(`/order/${item.order_id}`)} />
+                return <OrderCard order={item} index={index} onPress={() => router.push(`/order/${item.order_id}`)} />
               }
               const isLastCol = (index + 1) % ordersColumns === 0
               return (
                 <View style={[styles.gridItem, !isLastCol && { paddingRight: gap }]}>
-                  <OrderCard order={item} onPress={() => router.push(`/order/${item.order_id}`)} />
+                  <OrderCard order={item} index={index} onPress={() => router.push(`/order/${item.order_id}`)} />
                 </View>
               )
             }}

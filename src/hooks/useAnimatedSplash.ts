@@ -7,15 +7,14 @@ import {
   withSequence,
   withDelay,
   withRepeat,
-  runOnJS,
   Easing,
 } from 'react-native-reanimated'
+import { scheduleOnRN } from 'react-native-worklets'
 import { Dimensions } from 'react-native'
 
 const { width: SCREEN_W } = Dimensions.get('window')
-const LOGO_SIZE = 128 // w-32
+const LOGO_SIZE = 128
 
-// 6 decorative particle circles — fixed positions & sizes
 const PARTICLES = [
   { x: -40,           y: 80,            size: 160, opacity: 0.08, phase: 0 },
   { x: SCREEN_W - 80, y: 40,            size: 96,  opacity: 0.06, phase: 1 },
@@ -30,9 +29,14 @@ export { PARTICLES, LOGO_SIZE }
 
 export function useAnimatedSplash(onComplete: () => void) {
   // ── Shared values ─────────────────────────────────────────────────────────
-  const bgOpacity      = useSharedValue(0)
-  // Separate exit value so triggerExit() controls the final bg fade independently
-  const exitBgOpacity  = useSharedValue(1)
+  //
+  // masterOpacity is the single source of truth for the entire splash's
+  // visibility. Everything — gradient, particles, logo, text — lives inside
+  // one Animated.View that carries this opacity. Entrance and exit are
+  // therefore always perfectly simultaneous.
+  const masterOpacity  = useSharedValue(0)
+
+  // Internal motion values (transform-only, no separate opacity control)
   const logoScale      = useSharedValue(0)
   const logoIconRotate = useSharedValue(0)
   const shimmerX       = useSharedValue(-LOGO_SIZE)
@@ -40,27 +44,23 @@ export function useAnimatedSplash(onComplete: () => void) {
   const ripple1Opacity = useSharedValue(0)
   const ripple2Scale   = useSharedValue(1)
   const ripple2Opacity = useSharedValue(0)
-  const titleY         = useSharedValue(40)
-  const titleOpacity   = useSharedValue(0)
+  const titleY         = useSharedValue(30)
   const titleScale     = useSharedValue(1)
-  const taglineY       = useSharedValue(10)
-  const taglineOpacity = useSharedValue(0)
+  const taglineY       = useSharedValue(8)
   const exitScale      = useSharedValue(1)
-  const exitOpacity    = useSharedValue(1)
+  // readySignal fires onComplete via a zero-duration timing with no visual effect.
+  const readySignal    = useSharedValue(0)
 
-  // Particle float values (one per circle)
-  const p0Y = useSharedValue(0)
-  const p1Y = useSharedValue(0)
-  const p2Y = useSharedValue(0)
-  const p3Y = useSharedValue(0)
-  const p4Y = useSharedValue(0)
-  const p5Y = useSharedValue(0)
+  const p0Y = useSharedValue(0); const p1Y = useSharedValue(0)
+  const p2Y = useSharedValue(0); const p3Y = useSharedValue(0)
+  const p4Y = useSharedValue(0); const p5Y = useSharedValue(0)
   const particleYValues = [p0Y, p1Y, p2Y, p3Y, p4Y, p5Y]
 
   // ── Animated styles ───────────────────────────────────────────────────────
-  const backgroundStyle = useAnimatedStyle(() => ({
-    // bgOpacity handles the fade-IN; exitBgOpacity handles the final fade-OUT
-    opacity: bgOpacity.value * exitBgOpacity.value,
+
+  // Single master wrapper — controls the opacity of the entire splash screen.
+  const masterStyle = useAnimatedStyle(() => ({
+    opacity: masterOpacity.value,
   }))
 
   const logoCircleStyle = useAnimatedStyle(() => ({
@@ -85,22 +85,21 @@ export function useAnimatedSplash(onComplete: () => void) {
     opacity: ripple2Opacity.value,
   }))
 
+  // Title and tagline: transform-only (no opacity — masterOpacity owns visibility)
   const titleStyle = useAnimatedStyle(() => ({
     transform: [
       { translateY: titleY.value },
       { scale: titleScale.value },
     ],
-    opacity: titleOpacity.value,
   }))
 
   const taglineStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: taglineY.value }],
-    opacity: taglineOpacity.value,
   }))
 
+  // exitContainerStyle: scale-up effect on exit only (no opacity — master handles it)
   const exitContainerStyle = useAnimatedStyle(() => ({
     transform: [{ scale: exitScale.value }],
-    opacity: exitOpacity.value,
   }))
 
   const particleStyles = particleYValues.map((pY) =>
@@ -113,55 +112,45 @@ export function useAnimatedSplash(onComplete: () => void) {
     const EASE_OUT = Easing.out(Easing.cubic)
     const EASE_IN  = Easing.in(Easing.cubic)
 
-    // 400ms — background fades IN
-    bgOpacity.value = withTiming(1, { duration: 400, easing: EASE_OUT })
+    // t=0 — everything fades in together as one unit
+    masterOpacity.value = withTiming(1, { duration: 380, easing: EASE_OUT })
 
-    // 300ms — particles begin floating (continuous)
+    // t=0 — particles begin floating (continuous, no delay so they're moving on reveal)
     particleYValues.forEach((pY, i) => {
-      pY.value = withDelay(
-        300 + i * 80,
-        withRepeat(
-          withSequence(
-            withTiming(-12, { duration: 3000 + i * 400, easing: Easing.inOut(Easing.sin) }),
-            withTiming(12,  { duration: 3000 + i * 400, easing: Easing.inOut(Easing.sin) }),
-          ),
-          -1,
-          true,
+      pY.value = withRepeat(
+        withSequence(
+          withTiming(-12, { duration: 3000 + i * 400, easing: Easing.inOut(Easing.sin) }),
+          withTiming(12,  { duration: 3000 + i * 400, easing: Easing.inOut(Easing.sin) }),
         ),
+        -1,
+        true,
       )
     })
 
-    // 600ms — logo circle spring bounce in
-    logoScale.value = withDelay(
-      600,
-      withSpring(1, { damping: 12, stiffness: 180, mass: 0.8 }),
-    )
+    // t=0 — logo circle spring bounce (starts immediately with the fade-in)
+    logoScale.value = withSpring(1, { damping: 12, stiffness: 180, mass: 0.8 })
 
-    // 900ms — logo icon rotates 360° once
+    // t=300ms — logo icon rotates 360° once
     logoIconRotate.value = withDelay(
-      900,
+      300,
       withTiming(360, { duration: 600, easing: Easing.inOut(Easing.quad) }),
     )
 
-    // 1100ms — shimmer sweep
+    // t=500ms — shimmer sweep
     shimmerX.value = withDelay(
-      1100,
+      500,
       withTiming(LOGO_SIZE + 20, { duration: 400, easing: Easing.out(Easing.quad) }),
     )
 
-    // 1300ms — title rises + fades in
+    // t=200ms — title rises into position
     titleY.value = withDelay(
-      1300,
+      200,
       withSpring(0, { damping: 18, stiffness: 120 }),
     )
-    titleOpacity.value = withDelay(
-      1300,
-      withTiming(1, { duration: 400, easing: EASE_OUT }),
-    )
 
-    // 1750ms — subtle breathing pulse on title
+    // t=600ms — subtle breathing pulse on title (runs indefinitely)
     titleScale.value = withDelay(
-      1750,
+      600,
       withRepeat(
         withSequence(
           withTiming(1.02, { duration: 1800, easing: Easing.inOut(Easing.sin) }),
@@ -172,69 +161,62 @@ export function useAnimatedSplash(onComplete: () => void) {
       ),
     )
 
-    // 1600ms — tagline fades in
-    taglineOpacity.value = withDelay(
-      1600,
-      withTiming(1, { duration: 500, easing: EASE_OUT }),
-    )
+    // t=350ms — tagline slides up into position
     taglineY.value = withDelay(
-      1600,
-      withTiming(0, { duration: 500, easing: EASE_OUT }),
+      350,
+      withTiming(0, { duration: 400, easing: EASE_OUT }),
     )
 
-    // 1900ms — ripple 1
-    ripple1Opacity.value = withDelay(
-      1900,
-      withTiming(0, { duration: 800, easing: EASE_IN }),
-    )
-    ripple1Scale.value = withDelay(
-      1900,
+    // t=700ms — ripple 1
+    ripple1Opacity.value = withDelay(700, withTiming(0, { duration: 800, easing: EASE_IN }))
+    ripple1Scale.value   = withDelay(
+      700,
       withSequence(
         withTiming(0.4, { duration: 0 }),
         withTiming(2.5, { duration: 800, easing: EASE_IN }),
       ),
     )
 
-    // 2200ms — ripple 2
-    ripple2Opacity.value = withDelay(
-      2200,
-      withTiming(0, { duration: 800, easing: EASE_IN }),
-    )
-    ripple2Scale.value = withDelay(
-      2200,
+    // t=1000ms — ripple 2
+    ripple2Opacity.value = withDelay(1000, withTiming(0, { duration: 800, easing: EASE_IN }))
+    ripple2Scale.value   = withDelay(
+      1000,
       withSequence(
         withTiming(0.4, { duration: 0 }),
         withTiming(2.5, { duration: 800, easing: EASE_IN }),
       ),
     )
 
-    // 2800ms — exit: content scales up slightly and fades out
-    exitScale.value = withDelay(
-      2800,
-      withTiming(1.06, { duration: 400, easing: EASE_IN }),
-    )
-    // When content finishes fading, signal that the primary animation is done.
-    // Background stays solid — triggerExit() handles the final bg fade separately.
-    exitOpacity.value = withDelay(
-      2800,
-      withTiming(0, { duration: 400, easing: EASE_IN }, (finished) => {
-        if (finished) runOnJS(onComplete)()
+    // t=2000ms — signal that the entrance is complete; no visual change here.
+    // triggerExit() is responsible for all exit visuals.
+    readySignal.value = withDelay(
+      2000,
+      withTiming(1, { duration: 1 }, (finished) => {
+        if (finished) scheduleOnRN(onComplete)
       }),
     )
   }, [onComplete]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Final exit (call this only when ready to navigate) ────────────────────
-  // Fades the background to transparent then calls onDone on the JS thread.
+  // ── Final exit ────────────────────────────────────────────────────────────
+  // Fades the master opacity to 0 and scales the content up slightly.
+  // Background, particles, logo, title and tagline all disappear in one motion.
   function triggerExit(onDone: () => void) {
-    exitBgOpacity.value = withTiming(
+    const DURATION = 320
+    const ease     = Easing.in(Easing.cubic)
+
+    // Scale-up gives a subtle "pull away" feel as everything fades
+    exitScale.value = withTiming(1.06, { duration: DURATION, easing: ease })
+
+    // Single fade-out drives everything simultaneously
+    masterOpacity.value = withTiming(
       0,
-      { duration: 300, easing: Easing.in(Easing.cubic) },
-      (finished) => { if (finished) runOnJS(onDone)() },
+      { duration: DURATION, easing: ease },
+      (finished) => { if (finished) scheduleOnRN(onDone) },
     )
   }
 
   return {
-    backgroundStyle,
+    masterStyle,
     logoCircleStyle,
     logoIconStyle,
     shimmerStyle,

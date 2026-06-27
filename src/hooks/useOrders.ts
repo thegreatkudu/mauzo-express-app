@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getOrders, getOrderSummary, getOrderDetail, acceptOrder, rejectOrder } from '@/api/orders'
+import { getOrders, getOrderSummary, getOrderDetail, acceptOrder, rejectOrder, markDelivered, reportDeliveryIssue } from '@/api/orders'
 
 export function useOrders() {
   return useQuery({
@@ -47,6 +47,30 @@ export function useRejectOrder() {
       qc.invalidateQueries({ queryKey: ['order', orderId] })
       qc.invalidateQueries({ queryKey: ['orders'] })
       qc.invalidateQueries({ queryKey: ['orders-summary'] })
+    },
+  })
+}
+
+export function useMarkDelivered() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (orderId: string) => markDelivered(orderId),
+    onSuccess: (_data, orderId) => {
+      qc.invalidateQueries({ queryKey: ['order', orderId] })
+      qc.invalidateQueries({ queryKey: ['orders'] })
+      qc.invalidateQueries({ queryKey: ['orders-summary'] })
+    },
+  })
+}
+
+export function useReportDeliveryIssue() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ orderId, reason }: { orderId: string; reason: string }) =>
+      reportDeliveryIssue(orderId, reason),
+    onSuccess: (_data, { orderId }) => {
+      qc.invalidateQueries({ queryKey: ['order', orderId] })
+      qc.invalidateQueries({ queryKey: ['orders'] })
     },
   })
 }
