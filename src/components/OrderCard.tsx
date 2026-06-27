@@ -33,6 +33,8 @@ import { useTranslation } from 'react-i18next'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { formatDate, formatOrderId } from '@/utils/date'
 import { spring, listStagger } from '@/constants/animations'
+import { useTheme, useThemeStyles } from '@/hooks/use-theme'
+import type { AppTheme } from '@/hooks/use-theme'
 import type { Order } from '@/types'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -84,6 +86,8 @@ const OrderCard = memo(function OrderCard({ order, onPress, index = 0 }: OrderCa
 
   const { rf, isTablet } = useResponsive()
   const { t } = useTranslation()
+  const { theme } = useTheme()
+  const styles = useThemeStyles(getStyles)
 
   return (
     // Reanimated wrapper drives the staggered entrance.
@@ -111,7 +115,7 @@ const OrderCard = memo(function OrderCard({ order, onPress, index = 0 }: OrderCa
 
         {/* ── Row 2: Supplier name ── */}
         <View style={styles.metaRow}>
-          <HugeiconsIcon icon={BuildingIcon} size={13} color='#9CA3AF' strokeWidth={1.5} />
+          <HugeiconsIcon icon={BuildingIcon} size={13} color={theme.colors.textMuted} strokeWidth={1.5} />
           <Text style={[styles.metaText, { fontSize: rf(12) }]} numberOfLines={1}>
             {order.supplier.business_name}
           </Text>
@@ -127,7 +131,7 @@ const OrderCard = memo(function OrderCard({ order, onPress, index = 0 }: OrderCa
         {/* ── Row 4: Date + quoted total ── */}
         <View style={styles.bottomRow}>
           <View style={styles.dateRow}>
-            <HugeiconsIcon icon={CalendarIcon} size={12} color='#9CA3AF' strokeWidth={1.5} />
+            <HugeiconsIcon icon={CalendarIcon} size={12} color={theme.colors.textMuted} strokeWidth={1.5} />
             <Text style={[styles.dateText, { fontSize: rf(11) }]}>
               {formatDate(order.created_at)}
             </Text>
@@ -146,76 +150,35 @@ const OrderCard = memo(function OrderCard({ order, onPress, index = 0 }: OrderCa
 
 export default OrderCard
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
+function getStyles(theme: AppTheme) {
+  return StyleSheet.create({
+    card: {
+      backgroundColor: theme.colors.card,
+      borderRadius:    16,
+      padding:         16,
+      marginBottom:    10,
+      borderWidth:     1,
+      borderColor:     theme.colors.border,
+      shadowColor:     '#000',
+      shadowOffset:    { width: 0, height: 2 },
+      shadowOpacity:   theme.isDark ? 0 : 0.04,
+      shadowRadius:    5,
+      elevation:       2,
+      gap:             8,
+    },
+    cardTablet: { marginBottom: 0, borderRadius: 18, padding: 18 },
 
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#F0F0F0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 5,
-    elevation: 2,
-    gap: 8,
-  },
-  /** Slightly larger radius and padding on tablet to match the denser layout. */
-  cardTablet: {
-    marginBottom: 0,
-    borderRadius: 18,
-    padding: 18,
-  },
+    topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    orderId: { fontFamily: 'Poppins-Bold', color: theme.colors.text, flexShrink: 1, marginRight: 8 },
 
-  topRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  orderId: {
-    fontFamily: 'Poppins-Bold',
-    color: '#111827',
-    flexShrink: 1,
-    marginRight: 8,
-  },
+    metaRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+    metaText: { fontFamily: 'Poppins-Regular', color: theme.colors.textSub, flex: 1 },
 
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-  },
-  metaText: {
-    fontFamily: 'Poppins-Regular',
-    color: '#6B7280',
-    flex: 1,
-  },
+    product: { fontFamily: 'Poppins-Medium', color: theme.colors.textSub },
 
-  product: {
-    fontFamily: 'Poppins-Medium',
-    color: '#374151',
-  },
-
-  bottomRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 2,
-  },
-  dateRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  dateText: {
-    fontFamily: 'Poppins-Regular',
-    color: '#9CA3AF',
-  },
-  /** Brand-coloured total reinforces the monetary weight of the figure. */
-  total: {
-    fontFamily: 'Poppins-Bold',
-    color: '#CE4002',
-  },
-})
+    bottomRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 2 },
+    dateRow:   { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    dateText:  { fontFamily: 'Poppins-Regular', color: theme.colors.textMuted },
+    total:     { fontFamily: 'Poppins-Bold', color: theme.colors.primary },
+  })
+}

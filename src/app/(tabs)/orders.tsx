@@ -11,7 +11,8 @@ import { HugeiconsIcon } from '@hugeicons/react-native'
 import { useTranslation } from 'react-i18next'
 import { useOrders } from '@/hooks/useOrders'
 import { useResponsive } from '@/hooks/useResponsive'
-import { useTheme } from '@/hooks/use-theme'
+import { useTheme, useThemeStyles } from '@/hooks/use-theme'
+import type { AppTheme } from '@/hooks/use-theme'
 import OrderCard from '@/components/OrderCard'
 import EmptyState from '@/components/ui/EmptyState'
 import { OrderCardSkeleton } from '@/components/skeletons'
@@ -30,6 +31,7 @@ export default function OrdersScreen() {
   const { hp, rf, gap, ordersColumns, contentMaxWidth } = useResponsive()
   const { t } = useTranslation()
   const { theme } = useTheme()
+  const styles = useThemeStyles(getStyles)
 
   const FILTERS: { key: FilterKey; label: string }[] = [
     { key: 'all',            label: t('orders.filter_all') },
@@ -70,7 +72,7 @@ export default function OrdersScreen() {
   const hasSearch = search.trim().length > 0
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.colors.background }]} edges={['top']}>
+    <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={contentMaxWidth ? { flex: 1, maxWidth: contentMaxWidth, alignSelf: 'center', width: '100%' } : { flex: 1 }}>
 
         <View style={[styles.header, { paddingHorizontal: hp }]}>
@@ -83,11 +85,11 @@ export default function OrdersScreen() {
         {/* Search bar */}
         <View style={[styles.searchWrap, { paddingHorizontal: hp }]}>
           <View style={styles.searchBar}>
-            <HugeiconsIcon icon={SearchIcon} size={18} color='#9CA3AF' strokeWidth={1.5} />
+            <HugeiconsIcon icon={SearchIcon} size={18} color={theme.colors.textMuted} strokeWidth={1.5} />
             <TextInput
               style={[styles.searchInput, { fontSize: rf(14) }]}
               placeholder={t('orders.search_placeholder')}
-              placeholderTextColor='#9CA3AF'
+              placeholderTextColor={theme.colors.placeholder}
               value={search}
               onChangeText={setSearch}
               returnKeyType='search'
@@ -95,7 +97,7 @@ export default function OrdersScreen() {
             />
             {hasSearch && (
               <TouchableOpacity onPress={() => setSearch('')} hitSlop={8}>
-                <HugeiconsIcon icon={CloseIcon} size={16} color='#9CA3AF' strokeWidth={1.5} />
+                <HugeiconsIcon icon={CloseIcon} size={16} color={theme.colors.textMuted} strokeWidth={1.5} />
               </TouchableOpacity>
             )}
           </View>
@@ -145,7 +147,7 @@ export default function OrdersScreen() {
           <View style={styles.errorWrap}>
             <Text style={[styles.errorText, { fontSize: rf(14) }]}>{t('orders.error_load')}</Text>
             <TouchableOpacity style={styles.retryBtn} onPress={() => refetch()} activeOpacity={0.8}>
-              <HugeiconsIcon icon={RefreshIcon} size={16} color='#CE4002' strokeWidth={2} />
+              <HugeiconsIcon icon={RefreshIcon} size={16} color={theme.colors.primary} strokeWidth={2} />
               <Text style={[styles.retryText, { fontSize: rf(14) }]}>{t('common.retry')}</Text>
             </TouchableOpacity>
           </View>
@@ -168,7 +170,7 @@ export default function OrdersScreen() {
             contentContainerStyle={{ ...styles.list, paddingHorizontal: hp }}
             showsVerticalScrollIndicator={false}
             refreshControl={
-              <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor='#CE4002' />
+              <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={theme.colors.primary} />
             }
             ListEmptyComponent={
               <EmptyState
@@ -198,65 +200,63 @@ export default function OrdersScreen() {
   )
 }
 
-const styles = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: '#F8FAFC' },
+function getStyles(theme: AppTheme) {
+  return StyleSheet.create({
+    safe:   { flex: 1, backgroundColor: theme.colors.background },
 
-  header: { paddingTop: 16, paddingBottom: 4 },
-  title:    { fontFamily: 'Poppins-Bold',    color: '#111827' },
-  subtitle: { fontFamily: 'Poppins-Regular', color: '#6B7280', marginTop: 2 },
+    header:   { paddingTop: 16, paddingBottom: 4 },
+    title:    { fontFamily: 'Poppins-Bold',    color: theme.colors.text },
+    subtitle: { fontFamily: 'Poppins-Regular', color: theme.colors.textSub, marginTop: 2 },
 
-  searchWrap: { paddingVertical: 8 },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: '#F4F4F2',
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
-  searchInput: {
-    flex: 1,
-    fontFamily: 'Poppins-Regular',
-    color: '#111827',
-    padding: 0,
-  },
+    searchWrap: { paddingVertical: 8 },
+    searchBar: {
+      flexDirection:     'row',
+      alignItems:        'center',
+      gap:               10,
+      backgroundColor:   theme.colors.inputBg,
+      borderRadius:      14,
+      paddingHorizontal: 14,
+      paddingVertical:   12,
+    },
+    searchInput: {
+      flex:       1,
+      fontFamily: 'Poppins-Regular',
+      color:      theme.colors.text,
+      padding:    0,
+    },
 
-  filtersScroll: { flexGrow: 0 },
-  filtersRow: {
-    paddingVertical: 8,
-    gap: 8,
-  },
-  filterTab: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#ECECEC',
-  },
-  filterTabActive: {
-    backgroundColor: '#CE4002',
-    borderColor: '#CE4002',
-  },
-  filterText: {
-    fontFamily: 'Poppins-Medium',
-    color: '#6B7280',
-  },
-  filterTextActive: {
-    color: '#fff',
-    fontFamily: 'Poppins-SemiBold',
-  },
+    filtersScroll: { flexGrow: 0 },
+    filtersRow:    { paddingVertical: 8, gap: 8 },
+    filterTab: {
+      paddingHorizontal: 16,
+      paddingVertical:   8,
+      borderRadius:      20,
+      backgroundColor:   theme.colors.card,
+      borderWidth:       1,
+      borderColor:       theme.colors.border,
+    },
+    filterTabActive: {
+      backgroundColor: theme.colors.primary,
+      borderColor:     theme.colors.primary,
+    },
+    filterText:       { fontFamily: 'Poppins-Medium',   color: theme.colors.textSub },
+    filterTextActive: { fontFamily: 'Poppins-SemiBold', color: '#fff' },
 
-  list: { paddingBottom: 24 },
-  gridItem: { flex: 1, paddingBottom: 10 },
+    list:     { paddingBottom: 24 },
+    gridItem: { flex: 1, paddingBottom: 10 },
 
-  errorWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
-  errorText: { fontFamily: 'Poppins-Regular', color: '#6B7280' },
-  retryBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    paddingHorizontal: 20, paddingVertical: 10,
-    borderRadius: 12, borderWidth: 1.5, borderColor: '#CE4002',
-  },
-  retryText: { fontFamily: 'Poppins-SemiBold', color: '#CE4002' },
-})
+    errorWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
+    errorText: { fontFamily: 'Poppins-Regular', color: theme.colors.textSub },
+    retryBtn: {
+      flexDirection:     'row',
+      alignItems:        'center',
+      gap:               6,
+      paddingHorizontal: 20,
+      paddingVertical:   10,
+      borderRadius:      12,
+      borderWidth:       1.5,
+      borderColor:       theme.colors.primary,
+    },
+    retryText: { fontFamily: 'Poppins-SemiBold', color: theme.colors.primary },
+  })
+}

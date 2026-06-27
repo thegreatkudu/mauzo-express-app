@@ -3,6 +3,7 @@ import {
   Linking, ScrollView,
   StyleSheet, Text, TouchableOpacity, View,
 } from 'react-native'
+import { LinearGradient } from 'expo-linear-gradient'
 import { SubscriptionSkeleton } from '@/components/skeletons'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
@@ -10,16 +11,18 @@ import { HugeiconsIcon } from '@hugeicons/react-native'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
-import { getSubscriptionPrices, getSubscriptionStatus } from '@/api/subscription'
+import { getSubscriptionPrices } from '@/api/subscription'
 import { useAuthStore } from '@/store/auth.store'
 import { ADMIN_PHONE } from '@/constants/config'
 import { CrownIcon, PhoneIcon, CheckCircleIcon } from '@/constants/icons'
-import { useTheme } from '@/hooks/use-theme'
+import { useTheme, useThemeStyles } from '@/hooks/use-theme'
+import type { AppTheme } from '@/hooks/use-theme'
 import type { SubscriptionPlan } from '@/types'
 
 export default function SubscriptionScreen() {
   const { t } = useTranslation()
   const { theme } = useTheme()
+  const styles = useThemeStyles(getStyles)
 
   const PLAN_FEATURES = [
     t('subscription.features.browse'),
@@ -29,6 +32,7 @@ export default function SubscriptionScreen() {
     t('subscription.features.history'),
     t('subscription.features.notifications'),
   ]
+
   const profile = useAuthStore(s => s.profile)
   const sub = profile?.subscription
 
@@ -51,256 +55,298 @@ export default function SubscriptionScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.colors.background }]} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
 
-        {/* Header */}
-        <View style={styles.header}>
+        {/* ── Gradient hero ── */}
+        <LinearGradient
+          colors={['#8C2800', '#CE4002', '#E8621A']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.gradientHero}
+        >
           <View style={styles.crownWrap}>
-            <HugeiconsIcon icon={CrownIcon} size={36} color='#D97706' strokeWidth={1.5} />
+            <HugeiconsIcon icon={CrownIcon} size={32} color='#FCD34D' strokeWidth={1.5} />
           </View>
-          <Text style={styles.title}>{t('subscription.title')}</Text>
-          <Text style={styles.subtitle}>
+          <Text style={styles.heroTitle}>{t('subscription.title')}</Text>
+          <Text style={styles.heroSubtitle}>
             {isExpired
               ? t('subscription.subtitle_expired')
-              : t(daysLeft !== 1 ? 'subscription.subtitle_trial_other' : 'subscription.subtitle_trial_one', { count: daysLeft })
-            }
+              : t(daysLeft !== 1 ? 'subscription.subtitle_trial_other' : 'subscription.subtitle_trial_one', { count: daysLeft })}
           </Text>
-        </View>
+        </LinearGradient>
 
-        {/* Status banner */}
+        {/* ── Status banner (floats below gradient) ── */}
         {sub && (
-          <View style={[styles.statusBanner, isExpired ? styles.statusBannerExpired : styles.statusBannerTrial]}>
-            <Text style={[styles.statusText, isExpired ? styles.statusTextExpired : styles.statusTextTrial]}>
-              {isExpired
-                ? t('subscription.status_expired')
-                : t(daysLeft !== 1 ? 'subscription.status_trial_other' : 'subscription.status_trial_one', { count: daysLeft })
-              }
-            </Text>
+          <View style={styles.statusWrap}>
+            <View style={[styles.statusBanner, isExpired ? styles.statusExpired : styles.statusTrial]}>
+              <Text style={[styles.statusText, isExpired ? styles.statusTextExpired : styles.statusTextTrial]}>
+                {isExpired
+                  ? t('subscription.status_expired')
+                  : t(daysLeft !== 1 ? 'subscription.status_trial_other' : 'subscription.status_trial_one', { count: daysLeft })}
+              </Text>
+            </View>
           </View>
         )}
 
-        {/* Plan cards */}
-        <Text style={styles.sectionTitle}>{t('subscription.choose_plan')}</Text>
-        {isLoading ? (
-          <SubscriptionSkeleton />
-        ) : (
-          <View style={styles.plansGrid}>
-            {(plans ?? []).map(plan => (
-              <PlanCard
-                key={plan.id}
-                plan={plan}
-                selected={selectedPlanId === plan.id}
-                onSelect={() => setSelectedPlanId(plan.id)}
-              />
+        <View style={styles.body}>
+          {/* ── Plan cards ── */}
+          <Text style={styles.sectionTitle}>{t('subscription.choose_plan')}</Text>
+          {isLoading ? (
+            <SubscriptionSkeleton />
+          ) : (
+            <View style={styles.plansGrid}>
+              {(plans ?? []).map(plan => (
+                <PlanCard
+                  key={plan.id}
+                  plan={plan}
+                  selected={selectedPlanId === plan.id}
+                  onSelect={() => setSelectedPlanId(plan.id)}
+                  theme={theme}
+                />
+              ))}
+            </View>
+          )}
+
+          {/* ── Features ── */}
+          <View style={styles.featuresCard}>
+            <Text style={styles.featuresTitle}>{t('subscription.whats_included')}</Text>
+            {PLAN_FEATURES.map((f, i) => (
+              <View key={i} style={styles.featureRow}>
+                <View style={styles.checkWrap}>
+                  <HugeiconsIcon icon={CheckCircleIcon} size={14} color={theme.colors.success} strokeWidth={2} />
+                </View>
+                <Text style={styles.featureText}>{f}</Text>
+              </View>
             ))}
           </View>
-        )}
 
-        {/* Features */}
-        <View style={styles.featuresCard}>
-          <Text style={styles.featuresTitle}>{t('subscription.whats_included')}</Text>
-          {PLAN_FEATURES.map((f, i) => (
-            <View key={i} style={styles.featureRow}>
-              <HugeiconsIcon icon={CheckCircleIcon} size={16} color='#059669' strokeWidth={2} />
-              <Text style={styles.featureText}>{f}</Text>
-            </View>
-          ))}
+          {/* ── CTA ── */}
+          <View style={styles.ctaSection}>
+            <Text style={styles.ctaNote}>{t('subscription.cta_note')}</Text>
+            <TouchableOpacity
+              style={styles.callBtn}
+              onPress={handleSubscribe}
+              activeOpacity={0.88}
+            >
+              <HugeiconsIcon icon={PhoneIcon} size={20} color='#fff' strokeWidth={2} />
+              <Text style={styles.callBtnText}>{t('subscription.call_admin')}</Text>
+            </TouchableOpacity>
+            <Text style={styles.adminPhone}>{ADMIN_PHONE}</Text>
+          </View>
+
+          {/* ── Continue on trial ── */}
+          {!isExpired && (
+            <TouchableOpacity
+              style={styles.skipLink}
+              onPress={() => router.push('/(tabs)')}
+              hitSlop={8}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.skipLinkText}>{t('subscription.continue_trial')}</Text>
+            </TouchableOpacity>
+          )}
         </View>
-
-        {/* Subscribe CTA */}
-        <View style={styles.ctaSection}>
-          <Text style={styles.ctaNote}>{t('subscription.cta_note')}</Text>
-          <TouchableOpacity
-            style={styles.callBtn}
-            onPress={handleSubscribe}
-            activeOpacity={0.88}
-          >
-            <HugeiconsIcon icon={PhoneIcon} size={20} color='#fff' strokeWidth={2} />
-            <Text style={styles.callBtnText}>{t('subscription.call_admin')}</Text>
-          </TouchableOpacity>
-          <Text style={styles.adminPhone}>{ADMIN_PHONE}</Text>
-        </View>
-
-        {/* Continue in read-only mode */}
-        {!isExpired && (
-          <TouchableOpacity
-            style={styles.skipLink}
-            onPress={() => router.push('/(tabs)')}
-            hitSlop={8}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.skipLinkText}>{t('subscription.continue_trial')}</Text>
-          </TouchableOpacity>
-        )}
 
       </ScrollView>
     </SafeAreaView>
   )
 }
 
-function PlanCard({ plan, selected, onSelect }: {
+function PlanCard({ plan, selected, onSelect, theme }: {
   plan: SubscriptionPlan
   selected: boolean
   onSelect: () => void
+  theme: AppTheme
 }) {
   const { t } = useTranslation()
   return (
     <TouchableOpacity
-      style={[styles.planCard, selected && styles.planCardSelected]}
+      style={[
+        {
+          width: '47.5%' as const,
+          backgroundColor: theme.colors.card,
+          borderRadius: 16,
+          padding: 16,
+          borderWidth: 1.5,
+          borderColor: theme.colors.border,
+          gap: 4,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: theme.isDark ? 0 : 0.04,
+          shadowRadius: 5,
+          elevation: 2,
+          position: 'relative' as const,
+        },
+        selected && { borderColor: theme.colors.primary, backgroundColor: theme.colors.primaryLight },
+      ]}
       onPress={onSelect}
       activeOpacity={0.85}
     >
       {selected && (
-        <View style={styles.planSelectedDot}>
+        <View style={{
+          position: 'absolute', top: 12, right: 12,
+          width: 22, height: 22, borderRadius: 11,
+          backgroundColor: theme.colors.primary,
+          alignItems: 'center', justifyContent: 'center',
+        }}>
           <HugeiconsIcon icon={CheckCircleIcon} size={14} color='#fff' strokeWidth={2.5} />
         </View>
       )}
-      <Text style={[styles.planName, selected && styles.planNameSelected]}>{plan.name}</Text>
-      <Text style={[styles.planDuration, selected && styles.planTextSelected]}>
+      <Text style={{ fontSize: 14, fontFamily: 'Poppins-Bold', color: selected ? theme.colors.primary : theme.colors.text }}>
+        {plan.name}
+      </Text>
+      <Text style={{ fontSize: 12, fontFamily: 'Poppins-Regular', color: selected ? theme.colors.primary : theme.colors.textSub }}>
         {t(plan.duration_months !== 1 ? 'subscription.plan_month_other' : 'subscription.plan_month_one', { count: plan.duration_months })}
       </Text>
-      <Text style={[styles.planPrice, selected && styles.planPriceSelected]}>
+      <Text style={{ fontSize: 16, fontFamily: 'Poppins-Bold', marginTop: 8, color: selected ? theme.colors.primary : theme.colors.text }}>
         TZS {plan.price.toLocaleString()}
       </Text>
     </TouchableOpacity>
   )
 }
 
-const styles = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: '#F8FAFC' },
-  scroll: { paddingHorizontal: 16, paddingBottom: 40 },
+function getStyles(theme: AppTheme) {
+  return StyleSheet.create({
+    safe:   { flex: 1, backgroundColor: theme.colors.background },
+    scroll: { paddingBottom: 40 },
 
-  header: {
-    alignItems: 'center',
-    paddingTop: 32,
-    paddingBottom: 20,
-    gap: 10,
-  },
-  crownWrap: {
-    width: 80, height: 80, borderRadius: 24,
-    backgroundColor: '#FEF3C7',
-    alignItems: 'center', justifyContent: 'center',
-    marginBottom: 4,
-  },
-  title: {
-    fontSize: 22,
-    fontFamily: 'Poppins-Bold',
-    color: '#111827',
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 14,
-    fontFamily: 'Poppins-Regular',
-    color: '#6B7280',
-    textAlign: 'center',
-    lineHeight: 22,
-    maxWidth: 280,
-  },
+    gradientHero: {
+      alignItems:        'center',
+      paddingTop:        44,
+      paddingBottom:     40,
+      paddingHorizontal: 24,
+      gap:               10,
+    },
+    crownWrap: {
+      width:           72,
+      height:          72,
+      borderRadius:    22,
+      backgroundColor: 'rgba(255,255,255,0.15)',
+      borderWidth:     1,
+      borderColor:     'rgba(255,255,255,0.25)',
+      alignItems:      'center',
+      justifyContent:  'center',
+      marginBottom:    6,
+    },
+    heroTitle: {
+      fontSize:   22,
+      fontFamily: 'Poppins-Bold',
+      color:      '#fff',
+      textAlign:  'center',
+    },
+    heroSubtitle: {
+      fontSize:   14,
+      fontFamily: 'Poppins-Regular',
+      color:      'rgba(255,255,255,0.85)',
+      textAlign:  'center',
+      lineHeight: 22,
+      maxWidth:   280,
+    },
 
-  statusBanner: {
-    borderRadius: 14,
-    padding: 14,
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  statusBannerExpired: { backgroundColor: '#FEE2E2' },
-  statusBannerTrial:   { backgroundColor: '#FEF3C7' },
-  statusText:        { fontSize: 14, fontFamily: 'Poppins-SemiBold' },
-  statusTextExpired: { color: '#DC2626' },
-  statusTextTrial:   { color: '#D97706' },
+    statusWrap:    { paddingHorizontal: 16, marginTop: -18 },
+    statusBanner: {
+      borderRadius:      12,
+      paddingHorizontal: 18,
+      paddingVertical:   12,
+      alignItems:        'center',
+      shadowColor:       '#000',
+      shadowOffset:      { width: 0, height: 3 },
+      shadowOpacity:     0.10,
+      shadowRadius:      8,
+      elevation:         4,
+    },
+    statusExpired: { backgroundColor: theme.colors.dangerBg },
+    statusTrial:   { backgroundColor: theme.colors.warningBg },
+    statusText:        { fontSize: 14, fontFamily: 'Poppins-SemiBold' },
+    statusTextExpired: { color: theme.colors.danger },
+    statusTextTrial:   { color: theme.colors.warning },
 
-  sectionTitle: {
-    fontSize: 16,
-    fontFamily: 'Poppins-Bold',
-    color: '#111827',
-    marginTop: 20,
-    marginBottom: 12,
-  },
+    body: { paddingHorizontal: 16, paddingTop: 28 },
 
-  plansGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  planCard: {
-    width: '47.5%',
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#F0F0F0',
-    gap: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 5,
-    elevation: 2,
-    position: 'relative',
-  },
-  planCardSelected: {
-    borderColor: '#CE4002',
-    backgroundColor: '#FEF0E6',
-  },
-  planSelectedDot: {
-    position: 'absolute',
-    top: 12, right: 12,
-    width: 22, height: 22,
-    borderRadius: 11,
-    backgroundColor: '#CE4002',
-    alignItems: 'center', justifyContent: 'center',
-  },
-  planName:         { fontSize: 14, fontFamily: 'Poppins-Bold',    color: '#111827' },
-  planNameSelected: { color: '#CE4002' },
-  planDuration:     { fontSize: 12, fontFamily: 'Poppins-Regular', color: '#6B7280' },
-  planPrice:        { fontSize: 15, fontFamily: 'Poppins-Bold',    color: '#111827', marginTop: 6 },
-  planPriceSelected:{ color: '#CE4002' },
-  planTextSelected: { color: '#CE4002' },
+    sectionTitle: {
+      fontSize:     16,
+      fontFamily:   'Poppins-Bold',
+      color:        theme.colors.text,
+      marginBottom: 14,
+    },
 
-  featuresCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    marginTop: 20,
-    borderWidth: 1,
-    borderColor: '#F0F0F0',
-    gap: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 5,
-    elevation: 2,
-  },
-  featuresTitle: { fontSize: 15, fontFamily: 'Poppins-SemiBold', color: '#111827', marginBottom: 4 },
-  featureRow:    { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  featureText:   { fontSize: 13, fontFamily: 'Poppins-Regular', color: '#374151', flex: 1 },
+    plansGrid: {
+      flexDirection: 'row',
+      flexWrap:      'wrap',
+      gap:           10,
+      marginBottom:  24,
+    },
 
-  ctaSection: {
-    alignItems: 'center',
-    marginTop: 28,
-    gap: 12,
-  },
-  ctaNote: {
-    fontSize: 14,
-    fontFamily: 'Poppins-Regular',
-    color: '#6B7280',
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  callBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#CE4002',
-    paddingHorizontal: 32,
-    paddingVertical: 15,
-    borderRadius: 14,
-    width: '100%',
-    justifyContent: 'center',
-  },
-  callBtnText:  { fontSize: 16, fontFamily: 'Poppins-Bold',    color: '#fff' },
-  adminPhone:   { fontSize: 16, fontFamily: 'Poppins-SemiBold', color: '#374151', letterSpacing: 0.5 },
+    featuresCard: {
+      backgroundColor: theme.colors.card,
+      borderRadius:    16,
+      padding:         18,
+      borderWidth:     1,
+      borderColor:     theme.colors.border,
+      gap:             12,
+      shadowColor:     '#000',
+      shadowOffset:    { width: 0, height: 2 },
+      shadowOpacity:   theme.isDark ? 0 : 0.04,
+      shadowRadius:    5,
+      elevation:       2,
+    },
+    featuresTitle: {
+      fontSize:     15,
+      fontFamily:   'Poppins-SemiBold',
+      color:        theme.colors.text,
+      marginBottom: 4,
+    },
+    featureRow:  { flexDirection: 'row', alignItems: 'center', gap: 10 },
+    checkWrap: {
+      width:           26,
+      height:          26,
+      borderRadius:    8,
+      backgroundColor: theme.colors.successBg,
+      alignItems:      'center',
+      justifyContent:  'center',
+      flexShrink:      0,
+    },
+    featureText: {
+      fontSize:   13,
+      fontFamily: 'Poppins-Regular',
+      color:      theme.colors.textSub,
+      flex:       1,
+    },
 
-  skipLink: { alignItems: 'center', marginTop: 16 },
-  skipLinkText: { fontSize: 14, fontFamily: 'Poppins-SemiBold', color: '#6B7280' },
-})
+    ctaSection: { alignItems: 'center', marginTop: 28, gap: 14 },
+    ctaNote: {
+      fontSize:   14,
+      fontFamily: 'Poppins-Regular',
+      color:      theme.colors.textMuted,
+      textAlign:  'center',
+      lineHeight: 22,
+    },
+    callBtn: {
+      flexDirection:     'row',
+      alignItems:        'center',
+      gap:               10,
+      backgroundColor:   theme.colors.primary,
+      paddingHorizontal: 32,
+      paddingVertical:   16,
+      borderRadius:      14,
+      width:             '100%',
+      justifyContent:    'center',
+      shadowColor:       theme.colors.primary,
+      shadowOffset:      { width: 0, height: 4 },
+      shadowOpacity:     0.30,
+      shadowRadius:      10,
+      elevation:         4,
+    },
+    callBtnText: { fontSize: 16, fontFamily: 'Poppins-Bold', color: '#fff' },
+    adminPhone: {
+      fontSize:      16,
+      fontFamily:    'Poppins-SemiBold',
+      color:         theme.colors.text,
+      letterSpacing: 0.5,
+    },
+
+    skipLink:     { alignItems: 'center', marginTop: 8 },
+    skipLinkText: { fontSize: 14, fontFamily: 'Poppins-SemiBold', color: theme.colors.textMuted },
+  })
+}

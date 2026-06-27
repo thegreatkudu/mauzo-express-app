@@ -13,9 +13,13 @@ import {
   CheckCircleIcon, OrdersIcon, SuppliersNavIcon, HomeIcon,
   ChevronRightIcon, ClockIcon, BuildingIcon, PackageIcon, CalendarIcon,
 } from '@/constants/icons'
+import { useTheme, useThemeStyles } from '@/hooks/use-theme'
+import type { AppTheme } from '@/hooks/use-theme'
 
 export default function OrderSuccessScreen() {
   const { t } = useTranslation()
+  const { theme } = useTheme()
+  const styles = useThemeStyles(getStyles)
   const { orderId, supplierNames, totalAmount, itemCount, createdAt } =
     useLocalSearchParams<{
       orderId: string
@@ -125,7 +129,7 @@ export default function OrderSuccessScreen() {
                   {displayOrderId}
                 </Text>
                 <View style={styles.statusPill}>
-                  <HugeiconsIcon icon={ClockIcon} size={11} color='#9CA3AF' strokeWidth={2} />
+                  <HugeiconsIcon icon={ClockIcon} size={11} color={theme.colors.textMuted} strokeWidth={2} />
                   <Text style={[styles.statusPillText, { fontSize: rf(11) }]}>
                     {t('order_success.status_awaiting')}
                   </Text>
@@ -157,7 +161,7 @@ export default function OrderSuccessScreen() {
                 icon={CheckCircleIcon}
                 label={t('order_success.label_estimated')}
                 value={`TZS ${total.toLocaleString()}`}
-                valueColor='#CE4002'
+                valueColor={theme.colors.primary}
                 rf={rf}
                 isLast
               />
@@ -166,7 +170,7 @@ export default function OrderSuccessScreen() {
 
           {/* Info banner */}
           <View style={styles.infoBanner}>
-            <HugeiconsIcon icon={ClockIcon} size={15} color='#2563EB' strokeWidth={1.5} />
+            <HugeiconsIcon icon={ClockIcon} size={15} color={theme.colors.info} strokeWidth={1.5} />
             <Text style={[styles.infoBannerText, { fontSize: rf(12) }]}>
               {t('order_success.quote_info')}
             </Text>
@@ -208,7 +212,7 @@ export default function OrderSuccessScreen() {
               onPress={() => router.replace('/(tabs)')}
               activeOpacity={0.7}
             >
-              <HugeiconsIcon icon={HomeIcon} size={16} color='#9CA3AF' strokeWidth={1.5} />
+              <HugeiconsIcon icon={HomeIcon} size={16} color={theme.colors.textMuted} strokeWidth={1.5} />
               <Text style={[styles.ghostBtnText, { fontSize: rf(14) }]}>
                 {t('order_success.back_home')}
               </Text>
@@ -232,16 +236,18 @@ function DetailRow({
   rf: (s: number) => number
   isLast?: boolean
 }) {
+  const { theme } = useTheme()
+  const styles = useThemeStyles(getStyles)
   return (
     <View style={[styles.detailRow, !isLast && styles.detailRowBorder]}>
       <View style={styles.detailLeft}>
-        <HugeiconsIcon icon={icon} size={14} color='#9CA3AF' strokeWidth={1.5} />
+        <HugeiconsIcon icon={icon} size={14} color={theme.colors.textMuted} strokeWidth={1.5} />
         <Text style={[styles.detailLabel, { fontSize: rf(12) }]}>{label}</Text>
       </View>
       <Text
         style={[
           styles.detailValue,
-          { fontSize: rf(13), color: valueColor ?? '#111827' },
+          { fontSize: rf(13), color: valueColor ?? theme.colors.text },
         ]}
         numberOfLines={2}
       >
@@ -256,137 +262,120 @@ function SecondaryBtn({
 }: {
   label: string; icon: any; rf: (s: number) => number; onPress: () => void
 }) {
+  const { theme } = useTheme()
+  const styles = useThemeStyles(getStyles)
   return (
     <TouchableOpacity style={styles.btnSecondary} onPress={onPress} activeOpacity={0.85}>
-      <HugeiconsIcon icon={icon} size={15} color='#CE4002' strokeWidth={1.5} />
+      <HugeiconsIcon icon={icon} size={15} color={theme.colors.primary} strokeWidth={1.5} />
       <Text style={[styles.btnSecondaryText, { fontSize: rf(12) }]} numberOfLines={1}>
         {label}
       </Text>
-      <HugeiconsIcon icon={ChevronRightIcon} size={14} color='#CE4002' strokeWidth={1.5} />
+      <HugeiconsIcon icon={ChevronRightIcon} size={14} color={theme.colors.primary} strokeWidth={1.5} />
     </TouchableOpacity>
   )
 }
 
-// ── Styles ────────────────────────────────────────────────────────────────────
+function getStyles(theme: AppTheme) {
+  return StyleSheet.create({
+    safe:   { flex: 1, backgroundColor: theme.colors.background },
+    scroll: { paddingTop: 36 },
 
-const styles = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: '#F8FAFC' },
-  scroll: { paddingTop: 36 },
+    heroWrap:        { alignItems: 'center', marginBottom: 28, gap: 20 },
+    heroOuter:       { width: 110, height: 110, borderRadius: 55, backgroundColor: theme.colors.primaryLight, alignItems: 'center', justifyContent: 'center' },
+    heroOuterTablet: { width: 130, height: 130, borderRadius: 65 },
+    heroInner: {
+      width: 88, height: 88, borderRadius: 44,
+      backgroundColor: theme.colors.primary,
+      alignItems: 'center', justifyContent: 'center',
+      shadowColor:   theme.colors.primary,
+      shadowOffset:  { width: 0, height: 6 },
+      shadowOpacity: 0.4,
+      shadowRadius:  18,
+      elevation:     10,
+    },
+    heroInnerTablet: { width: 106, height: 106, borderRadius: 53 },
+    heroText:     { alignItems: 'center', gap: 8 },
+    heroTitle:    { fontFamily: 'Poppins-Bold',    color: theme.colors.text,    textAlign: 'center' },
+    heroSubtitle: { fontFamily: 'Poppins-Regular', color: theme.colors.textSub, textAlign: 'center', lineHeight: 22, paddingHorizontal: 16 },
 
-  // Hero
-  heroWrap: { alignItems: 'center', marginBottom: 28, gap: 20 },
-  heroOuter: {
-    width: 110, height: 110, borderRadius: 55,
-    backgroundColor: 'rgba(206, 64, 2, 0.12)',
-    alignItems: 'center', justifyContent: 'center',
-  },
-  heroOuterTablet: { width: 130, height: 130, borderRadius: 65 },
-  heroInner: {
-    width: 88, height: 88, borderRadius: 44,
-    backgroundColor: '#CE4002',
-    alignItems: 'center', justifyContent: 'center',
-    shadowColor: '#CE4002',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.4,
-    shadowRadius: 18,
-    elevation: 10,
-  },
-  heroInnerTablet: { width: 106, height: 106, borderRadius: 53 },
-  heroText:     { alignItems: 'center', gap: 8 },
-  heroTitle:    { fontFamily: 'Poppins-Bold',    color: '#111827', textAlign: 'center' },
-  heroSubtitle: { fontFamily: 'Poppins-Regular', color: '#6B7280', textAlign: 'center', lineHeight: 22, paddingHorizontal: 16 },
+    summaryCard: {
+      backgroundColor: theme.colors.card,
+      borderRadius:    20,
+      borderWidth:     1,
+      borderColor:     theme.colors.border,
+      shadowColor:     '#000',
+      shadowOffset:    { width: 0, height: 4 },
+      shadowOpacity:   theme.isDark ? 0 : 0.04,
+      shadowRadius:    16,
+      elevation:       4,
+      overflow:        'hidden',
+    },
+    summaryHeader:   { padding: 20, backgroundColor: theme.colors.primaryLight },
+    orderIdText:     { fontFamily: 'Poppins-Bold', color: theme.colors.primary },
+    statusPill: {
+      flexDirection: 'row', alignItems: 'center', gap: 5,
+      marginTop: 8, alignSelf: 'flex-start',
+      backgroundColor:   theme.colors.card,
+      paddingHorizontal: 10, paddingVertical: 5,
+      borderRadius:      20,
+    },
+    statusPillText: { fontFamily: 'Poppins-SemiBold', color: theme.colors.textMuted },
 
-  // Summary card
-  summaryCard: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#F0F0F0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.04,
-    shadowRadius: 16,
-    elevation: 4,
-    overflow: 'hidden',
-  },
-  summaryHeader: {
-    padding: 20,
-    backgroundColor: '#FEF0E6',
-  },
-  orderIdText: { fontFamily: 'Poppins-Bold', color: '#CE4002' },
-  statusPill: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    marginTop: 8, alignSelf: 'flex-start',
-    backgroundColor: '#fff',
-    paddingHorizontal: 10, paddingVertical: 5,
-    borderRadius: 20,
-  },
-  statusPillText: { fontFamily: 'Poppins-SemiBold', color: '#9CA3AF' },
+    detailsWrap:      { paddingHorizontal: 20, paddingBottom: 4 },
+    detailRow:        { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', paddingVertical: 13, gap: 12 },
+    detailRowBorder:  { borderBottomWidth: 1, borderBottomColor: theme.colors.divider },
+    detailLeft:       { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    detailLabel:      { fontFamily: 'Poppins-Regular', color: theme.colors.textMuted },
+    detailValue:      { fontFamily: 'Poppins-SemiBold', textAlign: 'right', flex: 1 },
 
-  detailsWrap: { paddingHorizontal: 20, paddingBottom: 4 },
-  detailRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    paddingVertical: 13,
-    gap: 12,
-  },
-  detailRowBorder: { borderBottomWidth: 1, borderBottomColor: '#F4F4F4' },
-  detailLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  detailLabel: { fontFamily: 'Poppins-Regular', color: '#9CA3AF' },
-  detailValue: { fontFamily: 'Poppins-SemiBold', textAlign: 'right', flex: 1 },
+    infoBanner: {
+      flexDirection: 'row', alignItems: 'flex-start', gap: 10,
+      backgroundColor: theme.colors.infoBg,
+      borderRadius:    14, padding: 14,
+      borderWidth:     1, borderColor: theme.isDark ? 'rgba(96,165,250,0.2)' : '#BFDBFE',
+    },
+    infoBannerText: { flex: 1, fontFamily: 'Poppins-Regular', color: theme.colors.info, lineHeight: 18 },
 
-  // Info banner
-  infoBanner: {
-    flexDirection: 'row', alignItems: 'flex-start', gap: 10,
-    backgroundColor: '#EFF6FF',
-    borderRadius: 14, padding: 14,
-    borderWidth: 1, borderColor: '#BFDBFE',
-  },
-  infoBannerText: {
-    flex: 1, fontFamily: 'Poppins-Regular', color: '#1D4ED8', lineHeight: 18,
-  },
+    actionsWrap:  { gap: 10 },
+    secondaryRow: { flexDirection: 'row', gap: 10 },
 
-  // Actions
-  actionsWrap:    { gap: 10 },
-  secondaryRow:   { flexDirection: 'row', gap: 10 },
+    btnPrimary: {
+      backgroundColor: theme.colors.primary,
+      height:          54,
+      borderRadius:    14,
+      flexDirection:   'row',
+      alignItems:      'center',
+      justifyContent:  'center',
+      gap:             10,
+      shadowColor:     theme.colors.primary,
+      shadowOffset:    { width: 0, height: 4 },
+      shadowOpacity:   0.3,
+      shadowRadius:    12,
+      elevation:       6,
+    },
+    btnPrimaryText: { fontFamily: 'Poppins-Bold', color: '#fff' },
 
-  btnPrimary: {
-    backgroundColor: '#CE4002',
-    height: 54,
-    borderRadius: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    shadowColor: '#CE4002',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 6,
-  },
-  btnPrimaryText: { fontFamily: 'Poppins-Bold', color: '#fff' },
+    btnSecondary: {
+      flex:              1,
+      height:            48,
+      flexDirection:     'row',
+      alignItems:        'center',
+      gap:               6,
+      paddingHorizontal: 12,
+      backgroundColor:   theme.colors.card,
+      borderRadius:      14,
+      borderWidth:       1.5,
+      borderColor:       theme.colors.primaryMuted,
+    },
+    btnSecondaryText: { fontFamily: 'Poppins-SemiBold', color: theme.colors.primary, flex: 1 },
 
-  btnSecondary: {
-    flex: 1,
-    height: 48,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: '#FEE5D8',
-  },
-  btnSecondaryText: { fontFamily: 'Poppins-SemiBold', color: '#CE4002', flex: 1 },
-
-  ghostBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 14,
-  },
-  ghostBtnText: { fontFamily: 'Poppins-Regular', color: '#9CA3AF' },
-})
+    ghostBtn: {
+      flexDirection:  'row',
+      alignItems:     'center',
+      justifyContent: 'center',
+      gap:            6,
+      paddingVertical: 14,
+    },
+    ghostBtnText: { fontFamily: 'Poppins-Regular', color: theme.colors.textMuted },
+  })
+}

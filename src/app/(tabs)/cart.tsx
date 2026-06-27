@@ -19,7 +19,8 @@ import { useResponsive } from '@/hooks/useResponsive'
 import EmptyState from '@/components/ui/EmptyState'
 import { useAppAlert } from '@/components/ui/AppAlert/AppAlertProvider'
 import { AddIcon, MinusIcon, TrashIcon, CartIcon, SuppliersNavIcon } from '@/constants/icons'
-import { useTheme } from '@/hooks/use-theme'
+import { useTheme, useThemeStyles } from '@/hooks/use-theme'
+import type { AppTheme } from '@/hooks/use-theme'
 import type { CartItem, Supplier } from '@/types'
 
 type SupplierGroup = {
@@ -39,6 +40,7 @@ export default function CartScreen() {
   const { hp, rf, isTablet, contentMaxWidth } = useResponsive()
   const { t } = useTranslation()
   const { theme } = useTheme()
+  const styles = useThemeStyles(getStyles)
   const { showAlert } = useAppAlert()
 
   useEffect(() => { fetchCart() }, [])
@@ -111,7 +113,7 @@ export default function CartScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={[styles.safe, { backgroundColor: theme.colors.background }]} edges={['top']}>
+      <SafeAreaView style={styles.safe} edges={['top']}>
         <View style={[styles.header, { paddingHorizontal: hp }]}>
           <SkeletonBox height={22} width='50%' borderRadius={8} />
           <SkeletonBox height={13} width='30%' borderRadius={5} style={{ marginTop: 6 }} />
@@ -123,7 +125,7 @@ export default function CartScreen() {
 
   if (items.length === 0) {
     return (
-      <SafeAreaView style={[styles.safe, { backgroundColor: theme.colors.background }]} edges={['top']}>
+      <SafeAreaView style={styles.safe} edges={['top']}>
         <View style={[styles.header, { paddingHorizontal: hp }]}>
           <Text style={[styles.title, { fontSize: rf(22) }]}>{t('cart.title')}</Text>
         </View>
@@ -161,7 +163,7 @@ export default function CartScreen() {
           contentContainerStyle={{ ...styles.list, paddingHorizontal: hp, paddingBottom: bottomBarH + 16 }}
           showsVerticalScrollIndicator={false}
           refreshControl={
-            <RefreshControl refreshing={false} onRefresh={fetchCart} tintColor='#CE4002' />
+            <RefreshControl refreshing={false} onRefresh={fetchCart} tintColor={theme.colors.primary} />
           }
         />
 
@@ -204,6 +206,8 @@ function SupplierSection({
   rf: (s: number) => number
 }) {
   const { t } = useTranslation()
+  const { theme } = useTheme()
+  const styles = useThemeStyles(getStyles)
   return (
     <View style={styles.supplierSection}>
       <TouchableOpacity
@@ -211,7 +215,7 @@ function SupplierSection({
         onPress={() => router.push({ pathname: '/supplier/[id]', params: { id: String(group.supplier.id) } } as any)}
         activeOpacity={0.8}
       >
-        <HugeiconsIcon icon={SuppliersNavIcon} size={16} color='#CE4002' strokeWidth={1.5} />
+        <HugeiconsIcon icon={SuppliersNavIcon} size={16} color={theme.colors.primary} strokeWidth={1.5} />
         <Text style={[styles.supplierName, { fontSize: rf(14) }]}>{group.supplier.business_name}</Text>
       </TouchableOpacity>
       {group.items.map(item => (
@@ -239,6 +243,8 @@ function CartItemRow({ item, onRemove, onUpdateQty, onProductPress, rf }: {
   onProductPress: () => void
   rf: (s: number) => number
 }) {
+  const { theme } = useTheme()
+  const styles = useThemeStyles(getStyles)
   return (
     <View style={styles.itemRow}>
       <TouchableOpacity style={styles.itemInfo} onPress={onProductPress} activeOpacity={0.7}>
@@ -250,7 +256,7 @@ function CartItemRow({ item, onRemove, onUpdateQty, onProductPress, rf }: {
       </TouchableOpacity>
       <View style={styles.itemActions}>
         <TouchableOpacity onPress={onRemove} style={styles.deleteBtn} hitSlop={8}>
-          <HugeiconsIcon icon={TrashIcon} size={16} color='#EF4444' strokeWidth={1.5} />
+          <HugeiconsIcon icon={TrashIcon} size={16} color={theme.colors.danger} strokeWidth={1.5} />
         </TouchableOpacity>
         <View style={styles.stepper}>
           <TouchableOpacity
@@ -261,13 +267,13 @@ function CartItemRow({ item, onRemove, onUpdateQty, onProductPress, rf }: {
           >
             <HugeiconsIcon
               icon={MinusIcon} size={14}
-              color={item.quantity <= 1 ? '#D1D5DB' : '#374151'}
+              color={item.quantity <= 1 ? theme.colors.textDisabled : theme.colors.text}
               strokeWidth={2}
             />
           </TouchableOpacity>
           <Text style={[styles.stepQty, { fontSize: rf(14) }]}>{item.quantity}</Text>
           <TouchableOpacity style={styles.stepBtn} onPress={() => onUpdateQty(item.quantity + 1)} hitSlop={4}>
-            <HugeiconsIcon icon={AddIcon} size={14} color='#374151' strokeWidth={2} />
+            <HugeiconsIcon icon={AddIcon} size={14} color={theme.colors.text} strokeWidth={2} />
           </TouchableOpacity>
         </View>
       </View>
@@ -275,105 +281,104 @@ function CartItemRow({ item, onRemove, onUpdateQty, onProductPress, rf }: {
   )
 }
 
-const styles = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: '#F8FAFC' },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+function getStyles(theme: AppTheme) {
+  return StyleSheet.create({
+    safe:   { flex: 1, backgroundColor: theme.colors.background },
+    center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
-  header: { paddingTop: 16, paddingBottom: 8 },
-  title:    { fontFamily: 'Poppins-Bold',    color: '#111827' },
-  subtitle: { fontFamily: 'Poppins-Regular', color: '#6B7280', marginTop: 2 },
+    header:   { paddingTop: 16, paddingBottom: 8 },
+    title:    { fontFamily: 'Poppins-Bold',    color: theme.colors.text },
+    subtitle: { fontFamily: 'Poppins-Regular', color: theme.colors.textSub, marginTop: 2 },
 
-  list:     { paddingTop: 10, paddingBottom: 4 },
+    list: { paddingTop: 10, paddingBottom: 4 },
 
-  supplierSection: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#F0F0F0',
-    overflow: 'hidden',
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 5,
-    elevation: 2,
-  },
-  supplierHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#FEF0E6',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-  },
-  supplierName: { fontFamily: 'Poppins-SemiBold', color: '#CE4002' },
+    supplierSection: {
+      backgroundColor: theme.colors.card,
+      borderRadius:    16,
+      borderWidth:     1,
+      borderColor:     theme.colors.border,
+      overflow:        'hidden',
+      marginBottom:    12,
+      shadowColor:     '#000',
+      shadowOffset:    { width: 0, height: 2 },
+      shadowOpacity:   theme.isDark ? 0 : 0.04,
+      shadowRadius:    5,
+      elevation:       2,
+    },
+    supplierHeader: {
+      flexDirection:     'row',
+      alignItems:        'center',
+      gap:               8,
+      paddingHorizontal: 16,
+      paddingVertical:   12,
+      backgroundColor:   theme.colors.primaryLight,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.border,
+    },
+    supplierName: { fontFamily: 'Poppins-SemiBold', color: theme.colors.primary },
 
-  itemRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 18,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F4F4F4',
-    gap: 12,
-  },
-  itemInfo:  { flex: 1, gap: 4 },
-  itemName:  { fontFamily: 'Poppins-Medium',  color: '#111827' },
-  itemMeta:  { fontFamily: 'Poppins-Regular', color: '#6B7280' },
-  itemPrice: { fontFamily: 'Poppins-Bold',    color: '#CE4002', marginTop: 2 },
+    itemRow: {
+      flexDirection:     'row',
+      alignItems:        'flex-start',
+      justifyContent:    'space-between',
+      paddingHorizontal: 16,
+      paddingVertical:   18,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.divider,
+      gap:               12,
+    },
+    itemInfo:  { flex: 1, gap: 4 },
+    itemName:  { fontFamily: 'Poppins-Medium',  color: theme.colors.text },
+    itemMeta:  { fontFamily: 'Poppins-Regular', color: theme.colors.textSub },
+    itemPrice: { fontFamily: 'Poppins-Bold',    color: theme.colors.primary, marginTop: 2 },
 
-  itemActions: { alignItems: 'flex-end', gap: 10 },
-  deleteBtn: { padding: 4 },
+    itemActions: { alignItems: 'flex-end', gap: 10 },
+    deleteBtn:   { padding: 4 },
 
-  stepper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F4F4F2',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#ECECEC',
-    paddingHorizontal: 4,
-    paddingVertical: 4,
-  },
-  stepBtn: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center', borderRadius: 6 },
-  stepQty: {
-    fontFamily: 'Poppins-SemiBold', color: '#111827',
-    minWidth: 28, textAlign: 'center',
-  },
+    stepper: {
+      flexDirection:     'row',
+      alignItems:        'center',
+      backgroundColor:   theme.colors.cardAlt,
+      borderRadius:      10,
+      borderWidth:       1,
+      borderColor:       theme.colors.border,
+      paddingHorizontal: 4,
+      paddingVertical:   4,
+    },
+    stepBtn: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center', borderRadius: 6 },
+    stepQty: { fontFamily: 'Poppins-SemiBold', color: theme.colors.text, minWidth: 28, textAlign: 'center' },
 
-  supplierTotal: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#F8FAFC',
-  },
-  supplierTotalLabel: { fontFamily: 'Poppins-Regular', color: '#6B7280' },
-  supplierTotalValue: { fontFamily: 'Poppins-Bold',    color: '#111827' },
+    supplierTotal: {
+      flexDirection:     'row',
+      alignItems:        'center',
+      justifyContent:    'space-between',
+      paddingHorizontal: 16,
+      paddingVertical:   12,
+      backgroundColor:   theme.colors.cardAlt,
+    },
+    supplierTotalLabel: { fontFamily: 'Poppins-Regular', color: theme.colors.textSub },
+    supplierTotalValue: { fontFamily: 'Poppins-Bold',    color: theme.colors.text },
 
-  bottomBar: {
-    position: 'absolute',
-    bottom: 0, left: 0, right: 0,
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#EFEFEF',
-    gap: 14,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 12,
-  },
-  totalRow:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  totalLabel: { fontFamily: 'Poppins-Regular', color: '#6B7280' },
-  totalValue: { fontFamily: 'Poppins-Bold',    color: '#111827' },
+    bottomBar: {
+      position:        'absolute',
+      bottom: 0, left: 0, right: 0,
+      backgroundColor: theme.colors.surface,
+      borderTopWidth:  1,
+      borderTopColor:  theme.colors.border,
+      gap:             14,
+      shadowColor:     '#000',
+      shadowOffset:    { width: 0, height: -4 },
+      shadowOpacity:   theme.isDark ? 0.25 : 0.08,
+      shadowRadius:    12,
+      elevation:       12,
+    },
+    totalRow:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    totalLabel: { fontFamily: 'Poppins-Regular', color: theme.colors.textSub },
+    totalValue: { fontFamily: 'Poppins-Bold',    color: theme.colors.text },
 
-  placeBtn:        { backgroundColor: '#CE4002', height: 54, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  placeBtnTablet:  { height: 58, borderRadius: 16 },
-  placeBtnDisabled:{ backgroundColor: '#E8A07A' },
-  placeBtnText:    { fontFamily: 'Poppins-Bold', color: '#fff' },
-})
+    placeBtn:         { backgroundColor: theme.colors.primary, height: 54, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+    placeBtnTablet:   { height: 58, borderRadius: 16 },
+    placeBtnDisabled: { backgroundColor: theme.colors.primaryMuted },
+    placeBtnText:     { fontFamily: 'Poppins-Bold', color: '#fff' },
+  })
+}

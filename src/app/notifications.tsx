@@ -15,7 +15,8 @@ import { NotificationRowSkeleton } from '@/components/skeletons'
 import { BackIcon, NotificationIcon, CheckCircleIcon, RefreshIcon } from '@/constants/icons'
 import { timeAgo } from '@/utils/date'
 import { getNotifMeta } from '@/utils/notifications'
-import { useTheme } from '@/hooks/use-theme'
+import { useTheme, useThemeStyles } from '@/hooks/use-theme'
+import type { AppTheme } from '@/hooks/use-theme'
 import type { Notification } from '@/types'
 
 // ── Card ─────────────────────────────────────────────────────────────────────
@@ -27,47 +28,59 @@ const NotificationRow = memo(function NotificationRow({
   notification: Notification
   onPress: () => void
 }) {
+  const { theme } = useTheme()
   const meta = getNotifMeta(notification.type, notification.message)
   const unread = !notification.is_read
 
   return (
     <TouchableOpacity
       style={[
-        styles.row,
-        unread && styles.rowUnread,
-        unread && { borderLeftColor: meta.color },
+        {
+          flexDirection:   'row',
+          alignItems:      'flex-start',
+          gap:             13,
+          backgroundColor: theme.colors.card,
+          borderRadius:    16,
+          padding:         16,
+          marginBottom:    14,
+          borderWidth:     1,
+          borderLeftWidth: 3,
+          borderColor:     theme.colors.border,
+          borderLeftColor: unread ? meta.color : theme.colors.border,
+          shadowColor:     '#000',
+          shadowOffset:    { width: 0, height: 2 },
+          shadowOpacity:   theme.isDark ? 0 : 0.04,
+          shadowRadius:    5,
+          elevation:       2,
+        },
       ]}
       onPress={onPress}
       activeOpacity={0.8}
     >
-      {/* Icon circle */}
-      <View style={[styles.iconWrap, { backgroundColor: meta.bgColor }]}>
+      <View style={[{ width: 46, height: 46, borderRadius: 14, alignItems: 'center', justifyContent: 'center', flexShrink: 0 }, { backgroundColor: meta.bgColor }]}>
         <HugeiconsIcon icon={meta.icon as any} size={20} color={meta.color} strokeWidth={1.5} />
       </View>
 
-      {/* Content */}
-      <View style={styles.content}>
-        {/* Title + time */}
-        <View style={styles.titleRow}>
-          <Text style={[styles.notifTitle, unread && styles.notifTitleUnread]} numberOfLines={1}>
+      <View style={{ flex: 1, gap: 5 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+          <Text style={{ flex: 1, fontSize: 13, fontFamily: 'Poppins-SemiBold', color: unread ? theme.colors.text : theme.colors.textSub }} numberOfLines={1}>
             {meta.title}
           </Text>
-          <Text style={styles.time}>{timeAgo(notification.created_at)}</Text>
+          <Text style={{ fontSize: 11, fontFamily: 'Poppins-Regular', color: theme.colors.textMuted, flexShrink: 0 }}>
+            {timeAgo(notification.created_at)}
+          </Text>
         </View>
 
-        {/* Type badge */}
-        <View style={[styles.badge, { backgroundColor: meta.bgColor }]}>
-          <Text style={[styles.badgeText, { color: meta.color }]}>{meta.label}</Text>
+        <View style={{ alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 20, backgroundColor: meta.bgColor }}>
+          <Text style={{ fontSize: 10, fontFamily: 'Poppins-SemiBold', color: meta.color }}>{meta.label}</Text>
         </View>
 
-        {/* Message preview */}
-        <Text style={[styles.message, unread && styles.messageUnread]} numberOfLines={2}>
+        <Text style={{ fontSize: 12, fontFamily: 'Poppins-Regular', color: unread ? theme.colors.textSub : theme.colors.textMuted, lineHeight: 18 }} numberOfLines={2}>
           {notification.message}
         </Text>
       </View>
 
-      {/* Unread dot */}
-      {unread && <View style={[styles.unreadDot, { backgroundColor: meta.color }]} />}
+      {unread && <View style={{ width: 8, height: 8, borderRadius: 4, marginTop: 4, flexShrink: 0, backgroundColor: meta.color }} />}
     </TouchableOpacity>
   )
 })
@@ -77,6 +90,7 @@ const NotificationRow = memo(function NotificationRow({
 export default function NotificationsScreen() {
   const { t } = useTranslation()
   const { theme } = useTheme()
+  const styles = useThemeStyles(getStyles)
   const { data: notifications, isLoading, isError, refetch, isRefetching } = useNotifications()
   const markRead = useMarkNotificationsRead()
 
@@ -104,16 +118,16 @@ export default function NotificationsScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.colors.background }]} edges={['top']}>
+    <SafeAreaView style={styles.safe} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={8} activeOpacity={0.7}>
-          <HugeiconsIcon icon={BackIcon} size={22} color='#374151' strokeWidth={2} />
+          <HugeiconsIcon icon={BackIcon} size={22} color={theme.colors.text} strokeWidth={2} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('notifications.title')}</Text>
         {unreadIds.length > 0 ? (
           <TouchableOpacity onPress={markAllRead} hitSlop={8} activeOpacity={0.7}>
-            <HugeiconsIcon icon={CheckCircleIcon} size={22} color='#CE4002' strokeWidth={1.5} />
+            <HugeiconsIcon icon={CheckCircleIcon} size={22} color={theme.colors.primary} strokeWidth={1.5} />
           </TouchableOpacity>
         ) : (
           <View style={{ width: 22 }} />
@@ -143,7 +157,7 @@ export default function NotificationsScreen() {
         <View style={styles.center}>
           <Text style={styles.errorText}>{t('notifications.error_load')}</Text>
           <TouchableOpacity style={styles.retryBtn} onPress={() => refetch()} activeOpacity={0.8}>
-            <HugeiconsIcon icon={RefreshIcon} size={16} color='#CE4002' strokeWidth={2} />
+            <HugeiconsIcon icon={RefreshIcon} size={16} color={theme.colors.primary} strokeWidth={2} />
             <Text style={styles.retryText}>{t('common.retry')}</Text>
           </TouchableOpacity>
         </View>
@@ -157,7 +171,7 @@ export default function NotificationsScreen() {
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
           refreshControl={
-            <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor='#CE4002' />
+            <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={theme.colors.primary} />
           }
           ListEmptyComponent={
             <EmptyState
@@ -172,111 +186,46 @@ export default function NotificationsScreen() {
   )
 }
 
-const styles = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: '#F8FAFC' },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
+function getStyles(theme: AppTheme) {
+  return StyleSheet.create({
+    safe:   { flex: 1, backgroundColor: theme.colors.background },
+    center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
 
-  header: {
-    flexDirection:      'row',
-    alignItems:         'center',
-    justifyContent:     'space-between',
-    paddingHorizontal:  16,
-    paddingVertical:    14,
-    backgroundColor:    '#fff',
-    borderBottomWidth:  1,
-    borderBottomColor:  '#F0F0F0',
-  },
-  headerTitle: { fontSize: 17, fontFamily: 'Poppins-SemiBold', color: '#111827' },
+    header: {
+      flexDirection:     'row',
+      alignItems:        'center',
+      justifyContent:    'space-between',
+      paddingHorizontal: 16,
+      paddingVertical:   14,
+      backgroundColor:   theme.colors.surface,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.border,
+    },
+    headerTitle: { fontSize: 17, fontFamily: 'Poppins-SemiBold', color: theme.colors.text },
 
-  unreadBanner: {
-    backgroundColor:   '#FEF0E6',
-    paddingHorizontal: 16,
-    paddingVertical:   10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#FDDCC7',
-  },
-  unreadBannerText: { fontSize: 12, fontFamily: 'Poppins-Regular', color: '#CE4002' },
+    unreadBanner: {
+      backgroundColor:   theme.colors.primaryLight,
+      paddingHorizontal: 16,
+      paddingVertical:   10,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.primaryMuted,
+    },
+    unreadBannerText: { fontSize: 12, fontFamily: 'Poppins-Regular', color: theme.colors.primary },
 
-  skeletonList: { padding: 16, paddingBottom: 40 },
-  list:         { padding: 16, paddingBottom: 40 },
+    skeletonList: { padding: 16, paddingBottom: 40 },
+    list:         { padding: 16, paddingBottom: 40 },
 
-  row: {
-    flexDirection:     'row',
-    alignItems:        'flex-start',
-    gap:               13,
-    backgroundColor:   '#fff',
-    borderRadius:      16,
-    padding:           16,
-    marginBottom:      14,
-    borderWidth:       1,
-    borderLeftWidth:   3,
-    borderColor:       '#F0F0F0',
-    borderLeftColor:   '#F0F0F0',
-    shadowColor:       '#000',
-    shadowOffset:      { width: 0, height: 2 },
-    shadowOpacity:     0.04,
-    shadowRadius:      5,
-    elevation:         2,
-  },
-  rowUnread: {
-    backgroundColor: '#FFFCFB',
-  },
-
-  iconWrap: {
-    width:           46,
-    height:          46,
-    borderRadius:    14,
-    alignItems:      'center',
-    justifyContent:  'center',
-    flexShrink:      0,
-  },
-
-  content: { flex: 1, gap: 5 },
-
-  titleRow: {
-    flexDirection:  'row',
-    alignItems:     'center',
-    justifyContent: 'space-between',
-    gap:            8,
-  },
-  notifTitle: {
-    flex:        1,
-    fontSize:    13,
-    fontFamily:  'Poppins-SemiBold',
-    color:       '#374151',
-  },
-  notifTitleUnread: { color: '#111827' },
-  time: { fontSize: 11, fontFamily: 'Poppins-Regular', color: '#9CA3AF', flexShrink: 0 },
-
-  badge: {
-    alignSelf:         'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical:   2,
-    borderRadius:      20,
-  },
-  badgeText: { fontSize: 10, fontFamily: 'Poppins-SemiBold' },
-
-  message:        { fontSize: 12, fontFamily: 'Poppins-Regular', color: '#6B7280', lineHeight: 18 },
-  messageUnread:  { color: '#374151' },
-
-  unreadDot: {
-    width:       8,
-    height:      8,
-    borderRadius: 4,
-    marginTop:   4,
-    flexShrink:  0,
-  },
-
-  errorText: { fontSize: 14, fontFamily: 'Poppins-Regular', color: '#6B7280' },
-  retryBtn: {
-    flexDirection:     'row',
-    alignItems:        'center',
-    gap:               6,
-    paddingHorizontal: 20,
-    paddingVertical:   10,
-    borderRadius:      12,
-    borderWidth:       1.5,
-    borderColor:       '#CE4002',
-  },
-  retryText: { fontSize: 14, fontFamily: 'Poppins-SemiBold', color: '#CE4002' },
-})
+    errorText: { fontSize: 14, fontFamily: 'Poppins-Regular', color: theme.colors.textSub },
+    retryBtn: {
+      flexDirection:     'row',
+      alignItems:        'center',
+      gap:               6,
+      paddingHorizontal: 20,
+      paddingVertical:   10,
+      borderRadius:      12,
+      borderWidth:       1.5,
+      borderColor:       theme.colors.primary,
+    },
+    retryText: { fontSize: 14, fontFamily: 'Poppins-SemiBold', color: theme.colors.primary },
+  })
+}
