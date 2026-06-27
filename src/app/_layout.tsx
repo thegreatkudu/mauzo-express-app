@@ -141,6 +141,36 @@ function ThemeStatusBar() {
   return <StatusBar style={isDark ? 'light' : 'dark'} />
 }
 
+// ── ThemeAwareStack ───────────────────────────────────────────────────────────
+// Sets contentStyle on every card so the stack's background matches the active
+// theme instead of remaining transparent. Without this, the index.tsx screen
+// (AnimatedSplashBackground, backgroundColor #CE4002) bleeds through the gaps
+// of slide_from_right animations when pressing back.
+
+function ThemeAwareStack() {
+  const { theme } = useTheme()
+  return (
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: theme.colors.background },
+      }}
+    >
+      {/* index must keep the brand gradient as its own background */}
+      <Stack.Screen name="index" options={{ contentStyle: { backgroundColor: '#CE4002' } }} />
+      <Stack.Screen name="(auth)" />
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="(routes)/onboarding/index" />
+      <Stack.Screen name="subscription" options={{ animation: 'fade' }} />
+      <Stack.Screen name="notifications"     options={{ animation: 'slide_from_right' }} />
+      <Stack.Screen name="notification/[id]" options={{ animation: 'slide_from_right' }} />
+      <Stack.Screen name="supplier/[id]"     options={{ animation: 'slide_from_right' }} />
+      <Stack.Screen name="order/[id]"        options={{ animation: 'slide_from_right' }} />
+      <Stack.Screen name="checkout/success"  options={{ animation: 'fade', gestureEnabled: false }} />
+    </Stack>
+  )
+}
+
 // ── RootLayout ────────────────────────────────────────────────────────────────
 
 export default function RootLayout() {
@@ -169,18 +199,7 @@ export default function RootLayout() {
       <ShimmerProvider>
       <Providers>
         <NavigationGuard />
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="index" />
-          <Stack.Screen name="(auth)" />
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="(routes)/onboarding/index" />
-          <Stack.Screen name="subscription" options={{ animation: 'fade' }} />
-          <Stack.Screen name="notifications"     options={{ animation: 'slide_from_right' }} />
-          <Stack.Screen name="notification/[id]" options={{ animation: 'slide_from_right' }} />
-          <Stack.Screen name="supplier/[id]"  options={{ animation: 'slide_from_right' }} />
-          <Stack.Screen name="order/[id]"     options={{ animation: 'slide_from_right' }} />
-          <Stack.Screen name="checkout/success" options={{ animation: 'fade', gestureEnabled: false }} />
-        </Stack>
+        <ThemeAwareStack />
         {/* SplashCover: covers the home screen on re-login while data loads. */}
         <SplashCover />
         <ThemeStatusBar />
