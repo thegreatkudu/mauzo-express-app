@@ -152,9 +152,14 @@ function ThemeStatusBar() {
 
 // ── ThemeAwareStack ───────────────────────────────────────────────────────────
 // Sets contentStyle on every card so the stack's background matches the active
-// theme instead of remaining transparent. Without this, the index.tsx screen
-// (AnimatedSplashBackground, backgroundColor #CE4002) bleeds through the gaps
-// of slide_from_right animations when pressing back.
+// theme instead of remaining transparent.
+//
+// The `index` screen intentionally does NOT get a custom contentStyle —
+// AnimatedSplashBackground already sets backgroundColor: '#CE4002' on its own
+// root View. Overriding contentStyle at the Stack level with the same orange
+// was redundant but caused #CE4002 to leak into the native-stack transition
+// container, appearing as an orange strip at the top of the viewport during
+// every slide_from_right back gesture.
 
 function ThemeAwareStack() {
   const { theme } = useTheme()
@@ -165,8 +170,9 @@ function ThemeAwareStack() {
         contentStyle: { backgroundColor: theme.colors.background },
       }}
     >
-      {/* index must keep the brand gradient as its own background */}
-      <Stack.Screen name="index" options={{ contentStyle: { backgroundColor: '#CE4002' } }} />
+      {/* animation:none + gestureEnabled:false because index is only ever
+          the launch origin; router.replace() is always used to leave it. */}
+      <Stack.Screen name="index" options={{ animation: 'none', gestureEnabled: false }} />
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="(routes)/onboarding/index" />
