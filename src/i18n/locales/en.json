@@ -11,7 +11,30 @@
     "suppliers": "Suppliers",
     "orders": "Orders",
     "cart": "Cart",
-    "profile": "Profile"
+    "profile": "Profile",
+    "analytics": "Analytics"
+  },
+  "analytics": {
+    "title": "Analytics",
+    "subtitle": "Order performance insights",
+    "active_workload": "Active Workload",
+    "orders_in_progress": "Orders in progress",
+    "period_weekly": "Weekly",
+    "period_monthly": "Monthly",
+    "period_yearly": "Yearly",
+    "chart_title": "Order Volume",
+    "chart_empty": "No orders in this period",
+    "chart_loading": "Loading chart…",
+    "status_breakdown": "Status Breakdown",
+    "recent_orders": "Recent Orders",
+    "no_orders": "No orders yet",
+    "no_orders_sub": "Your orders will appear here once you start placing them.",
+    "total_orders": "Total Orders",
+    "completed_orders": "Completed",
+    "pending_orders": "Pending",
+    "error_load": "Could not load analytics",
+    "legend_orders": "Total Orders",
+    "legend_amount": "Total Amount (K TZS)"
   },
   "onboarding": {
     "skip": "Skip",
@@ -118,7 +141,13 @@
     "status_dispatched": "Dispatched",
     "status_dispatched_desc": "Order is on the way",
     "status_delivered": "Delivered",
-    "status_delivered_desc": "Order received successfully"
+    "status_delivered_desc": "Order received successfully",
+    "total_spent": "Total Spent",
+    "amount_period_day": "Today",
+    "amount_period_month": "Month",
+    "amount_period_year": "Year",
+    "recent_orders": "Recent Orders",
+    "view_all": "View All"
   },
   "suppliers": {
     "title": "Suppliers",
@@ -191,7 +220,24 @@
     "quote_banner_title": "Quotation Ready",
     "quote_banner_body": "A supplier has submitted prices for your order. Review the items below then accept or reject.",
     "rejection_section": "Rejection Reason",
-    "rejection_no_reason": "No reason was provided."
+    "rejection_no_reason": "No reason was provided.",
+    "dispatch_banner_title": "Order On the Way",
+    "dispatch_banner_body": "Your order has been dispatched by the supplier. Confirm receipt once it arrives.",
+    "delivery_actions_note": "Has this order been delivered to you?",
+    "mark_delivered": "Confirm Received",
+    "not_delivered": "Not Delivered",
+    "confirm_delivered_title": "Confirm Delivery",
+    "confirm_delivered_message": "Confirm that you have received this order?",
+    "confirm_delivered_btn": "Yes, Received",
+    "delivered_success": "Order marked as delivered",
+    "delivered_error": "Could not confirm delivery",
+    "issue_modal_title": "Report Delivery Issue",
+    "issue_modal_subtitle": "Describe the issue with this delivery:",
+    "issue_reason_placeholder": "e.g. Order not received, wrong items delivered…",
+    "issue_reason_required": "Please describe the issue",
+    "issue_submit": "Submit Report",
+    "issue_success": "Issue reported successfully",
+    "issue_error": "Could not submit report"
   },
   "cart": {
     "title": "My Cart",

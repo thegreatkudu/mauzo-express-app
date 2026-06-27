@@ -208,6 +208,20 @@ export async function mockRejectOrder(orderId: string, reason: string): Promise<
   }))
 }
 
+export async function mockMarkDelivered(orderId: string): Promise<void> {
+  await delay(400)
+  const order = _orders.find(o => o.order_id === orderId)
+  if (!order) throw new Error(`Order ${orderId} not found`)
+  order.status = 'delivered'
+}
+
+export async function mockReportDeliveryIssue(orderId: string, _reason: string): Promise<void> {
+  await delay(400)
+  const order = _orders.find(o => o.order_id === orderId)
+  if (!order) throw new Error(`Order ${orderId} not found`)
+  // Status stays 'dispatched' — admin/supplier is notified to follow up.
+}
+
 // ─── Notifications ────────────────────────────────────────────────────────────
 
 export async function mockGetNotifications(): Promise<Notification[]> {

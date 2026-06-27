@@ -270,7 +270,7 @@ function SecondaryBtn({
 // ── Styles ────────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: '#F6F6F4' },
+  safe:   { flex: 1, backgroundColor: '#F8FAFC' },
   scroll: { paddingTop: 36 },
 
   // Hero

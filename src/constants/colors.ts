@@ -12,7 +12,7 @@ export const Colors = {
   info:     '#6366f1',
 
   // surface
-  background:   '#F6F6F4',
+  background:   '#F8FAFC',
   card:         '#FFFFFF',
   border:       '#E2E8F0',
   borderLight:  '#F1F5F9',
@@ -40,8 +40,8 @@ export const Colors = {
 // Card shadow (SRS §6.1)
 export const CARD_SHADOW = {
   shadowColor: '#000',
-  shadowOffset: { width: 0, height: 4 },
-  shadowOpacity: 0.06,
-  shadowRadius: 16,
-  elevation: 4,
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.04,
+  shadowRadius: 5,
+  elevation: 2,
 } as const

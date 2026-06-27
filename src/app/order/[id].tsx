@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import {
-  ActivityIndicator, Alert, Modal, Pressable, RefreshControl,
+  ActivityIndicator, Modal, Pressable, RefreshControl,
   ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -9,9 +9,10 @@ import { HugeiconsIcon } from '@hugeicons/react-native'
 import { toast } from 'sonner-native'
 import { useTranslation } from 'react-i18next'
 
-import { useOrderDetail, useAcceptOrder, useRejectOrder } from '@/hooks/useOrders'
+import { useOrderDetail, useAcceptOrder, useRejectOrder, useMarkDelivered, useReportDeliveryIssue } from '@/hooks/useOrders'
 import { OrderDetailSkeleton } from '@/components/skeletons'
 import StatusBadge from '@/components/ui/StatusBadge'
+import { useAppAlert } from '@/components/ui/AppAlert/AppAlertProvider'
 import { formatDate, formatOrderId } from '@/utils/date'
 import { useResponsive } from '@/hooks/useResponsive'
 import {
@@ -64,12 +65,17 @@ export default function OrderDetailScreen() {
   const { t } = useTranslation()
   const { id: orderId } = useLocalSearchParams<{ id: string }>()
   const { data: order, isLoading, isError, refetch, isRefetching } = useOrderDetail(orderId)
-  const acceptMutation = useAcceptOrder()
-  const rejectMutation = useRejectOrder()
+  const acceptMutation         = useAcceptOrder()
+  const rejectMutation         = useRejectOrder()
+  const markDeliveredMutation  = useMarkDelivered()
+  const reportIssueMutation    = useReportDeliveryIssue()
   const { hp } = useResponsive()
+  const { showAlert } = useAppAlert()
 
-  const [rejectModalOpen, setRejectModalOpen] = useState(false)
-  const [rejectReason,    setRejectReason]    = useState('')
+  const [rejectModalOpen,     setRejectModalOpen]     = useState(false)
+  const [rejectReason,        setRejectReason]        = useState('')
+  const [issueModalOpen,      setIssueModalOpen]      = useState(false)
+  const [issueReason,         setIssueReason]         = useState('')
 
   const TIMELINE_STEPS = [
     { key: 'placed',     label: t('order_detail.timeline_placed'),     icon: ClockIcon },
@@ -80,25 +86,21 @@ export default function OrderDetailScreen() {
   ]
 
   function confirmAccept() {
-    Alert.alert(
-      t('order_detail.confirm_accept_title'),
-      t('order_detail.confirm_accept_message'),
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        {
-          text: t('order_detail.accept'),
-          style: 'default',
-          onPress: async () => {
-            try {
-              await acceptMutation.mutateAsync(orderId)
-              toast.success(t('order_detail.accept_success'))
-            } catch {
-              toast.error(t('order_detail.accept_error'))
-            }
-          },
-        },
-      ],
-    )
+    showAlert({
+      title:       t('order_detail.confirm_accept_title'),
+      message:     t('order_detail.confirm_accept_message'),
+      variant:     'success',
+      confirmText: t('order_detail.accept'),
+      cancelText:  t('common.cancel'),
+      onConfirm:   async () => {
+        try {
+          await acceptMutation.mutateAsync(orderId)
+          toast.success(t('order_detail.accept_success'))
+        } catch {
+          toast.error(t('order_detail.accept_error'))
+        }
+      },
+    })
   }
 
   async function handleReject() {
@@ -110,6 +112,36 @@ export default function OrderDetailScreen() {
       toast.success(t('order_detail.reject_success'))
     } catch {
       toast.error(t('order_detail.reject_error'))
+    }
+  }
+
+  function confirmDelivered() {
+    showAlert({
+      title:       t('order_detail.confirm_delivered_title'),
+      message:     t('order_detail.confirm_delivered_message'),
+      variant:     'success',
+      confirmText: t('order_detail.confirm_delivered_btn'),
+      cancelText:  t('common.cancel'),
+      onConfirm:   async () => {
+        try {
+          await markDeliveredMutation.mutateAsync(orderId)
+          toast.success(t('order_detail.delivered_success'))
+        } catch {
+          toast.error(t('order_detail.delivered_error'))
+        }
+      },
+    })
+  }
+
+  async function handleReportIssue() {
+    if (!issueReason.trim()) { toast.error(t('order_detail.issue_reason_required')); return }
+    try {
+      await reportIssueMutation.mutateAsync({ orderId, reason: issueReason.trim() })
+      setIssueModalOpen(false)
+      setIssueReason('')
+      toast.success(t('order_detail.issue_success'))
+    } catch {
+      toast.error(t('order_detail.issue_error'))
     }
   }
 
@@ -139,10 +171,11 @@ export default function OrderDetailScreen() {
     )
   }
 
-  const activeStep  = getTimelineStep(order.status)
-  const statusMeta  = getStatusMeta(order.status)
-  const canAct      = order.status === 'quote_received'
-  const isRejected  = order.status === 'rejected' || order.status === 'cancelled'
+  const activeStep          = getTimelineStep(order.status)
+  const statusMeta          = getStatusMeta(order.status)
+  const canAct              = order.status === 'quote_received'
+  const canConfirmDelivery  = order.status === 'dispatched'
+  const isRejected          = order.status === 'rejected' || order.status === 'cancelled'
   const rejectionReason = order.quotations.find(q => q.rejection_reason)?.rejection_reason ?? null
   const itemCount   = order.items.length
 
@@ -258,7 +291,20 @@ export default function OrderDetailScreen() {
           </View>
         )}
 
-        {/* ── 5. Timeline ── */}
+        {/* ── 5. Dispatched banner ── */}
+        {canConfirmDelivery && (
+          <View style={styles.dispatchBanner}>
+            <View style={styles.dispatchBannerIconWrap}>
+              <HugeiconsIcon icon={DeliveryIcon} size={20} color='#7C3AED' strokeWidth={1.5} />
+            </View>
+            <View style={styles.quoteBannerText}>
+              <Text style={styles.dispatchBannerTitle}>{t('order_detail.dispatch_banner_title')}</Text>
+              <Text style={styles.dispatchBannerBody}>{t('order_detail.dispatch_banner_body')}</Text>
+            </View>
+          </View>
+        )}
+
+        {/* ── 6. Timeline ── */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>{t('order_detail.timeline_title')}</Text>
           <View style={styles.timeline}>
@@ -372,7 +418,7 @@ export default function OrderDetailScreen() {
           })}
         </View>
 
-        {/* ── 7. Accept / Reject actions ── */}
+        {/* ── 7. Accept / Reject actions (quote_received) ── */}
         {canAct && (
           <View style={styles.actionsCard}>
             <View style={styles.actionsRow}>
@@ -397,6 +443,39 @@ export default function OrderDetailScreen() {
                   : <>
                       <HugeiconsIcon icon={CheckCircleIcon} size={16} color='#fff' strokeWidth={2} />
                       <Text style={styles.acceptBtnText}>{t('order_detail.accept')}</Text>
+                    </>
+                }
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+        {/* ── 8. Delivery confirmation actions (dispatched) ── */}
+        {canConfirmDelivery && (
+          <View style={styles.actionsCard}>
+            <Text style={styles.actionsNote}>{t('order_detail.delivery_actions_note')}</Text>
+            <View style={styles.actionsRow}>
+              <TouchableOpacity
+                style={[styles.rejectBtn, reportIssueMutation.isPending && styles.btnDisabled]}
+                onPress={() => setIssueModalOpen(true)}
+                disabled={reportIssueMutation.isPending}
+                activeOpacity={0.85}
+              >
+                <HugeiconsIcon icon={CloseIcon} size={16} color='#EF4444' strokeWidth={2} />
+                <Text style={styles.rejectBtnText}>{t('order_detail.not_delivered')}</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.deliveredBtn, markDeliveredMutation.isPending && styles.btnDisabled]}
+                onPress={confirmDelivered}
+                disabled={markDeliveredMutation.isPending}
+                activeOpacity={0.88}
+              >
+                {markDeliveredMutation.isPending
+                  ? <ActivityIndicator color='#fff' size='small' />
+                  : <>
+                      <HugeiconsIcon icon={TickIcon} size={16} color='#fff' strokeWidth={2} />
+                      <Text style={styles.deliveredBtnText}>{t('order_detail.mark_delivered')}</Text>
                     </>
                 }
               </TouchableOpacity>
@@ -449,6 +528,50 @@ export default function OrderDetailScreen() {
           </Pressable>
         </Pressable>
       </Modal>
+      {/* ── Issue Report Modal ── */}
+      <Modal
+        visible={issueModalOpen}
+        transparent
+        animationType='slide'
+        onRequestClose={() => setIssueModalOpen(false)}
+      >
+        <Pressable style={styles.overlay} onPress={() => setIssueModalOpen(false)}>
+          <Pressable style={styles.sheet} onPress={() => {}}>
+            <View style={styles.sheetHandle} />
+            <View style={styles.sheetHeader}>
+              <Text style={styles.sheetTitle}>{t('order_detail.issue_modal_title')}</Text>
+              <TouchableOpacity onPress={() => setIssueModalOpen(false)} hitSlop={8}>
+                <HugeiconsIcon icon={CloseIcon} size={20} color='#6B7280' strokeWidth={1.5} />
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.sheetSubtitle}>{t('order_detail.issue_modal_subtitle')}</Text>
+            <TextInput
+              style={styles.reasonInput}
+              value={issueReason}
+              onChangeText={setIssueReason}
+              placeholder={t('order_detail.issue_reason_placeholder')}
+              placeholderTextColor='#9CA3AF'
+              multiline
+              numberOfLines={4}
+              textAlignVertical='top'
+            />
+            <TouchableOpacity
+              style={[
+                styles.issueConfirmBtn,
+                (reportIssueMutation.isPending || !issueReason.trim()) && styles.btnDisabled,
+              ]}
+              onPress={handleReportIssue}
+              disabled={reportIssueMutation.isPending || !issueReason.trim()}
+              activeOpacity={0.88}
+            >
+              {reportIssueMutation.isPending
+                ? <ActivityIndicator color='#fff' />
+                : <Text style={styles.rejectConfirmBtnText}>{t('order_detail.issue_submit')}</Text>
+              }
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   )
 }
@@ -477,7 +600,7 @@ function ScreenHeader({ onBack, onRefresh }: { onBack: () => void; onRefresh?: (
 // ── Styles ────────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: '#F6F6F4' },
+  safe:   { flex: 1, backgroundColor: '#F8FAFC' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
   scroll: { paddingVertical: 16, gap: 14, paddingBottom: 48 },
 
@@ -503,8 +626,8 @@ const styles = StyleSheet.create({
     borderColor:     '#F0F0F0',
     shadowColor:     '#000',
     shadowOffset:    { width: 0, height: 2 },
-    shadowOpacity:   0.05,
-    shadowRadius:    10,
+    shadowOpacity:   0.04,
+    shadowRadius:    5,
     elevation:       2,
   },
   heroBand: {
@@ -551,10 +674,10 @@ const styles = StyleSheet.create({
     borderWidth:     1,
     borderColor:     '#F0F0F0',
     shadowColor:     '#000',
-    shadowOffset:    { width: 0, height: 1 },
+    shadowOffset:    { width: 0, height: 2 },
     shadowOpacity:   0.04,
-    shadowRadius:    6,
-    elevation:       1,
+    shadowRadius:    5,
+    elevation:       2,
   },
   supplierIconWrap: {
     width:           46,
@@ -617,7 +740,7 @@ const styles = StyleSheet.create({
     shadowColor:     '#000',
     shadowOffset:    { width: 0, height: 2 },
     shadowOpacity:   0.04,
-    shadowRadius:    8,
+    shadowRadius:    5,
     elevation:       2,
     gap:             14,
   },
@@ -729,6 +852,29 @@ const styles = StyleSheet.create({
   qsBadgeText: { fontSize: 10, fontFamily: 'Poppins-SemiBold' },
   noPriceText: { fontSize: 11, fontFamily: 'Poppins-Regular', color: '#9CA3AF' },
 
+  // ── Dispatched banner ──────────────────────────────────────────────────────
+  dispatchBanner: {
+    flexDirection:   'row',
+    alignItems:      'flex-start',
+    gap:             12,
+    backgroundColor: '#F5F3FF',
+    borderRadius:    14,
+    padding:         14,
+    borderWidth:     1,
+    borderColor:     '#DDD6FE',
+  },
+  dispatchBannerIconWrap: {
+    width:           36,
+    height:          36,
+    borderRadius:    10,
+    backgroundColor: '#EDE9FE',
+    alignItems:      'center',
+    justifyContent:  'center',
+    flexShrink:      0,
+  },
+  dispatchBannerTitle: { fontSize: 13, fontFamily: 'Poppins-SemiBold', color: '#4C1D95' },
+  dispatchBannerBody:  { fontSize: 12, fontFamily: 'Poppins-Regular',  color: '#5B21B6', lineHeight: 18 },
+
   // ── Actions ────────────────────────────────────────────────────────────────
   actionsCard: {
     backgroundColor: '#fff',
@@ -739,9 +885,10 @@ const styles = StyleSheet.create({
     shadowColor:     '#000',
     shadowOffset:    { width: 0, height: 2 },
     shadowOpacity:   0.04,
-    shadowRadius:    8,
+    shadowRadius:    5,
     elevation:       2,
   },
+  actionsNote: { fontSize: 12, fontFamily: 'Poppins-Regular', color: '#6B7280', marginBottom: 4 },
   actionsRow: { flexDirection: 'row', gap: 10 },
   rejectBtn: {
     flex: 1, height: 50, borderRadius: 14,
@@ -760,6 +907,22 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   acceptBtnText: { fontSize: 14, fontFamily: 'Poppins-SemiBold', color: '#fff' },
+  deliveredBtn: {
+    flex: 2, height: 50, borderRadius: 14,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+    backgroundColor: '#2563EB',
+    shadowColor: '#2563EB',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  deliveredBtnText: { fontSize: 14, fontFamily: 'Poppins-SemiBold', color: '#fff' },
+  issueConfirmBtn: {
+    height: 52, borderRadius: 14,
+    backgroundColor: '#EF4444',
+    alignItems: 'center', justifyContent: 'center',
+  },
   btnDisabled:   { opacity: 0.5 },
 
   // ── Error / Retry ──────────────────────────────────────────────────────────

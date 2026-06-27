@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import {
-  ActivityIndicator, Alert, RefreshControl, ScrollView,
+  ActivityIndicator, RefreshControl, ScrollView,
   StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -17,6 +17,7 @@ import { placeOrder } from '@/api/orders'
 import { extractApiError } from '@/api/client'
 import { useResponsive } from '@/hooks/useResponsive'
 import EmptyState from '@/components/ui/EmptyState'
+import { useAppAlert } from '@/components/ui/AppAlert/AppAlertProvider'
 import {
   BackIcon, CartIcon, BuildingIcon, PackageIcon, CheckCircleIcon, AlertCircleIcon,
 } from '@/constants/icons'
@@ -35,6 +36,7 @@ export default function OrderReviewScreen() {
   const [notes, setNotes] = useState('')
   const { rf, hp, isTablet } = useResponsive()
   const insets = useSafeAreaInsets()
+  const { showAlert } = useAppAlert()
 
   const groups = useMemo<SupplierGroup[]>(() => {
     const map = new Map<number, SupplierGroup>()
@@ -56,17 +58,17 @@ export default function OrderReviewScreen() {
   )
 
   function confirmSubmit() {
-    Alert.alert(
-      t('order_review.confirm_title'),
-      t(
+    showAlert({
+      title:       t('order_review.confirm_title'),
+      message:     t(
         groups.length !== 1 ? 'order_review.confirm_message_other' : 'order_review.confirm_message_one',
         { count: groups.length },
       ),
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        { text: t('order_review.place_order'), style: 'default', onPress: doPlaceOrder },
-      ],
-    )
+      variant:     'default',
+      confirmText: t('order_review.place_order'),
+      cancelText:  t('common.cancel'),
+      onConfirm:   doPlaceOrder,
+    })
   }
 
   async function doPlaceOrder() {
@@ -289,7 +291,7 @@ function ScreenHeader({ onBack, rf, hp, isTablet }: {
 }
 
 const styles = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: '#F6F6F4' },
+  safe:   { flex: 1, backgroundColor: '#F8FAFC' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
   // ── Header ───────────────────────────────────────────────────────────────────
@@ -348,7 +350,7 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
-    shadowRadius: 8,
+    shadowRadius: 5,
     elevation: 2,
     overflow: 'hidden',
   },
@@ -413,7 +415,7 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
-    shadowRadius: 8,
+    shadowRadius: 5,
     elevation: 2,
     gap: 12,
   },
@@ -433,7 +435,7 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
-    shadowRadius: 8,
+    shadowRadius: 5,
     elevation: 2,
     paddingTop: 16,
     paddingHorizontal: 16,

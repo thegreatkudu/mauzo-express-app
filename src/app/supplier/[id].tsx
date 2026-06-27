@@ -533,7 +533,7 @@ export default function SupplierProductsScreen() {
 // ── Styles ────────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F6F6F4' },
+  safe: { flex: 1, backgroundColor: '#F8FAFC' },
 
   // Screen header
   screenHeader: {
@@ -598,8 +598,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
+    shadowOpacity: 0.04,
+    shadowRadius: 5,
     elevation: 2,
   },
   productCardCompact: {

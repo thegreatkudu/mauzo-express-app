@@ -183,7 +183,7 @@ export default function SuppliersScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F6F6F4' },
+  safe: { flex: 1, backgroundColor: '#F8FAFC' },
 
   pageHeader: {
     paddingBottom: 8,

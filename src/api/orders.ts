@@ -8,6 +8,8 @@ import {
   mockPlaceOrder,
   mockAcceptOrder,
   mockRejectOrder,
+  mockMarkDelivered,
+  mockReportDeliveryIssue,
 } from './mock'
 
 export type OrderSummary = {
@@ -48,4 +50,14 @@ export async function acceptOrder(orderId: string): Promise<void> {
 export async function rejectOrder(orderId: string, reason: string): Promise<void> {
   if (DEMO_MODE) return mockRejectOrder(orderId, reason)
   await apiClient.post(`/orders/${orderId}/reject`, { reason })
+}
+
+export async function markDelivered(orderId: string): Promise<void> {
+  if (DEMO_MODE) return mockMarkDelivered(orderId)
+  await apiClient.post(`/orders/${orderId}/mark-delivered`)
+}
+
+export async function reportDeliveryIssue(orderId: string, reason: string): Promise<void> {
+  if (DEMO_MODE) return mockReportDeliveryIssue(orderId, reason)
+  await apiClient.post(`/orders/${orderId}/report-issue`, { reason })
 }

@@ -206,7 +206,7 @@ function ScreenHeader({ onBack, rf, hp, isTablet }: {
 }
 
 const styles = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: '#F6F6F4' },
+  safe:   { flex: 1, backgroundColor: '#F8FAFC' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
   // ── Header ───────────────────────────────────────────────────────────────────
@@ -248,9 +248,9 @@ const styles = StyleSheet.create({
     borderColor: '#F0F0F0',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 3,
+    shadowOpacity: 0.04,
+    shadowRadius: 5,
+    elevation: 2,
     gap: 10,
   },
   heroIconWrap: {
@@ -294,7 +294,7 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
-    shadowRadius: 8,
+    shadowRadius: 5,
     elevation: 2,
     gap: 2,
   },

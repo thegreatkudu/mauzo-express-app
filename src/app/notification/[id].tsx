@@ -161,7 +161,7 @@ export default function NotificationPreviewScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F6F6F4' },
+  safe: { flex: 1, backgroundColor: '#F8FAFC' },
 
   header: {
     flexDirection:     'row',
@@ -195,10 +195,10 @@ const styles = StyleSheet.create({
     alignItems:     'center',
     justifyContent: 'center',
     shadowColor:    '#000',
-    shadowOffset:   { width: 0, height: 4 },
-    shadowOpacity:  0.08,
-    shadowRadius:   12,
-    elevation:      4,
+    shadowOffset:   { width: 0, height: 2 },
+    shadowOpacity:  0.04,
+    shadowRadius:   5,
+    elevation:      2,
   },
 
   newBadge: {
@@ -241,10 +241,10 @@ const styles = StyleSheet.create({
     borderWidth:     1,
     borderColor:     '#F0F0F0',
     shadowColor:     '#000',
-    shadowOffset:    { width: 0, height: 1 },
+    shadowOffset:    { width: 0, height: 2 },
     shadowOpacity:   0.04,
-    shadowRadius:    6,
-    elevation:       1,
+    shadowRadius:    5,
+    elevation:       2,
     gap:             10,
   },
   messageCardLabel: {
@@ -271,10 +271,10 @@ const styles = StyleSheet.create({
     borderWidth:     1,
     borderColor:     '#F0F0F0',
     shadowColor:     '#000',
-    shadowOffset:    { width: 0, height: 1 },
+    shadowOffset:    { width: 0, height: 2 },
     shadowOpacity:   0.04,
-    shadowRadius:    6,
-    elevation:       1,
+    shadowRadius:    5,
+    elevation:       2,
   },
   detailRow: {
     flexDirection:  'row',
