@@ -8,6 +8,7 @@ import { router, useLocalSearchParams } from 'expo-router'
 import { HugeiconsIcon } from '@hugeicons/react-native'
 import { toast } from 'sonner-native'
 import { useTranslation } from 'react-i18next'
+import { useTheme } from '@/hooks/use-theme'
 
 import { useOrderDetail, useAcceptOrder, useRejectOrder, useMarkDelivered, useReportDeliveryIssue } from '@/hooks/useOrders'
 import { OrderDetailSkeleton } from '@/components/skeletons'
@@ -63,6 +64,7 @@ function getTimelineStep(status: string): number {
 
 export default function OrderDetailScreen() {
   const { t } = useTranslation()
+  const { theme } = useTheme()
   const { id: orderId } = useLocalSearchParams<{ id: string }>()
   const { data: order, isLoading, isError, refetch, isRefetching } = useOrderDetail(orderId)
   const acceptMutation         = useAcceptOrder()
@@ -149,7 +151,7 @@ export default function OrderDetailScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.safe} edges={['top']}>
+      <SafeAreaView style={[styles.safe, { backgroundColor: theme.colors.background }]} edges={['top']}>
         <ScreenHeader onBack={() => router.back()} />
         <OrderDetailSkeleton />
       </SafeAreaView>
@@ -158,7 +160,7 @@ export default function OrderDetailScreen() {
 
   if (isError || !order) {
     return (
-      <SafeAreaView style={styles.safe} edges={['top']}>
+      <SafeAreaView style={[styles.safe, { backgroundColor: theme.colors.background }]} edges={['top']}>
         <ScreenHeader onBack={() => router.back()} />
         <View style={styles.center}>
           <Text style={styles.errorText}>{t('order_detail.error_load')}</Text>

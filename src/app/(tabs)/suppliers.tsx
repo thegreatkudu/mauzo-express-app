@@ -11,6 +11,7 @@ import { HugeiconsIcon } from '@hugeicons/react-native'
 import { useTranslation } from 'react-i18next'
 import { useSuppliers } from '@/hooks/useSuppliers'
 import { useResponsive } from '@/hooks/useResponsive'
+import { useTheme } from '@/hooks/use-theme'
 import SupplierCard from '@/components/SupplierCard'
 import EmptyState from '@/components/ui/EmptyState'
 import { SupplierCardSkeleton } from '@/components/skeletons'
@@ -22,6 +23,7 @@ export default function SuppliersScreen() {
   const { data: suppliers, isLoading, isError, refetch, isRefetching } = useSuppliers()
   const { hp, rf, gap, vgap, suppliersColumns, contentMaxWidth } = useResponsive()
   const { t } = useTranslation()
+  const { theme } = useTheme()
 
   const filtered = useMemo(() => {
     if (!suppliers) return []
@@ -45,7 +47,7 @@ export default function SuppliersScreen() {
   const isMultiCol = suppliersColumns > 1
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.colors.background }]} edges={['top']}>
       <View style={contentMaxWidth
         ? { flex: 1, maxWidth: contentMaxWidth, alignSelf: 'center', width: '100%' }
         : { flex: 1 }

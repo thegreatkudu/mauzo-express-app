@@ -17,11 +17,92 @@ import LanguageSelector from '@/components/LanguageSelector'
 import { useAppAlert } from '@/components/ui/AppAlert/AppAlertProvider'
 import { maskPhone } from '@/utils/phone'
 import { daysRemaining } from '@/utils/date'
+import { useTheme, useThemeStyles } from '@/hooks/use-theme'
+import type { AppTheme, ThemeMode } from '@/hooks/use-theme'
 import {
   PersonIcon, PhoneIcon, LocationIcon, EditIcon,
   KeyIcon, LogoutIcon, CrownIcon, ChevronRightIcon,
   BuildingIcon,
 } from '@/constants/icons'
+import {
+  Sun01Icon,
+  Moon02Icon,
+  SmartPhone01Icon,
+} from '@hugeicons/core-free-icons'
+
+// ── Theme picker ──────────────────────────────────────────────────────────────
+
+const THEME_OPTIONS: { mode: ThemeMode; label: string; icon: any }[] = [
+  { mode: 'light',  label: 'Light',  icon: Sun01Icon },
+  { mode: 'dark',   label: 'Dark',   icon: Moon02Icon },
+  { mode: 'system', label: 'System', icon: SmartPhone01Icon },
+]
+
+function ThemePicker() {
+  const { mode, setMode, theme } = useTheme()
+  const styles = useThemeStyles(getThemePickerStyles)
+
+  return (
+    <View style={styles.pickerRow}>
+      {THEME_OPTIONS.map(({ mode: opt, label, icon }) => {
+        const active = mode === opt
+        return (
+          <TouchableOpacity
+            key={opt}
+            style={[styles.pickerOption, active && styles.pickerOptionActive]}
+            onPress={() => setMode(opt)}
+            activeOpacity={0.75}
+          >
+            <HugeiconsIcon
+              icon={icon as any}
+              size={16}
+              color={active ? theme.colors.primary : theme.colors.textMuted}
+              strokeWidth={active ? 2 : 1.5}
+            />
+            <Text style={[styles.pickerLabel, active && styles.pickerLabelActive]}>
+              {label}
+            </Text>
+          </TouchableOpacity>
+        )
+      })}
+    </View>
+  )
+}
+
+function getThemePickerStyles(theme: AppTheme) {
+  return StyleSheet.create({
+    pickerRow: {
+      flexDirection: 'row',
+      backgroundColor: theme.colors.card,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      overflow: 'hidden',
+    },
+    pickerOption: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+      paddingVertical: 12,
+      borderWidth: 0,
+    },
+    pickerOptionActive: {
+      backgroundColor: theme.colors.primaryLight,
+    },
+    pickerLabel: {
+      fontFamily: 'Poppins-Medium',
+      fontSize: 13,
+      color: theme.colors.textMuted,
+    },
+    pickerLabelActive: {
+      color: theme.colors.primary,
+    },
+  })
+}
+
+// ── Screen ────────────────────────────────────────────────────────────────────
 
 export default function ProfileScreen() {
   const profile  = useAuthStore(s => s.profile)
@@ -42,6 +123,8 @@ export default function ProfileScreen() {
   const { hp, rf, isTablet, isLandscape, contentMaxWidth } = useResponsive()
   const { t } = useTranslation()
   const { showAlert } = useAppAlert()
+  const styles = useThemeStyles(getStyles)
+  const { theme } = useTheme()
 
   const sub      = profile?.subscription
   const daysLeft = daysRemaining(sub?.expires_at ?? null)
@@ -91,34 +174,22 @@ export default function ProfileScreen() {
     })
   }
 
-  const avatarSize = isTablet ? 80 : 64
+  const avatarSize   = isTablet ? 80 : 64
   const avatarRadius = isTablet ? 24 : 20
-
-  // On tablets in landscape, show a two-column profile layout
   const showSideBySide = isTablet && isLandscape
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.scroll,
-          { paddingHorizontal: hp, paddingBottom: 40 },
-        ]}
+        contentContainerStyle={[styles.scroll, { paddingHorizontal: hp, paddingBottom: 40 }]}
       >
         <View style={contentMaxWidth ? { maxWidth: contentMaxWidth, alignSelf: 'center', width: '100%' } : undefined}>
 
           {/* Header */}
           <View style={[styles.header, { paddingTop: isTablet ? 24 : 20, gap: isTablet ? 16 : 14 }]}>
-            <View style={[
-              styles.avatar,
-              {
-                width: avatarSize,
-                height: avatarSize,
-                borderRadius: avatarRadius,
-              },
-            ]}>
-              <HugeiconsIcon icon={BuildingIcon} size={isTablet ? 40 : 32} color='#CE4002' strokeWidth={1.5} />
+            <View style={[styles.avatar, { width: avatarSize, height: avatarSize, borderRadius: avatarRadius }]}>
+              <HugeiconsIcon icon={BuildingIcon} size={isTablet ? 40 : 32} color={theme.colors.primary} strokeWidth={1.5} />
             </View>
             <View style={styles.headerInfo}>
               <Text style={[styles.bizName, { fontSize: rf(18) }]} numberOfLines={1}>
@@ -128,85 +199,69 @@ export default function ProfileScreen() {
             </View>
           </View>
 
-          {/* Two-col layout on tablet landscape */}
           {showSideBySide ? (
             <View style={styles.sideRow}>
               <View style={styles.sideLeft}>
-                <Section title={t('profile.section_business')} rf={rf}>
+                <Section title={t('profile.section_business')} rf={rf} theme={theme}>
                   <BusinessInfoCard
-                    profile={profile}
-                    editMode={editMode}
-                    bizName={bizName}
-                    location={location}
-                    setBizName={setBizName}
-                    setLocation={setLocation}
-                    savingProfile={savingProfile}
-                    setEditMode={setEditMode}
-                    handleSaveProfile={handleSaveProfile}
-                    rf={rf}
-                    isTablet={isTablet}
+                    profile={profile} editMode={editMode} bizName={bizName} location={location}
+                    setBizName={setBizName} setLocation={setLocation} savingProfile={savingProfile}
+                    setEditMode={setEditMode} handleSaveProfile={handleSaveProfile}
+                    rf={rf} isTablet={isTablet} theme={theme}
                   />
                 </Section>
               </View>
               <View style={styles.sideRight}>
-                <Section title={t('profile.section_subscription')} rf={rf}>
-                  <SubscriptionCard sub={sub} daysLeft={daysLeft} rf={rf} />
+                <Section title={t('profile.section_subscription')} rf={rf} theme={theme}>
+                  <SubscriptionCard sub={sub} daysLeft={daysLeft} rf={rf} theme={theme} />
                 </Section>
-                <Section title={t('profile.section_password')} rf={rf}>
+                <Section title={t('profile.section_password')} rf={rf} theme={theme}>
                   <PasswordSection
-                    pwVisible={pwVisible}
-                    setPwVisible={setPwVisible}
+                    pwVisible={pwVisible} setPwVisible={setPwVisible}
                     curPw={curPw} setCurPw={setCurPw}
                     newPw={newPw} setNewPw={setNewPw}
                     confirmPw={confirmPw} setConfirmPw={setConfirmPw}
-                    changingPw={changingPw}
-                    handleChangePassword={handleChangePassword}
-                    rf={rf}
-                    isTablet={isTablet}
+                    changingPw={changingPw} handleChangePassword={handleChangePassword}
+                    rf={rf} isTablet={isTablet} theme={theme}
                   />
                 </Section>
               </View>
             </View>
           ) : (
             <>
-              <Section title={t('profile.section_business')} rf={rf}>
+              <Section title={t('profile.section_business')} rf={rf} theme={theme}>
                 <BusinessInfoCard
-                  profile={profile}
-                  editMode={editMode}
-                  bizName={bizName}
-                  location={location}
-                  setBizName={setBizName}
-                  setLocation={setLocation}
-                  savingProfile={savingProfile}
-                  setEditMode={setEditMode}
-                  handleSaveProfile={handleSaveProfile}
-                  rf={rf}
-                  isTablet={isTablet}
+                  profile={profile} editMode={editMode} bizName={bizName} location={location}
+                  setBizName={setBizName} setLocation={setLocation} savingProfile={savingProfile}
+                  setEditMode={setEditMode} handleSaveProfile={handleSaveProfile}
+                  rf={rf} isTablet={isTablet} theme={theme}
                 />
               </Section>
 
-              <Section title={t('profile.section_subscription')} rf={rf}>
-                <SubscriptionCard sub={sub} daysLeft={daysLeft} rf={rf} />
+              <Section title={t('profile.section_subscription')} rf={rf} theme={theme}>
+                <SubscriptionCard sub={sub} daysLeft={daysLeft} rf={rf} theme={theme} />
               </Section>
 
-              <Section title={t('profile.section_password')} rf={rf}>
+              <Section title={t('profile.section_password')} rf={rf} theme={theme}>
                 <PasswordSection
-                  pwVisible={pwVisible}
-                  setPwVisible={setPwVisible}
+                  pwVisible={pwVisible} setPwVisible={setPwVisible}
                   curPw={curPw} setCurPw={setCurPw}
                   newPw={newPw} setNewPw={setNewPw}
                   confirmPw={confirmPw} setConfirmPw={setConfirmPw}
-                  changingPw={changingPw}
-                  handleChangePassword={handleChangePassword}
-                  rf={rf}
-                  isTablet={isTablet}
+                  changingPw={changingPw} handleChangePassword={handleChangePassword}
+                  rf={rf} isTablet={isTablet} theme={theme}
                 />
               </Section>
             </>
           )}
 
+          {/* Appearance */}
+          <Section title={t('profile.section_appearance', { defaultValue: 'Appearance' })} rf={rf} theme={theme}>
+            <ThemePicker />
+          </Section>
+
           {/* Language */}
-          <Section title={t('profile.section_language')} rf={rf}>
+          <Section title={t('profile.section_language')} rf={rf} theme={theme}>
             <LanguageSelector />
           </Section>
 
@@ -228,21 +283,40 @@ export default function ProfileScreen() {
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-function Section({ title, children, rf }: { title: string; children: React.ReactNode; rf: (s: number) => number }) {
+function Section({
+  title, children, rf, theme,
+}: { title: string; children: React.ReactNode; rf: (s: number) => number; theme: AppTheme }) {
   return (
-    <View style={styles.section}>
-      <Text style={[styles.sectionTitle, { fontSize: rf(11) }]}>{title}</Text>
+    <View style={{ marginTop: 24 }}>
+      <Text style={{
+        fontFamily: 'Poppins-SemiBold',
+        color: theme.colors.textMuted,
+        textTransform: 'uppercase',
+        letterSpacing: 0.8,
+        marginBottom: 10,
+        fontSize: rf(11),
+      }}>
+        {title}
+      </Text>
       {children}
     </View>
   )
 }
 
-function InfoRow({ icon, label, children, rf }: { icon: any; label: string; children: React.ReactNode; rf: (s: number) => number }) {
+function InfoRow({
+  icon, label, children, rf, theme,
+}: { icon: any; label: string; children: React.ReactNode; rf: (s: number) => number; theme: AppTheme }) {
   return (
-    <View style={styles.infoRow}>
-      <HugeiconsIcon icon={icon} size={16} color='#9CA3AF' strokeWidth={1.5} />
-      <View style={styles.infoContent}>
-        <Text style={[styles.infoLabel, { fontSize: rf(11) }]}>{label}</Text>
+    <View style={{
+      flexDirection: 'row', alignItems: 'flex-start', gap: 12,
+      paddingHorizontal: 16, paddingVertical: 13,
+      borderBottomWidth: 1, borderBottomColor: theme.colors.borderLight,
+    }}>
+      <HugeiconsIcon icon={icon} size={16} color={theme.colors.textMuted} strokeWidth={1.5} />
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text style={{ fontFamily: 'Poppins-Regular', color: theme.colors.textMuted, fontSize: rf(11) }}>
+          {label}
+        </Text>
         {children}
       </View>
     </View>
@@ -250,24 +324,29 @@ function InfoRow({ icon, label, children, rf }: { icon: any; label: string; chil
 }
 
 function PwField({
-  label, value, onChange, rf, textContentType, autoComplete,
+  label, value, onChange, rf, theme, textContentType, autoComplete,
 }: {
-  label: string
-  value: string
-  onChange: (v: string) => void
-  rf: (s: number) => number
+  label: string; value: string; onChange: (v: string) => void
+  rf: (s: number) => number; theme: AppTheme
   textContentType?: TextInputProps['textContentType']
   autoComplete?: TextInputProps['autoComplete']
 }) {
   return (
-    <View style={styles.pwField}>
-      <Text style={[styles.pwFieldLabel, { fontSize: rf(12) }]}>{label}</Text>
+    <View style={{ gap: 6 }}>
+      <Text style={{ fontFamily: 'Poppins-Regular', color: theme.colors.textSub, fontSize: rf(12) }}>
+        {label}
+      </Text>
       <TextInput
-        style={[styles.pwInput, { fontSize: rf(14) }]}
+        style={{
+          height: 48, borderRadius: 12, borderWidth: 1.5,
+          borderColor: theme.colors.inputBorder, paddingHorizontal: 14,
+          fontFamily: 'Poppins-Regular', color: theme.colors.text,
+          backgroundColor: theme.colors.inputBg, fontSize: rf(14),
+        }}
         value={value}
         onChangeText={onChange}
         secureTextEntry
-        placeholderTextColor='#9CA3AF'
+        placeholderTextColor={theme.colors.placeholder}
         placeholder='••••••••'
         textContentType={textContentType}
         autoComplete={autoComplete}
@@ -282,145 +361,159 @@ function PwField({
 
 function BusinessInfoCard({
   profile, editMode, bizName, location, setBizName, setLocation,
-  savingProfile, setEditMode, handleSaveProfile, rf, isTablet,
+  savingProfile, setEditMode, handleSaveProfile, rf, isTablet, theme,
 }: any) {
   const { t } = useTranslation()
   return (
-    <View style={styles.card}>
-      <InfoRow icon={PersonIcon} label={t('profile.field_business_name')} rf={rf}>
+    <View style={[cardStyle(theme)]}>
+      <InfoRow icon={PersonIcon} label={t('profile.field_business_name')} rf={rf} theme={theme}>
         {editMode ? (
           <TextInput
-            style={[styles.editInput, { fontSize: rf(14) }]}
-            value={bizName}
-            onChangeText={setBizName}
-            placeholderTextColor='#9CA3AF'
+            style={{ fontFamily: 'Poppins-Regular', color: theme.colors.text, fontSize: rf(14), borderBottomWidth: 1, borderBottomColor: theme.colors.primary, paddingBottom: 4, padding: 0 }}
+            value={bizName} onChangeText={setBizName}
+            placeholderTextColor={theme.colors.placeholder}
           />
         ) : (
-          <Text style={[styles.infoValue, { fontSize: rf(14) }]}>{profile?.business_name}</Text>
+          <Text style={{ fontFamily: 'Poppins-Medium', color: theme.colors.text, fontSize: rf(14) }}>
+            {profile?.business_name}
+          </Text>
         )}
       </InfoRow>
-      <InfoRow icon={PhoneIcon} label={t('profile.field_phone')} rf={rf}>
-        <Text style={[styles.infoValue, { fontSize: rf(14) }]}>{maskPhone(profile?.phone ?? '')}</Text>
-        <Text style={[styles.infoHint, { fontSize: rf(11) }]}>{t('profile.contact_admin_to_change')}</Text>
+      <InfoRow icon={PhoneIcon} label={t('profile.field_phone')} rf={rf} theme={theme}>
+        <Text style={{ fontFamily: 'Poppins-Medium', color: theme.colors.text, fontSize: rf(14) }}>
+          {maskPhone(profile?.phone ?? '')}
+        </Text>
+        <Text style={{ fontFamily: 'Poppins-Regular', color: theme.colors.textDisabled, fontSize: rf(11) }}>
+          {t('profile.contact_admin_to_change')}
+        </Text>
       </InfoRow>
-      <InfoRow icon={LocationIcon} label={t('profile.field_location')} rf={rf}>
+      <InfoRow icon={LocationIcon} label={t('profile.field_location')} rf={rf} theme={theme}>
         {editMode ? (
           <TextInput
-            style={[styles.editInput, { fontSize: rf(14) }]}
-            value={location}
-            onChangeText={setLocation}
-            placeholderTextColor='#9CA3AF'
+            style={{ fontFamily: 'Poppins-Regular', color: theme.colors.text, fontSize: rf(14), borderBottomWidth: 1, borderBottomColor: theme.colors.primary, paddingBottom: 4, padding: 0 }}
+            value={location} onChangeText={setLocation}
+            placeholderTextColor={theme.colors.placeholder}
           />
         ) : (
-          <Text style={[styles.infoValue, { fontSize: rf(14) }]}>{profile?.location}</Text>
+          <Text style={{ fontFamily: 'Poppins-Medium', color: theme.colors.text, fontSize: rf(14) }}>
+            {profile?.location}
+          </Text>
         )}
       </InfoRow>
-      <InfoRow icon={BuildingIcon} label={t('profile.field_category')} rf={rf}>
-        <Text style={[styles.infoValue, { fontSize: rf(14) }]}>{profile?.category.name}</Text>
-        <Text style={[styles.infoHint, { fontSize: rf(11) }]}>{t('profile.contact_admin_to_change')}</Text>
+      <InfoRow icon={BuildingIcon} label={t('profile.field_category')} rf={rf} theme={theme}>
+        <Text style={{ fontFamily: 'Poppins-Medium', color: theme.colors.text, fontSize: rf(14) }}>
+          {profile?.category.name}
+        </Text>
+        <Text style={{ fontFamily: 'Poppins-Regular', color: theme.colors.textDisabled, fontSize: rf(11) }}>
+          {t('profile.contact_admin_to_change')}
+        </Text>
       </InfoRow>
 
       {editMode ? (
-        <View style={styles.editActions}>
+        <View style={{ flexDirection: 'row', gap: 10, padding: 16 }}>
           <TouchableOpacity
-            style={[styles.cancelBtn, isTablet && styles.tallBtn]}
-            onPress={() => {
-              setBizName(profile?.business_name ?? '')
-              setLocation(profile?.location ?? '')
-              setEditMode(false)
-            }}
+            style={[{ flex: 1, height: isTablet ? 52 : 44, borderRadius: isTablet ? 14 : 12, borderWidth: 1.5, borderColor: theme.colors.border, alignItems: 'center', justifyContent: 'center' }]}
+            onPress={() => { setBizName(profile?.business_name ?? ''); setLocation(profile?.location ?? ''); setEditMode(false) }}
             activeOpacity={0.8}
           >
-            <Text style={[styles.cancelBtnText, { fontSize: rf(14) }]}>{t('profile.cancel')}</Text>
+            <Text style={{ fontFamily: 'Poppins-SemiBold', color: theme.colors.textSub, fontSize: rf(14) }}>
+              {t('profile.cancel')}
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.saveBtn, isTablet && styles.tallBtn, savingProfile && styles.saveBtnDisabled]}
-            onPress={handleSaveProfile}
-            disabled={savingProfile}
-            activeOpacity={0.88}
+            style={[{ flex: 1, height: isTablet ? 52 : 44, borderRadius: isTablet ? 14 : 12, backgroundColor: savingProfile ? theme.colors.primaryMuted : theme.colors.primary, alignItems: 'center', justifyContent: 'center' }]}
+            onPress={handleSaveProfile} disabled={savingProfile} activeOpacity={0.88}
           >
             {savingProfile
               ? <ActivityIndicator color='#fff' size='small' />
-              : <Text style={[styles.saveBtnText, { fontSize: rf(14) }]}>{t('profile.save_changes')}</Text>
+              : <Text style={{ fontFamily: 'Poppins-SemiBold', color: '#fff', fontSize: rf(14) }}>{t('profile.save_changes')}</Text>
             }
           </TouchableOpacity>
         </View>
       ) : (
-        <TouchableOpacity style={styles.editBtn} onPress={() => setEditMode(true)} activeOpacity={0.8}>
-          <HugeiconsIcon icon={EditIcon} size={15} color='#CE4002' strokeWidth={1.5} />
-          <Text style={[styles.editBtnText, { fontSize: rf(14) }]}>{t('profile.edit_profile')}</Text>
+        <TouchableOpacity
+          style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, padding: 14 }}
+          onPress={() => setEditMode(true)} activeOpacity={0.8}
+        >
+          <HugeiconsIcon icon={EditIcon} size={15} color={theme.colors.primary} strokeWidth={1.5} />
+          <Text style={{ fontFamily: 'Poppins-SemiBold', color: theme.colors.primary, fontSize: rf(14) }}>
+            {t('profile.edit_profile')}
+          </Text>
         </TouchableOpacity>
       )}
     </View>
   )
 }
 
-function SubscriptionCard({ sub, daysLeft, rf }: any) {
+function SubscriptionCard({ sub, daysLeft, rf, theme }: any) {
   const { t } = useTranslation()
   return (
     <TouchableOpacity
-      style={styles.subscriptionCard}
+      style={[cardStyle(theme), { padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}
       onPress={() => router.push('/subscription')}
       activeOpacity={0.85}
     >
-      <View style={styles.subLeft}>
-        <View style={[styles.subIconWrap, { backgroundColor: sub?.is_active ? '#D1FAE5' : '#FEE2E2' }]}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+        <View style={{
+          width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center',
+          backgroundColor: sub?.is_active ? theme.colors.successBg : theme.colors.dangerBg,
+        }}>
           <HugeiconsIcon
             icon={CrownIcon} size={20}
-            color={sub?.is_active ? '#059669' : '#DC2626'}
+            color={sub?.is_active ? theme.colors.success : theme.colors.danger}
             strokeWidth={1.5}
           />
         </View>
         <View>
-          <Text style={[styles.subPlan, { fontSize: rf(15) }]}>
+          <Text style={{ fontFamily: 'Poppins-SemiBold', color: theme.colors.text, fontSize: rf(15) }}>
             {sub?.plan ?? (sub?.type === 'trial' ? t('profile.sub_trial') : t('profile.sub_no_plan'))}
           </Text>
-          <Text style={[styles.subStatus, { fontSize: rf(12) }]}>
+          <Text style={{ fontFamily: 'Poppins-Regular', color: theme.colors.textSub, fontSize: rf(12), marginTop: 2 }}>
             {sub?.is_active
               ? t(daysLeft !== 1 ? 'profile.sub_active_plural' : 'profile.sub_active', { count: daysLeft })
               : t('profile.sub_expired')}
           </Text>
         </View>
       </View>
-      <HugeiconsIcon icon={ChevronRightIcon} size={18} color='#9CA3AF' strokeWidth={1.5} />
+      <HugeiconsIcon icon={ChevronRightIcon} size={18} color={theme.colors.textMuted} strokeWidth={1.5} />
     </TouchableOpacity>
   )
 }
 
 function PasswordSection({
   pwVisible, setPwVisible, curPw, setCurPw, newPw, setNewPw,
-  confirmPw, setConfirmPw, changingPw, handleChangePassword, rf, isTablet,
+  confirmPw, setConfirmPw, changingPw, handleChangePassword, rf, isTablet, theme,
 }: any) {
   const { t } = useTranslation()
   return (
-    <View style={styles.card}>
+    <View style={cardStyle(theme)}>
       <TouchableOpacity
-        style={styles.pwToggle}
+        style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16 }}
         onPress={() => setPwVisible((v: boolean) => !v)}
         activeOpacity={0.8}
       >
-        <HugeiconsIcon icon={KeyIcon} size={18} color='#6B7280' strokeWidth={1.5} />
-        <Text style={[styles.pwToggleText, { fontSize: rf(14) }]}>{t('profile.change_password')}</Text>
-        <HugeiconsIcon
-          icon={ChevronRightIcon} size={18} color='#9CA3AF' strokeWidth={1.5}
-          style={{ marginLeft: 'auto' } as any}
-        />
+        <HugeiconsIcon icon={KeyIcon} size={18} color={theme.colors.textSub} strokeWidth={1.5} />
+        <Text style={{ fontFamily: 'Poppins-Medium', color: theme.colors.text, flex: 1, fontSize: rf(14) }}>
+          {t('profile.change_password')}
+        </Text>
+        <HugeiconsIcon icon={ChevronRightIcon} size={18} color={theme.colors.textMuted} strokeWidth={1.5} />
       </TouchableOpacity>
 
       {pwVisible && (
-        <View style={styles.pwForm}>
-          <PwField label={t('profile.current_password')} value={curPw} onChange={setCurPw} rf={rf} textContentType='password'    autoComplete='current-password' />
-          <PwField label={t('profile.new_password')}     value={newPw} onChange={setNewPw} rf={rf} textContentType='newPassword' autoComplete='new-password' />
-          <PwField label={t('profile.confirm_password')} value={confirmPw} onChange={setConfirmPw} rf={rf} textContentType='newPassword' autoComplete='new-password' />
+        <View style={{
+          paddingHorizontal: 16, paddingBottom: 16, gap: 14,
+          borderTopWidth: 1, borderTopColor: theme.colors.borderLight, paddingTop: 16,
+        }}>
+          <PwField label={t('profile.current_password')} value={curPw} onChange={setCurPw} rf={rf} theme={theme} textContentType='password'    autoComplete='current-password' />
+          <PwField label={t('profile.new_password')}     value={newPw} onChange={setNewPw} rf={rf} theme={theme} textContentType='newPassword' autoComplete='new-password' />
+          <PwField label={t('profile.confirm_password')} value={confirmPw} onChange={setConfirmPw} rf={rf} theme={theme} textContentType='newPassword' autoComplete='new-password' />
           <TouchableOpacity
-            style={[styles.saveBtn, isTablet && styles.tallBtn, changingPw && styles.saveBtnDisabled]}
-            onPress={handleChangePassword}
-            disabled={changingPw}
-            activeOpacity={0.88}
+            style={{ height: isTablet ? 52 : 44, borderRadius: isTablet ? 14 : 12, backgroundColor: changingPw ? theme.colors.primaryMuted : theme.colors.primary, alignItems: 'center', justifyContent: 'center' }}
+            onPress={handleChangePassword} disabled={changingPw} activeOpacity={0.88}
           >
             {changingPw
               ? <ActivityIndicator color='#fff' size='small' />
-              : <Text style={[styles.saveBtnText, { fontSize: rf(14) }]}>{t('profile.update_password')}</Text>
+              : <Text style={{ fontFamily: 'Poppins-SemiBold', color: '#fff', fontSize: rf(14) }}>{t('profile.update_password')}</Text>
             }
           </TouchableOpacity>
         </View>
@@ -429,177 +522,47 @@ function PasswordSection({
   )
 }
 
-const styles = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: '#F8FAFC' },
-  scroll: {},
+// ── Styles ────────────────────────────────────────────────────────────────────
 
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingBottom: 8,
-  },
-  avatar: {
-    backgroundColor: '#FEF0E6',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#CE4002',
-  },
-  headerInfo: { flex: 1, gap: 2 },
-  bizName:  { fontFamily: 'Poppins-Bold',    color: '#111827' },
-  category: { fontFamily: 'Poppins-Regular', color: '#6B7280' },
-
-  section: { marginTop: 24 },
-  sectionTitle: {
-    fontFamily: 'Poppins-SemiBold',
-    color: '#9CA3AF',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginBottom: 10,
-  },
-
-  card: {
-    backgroundColor: '#fff',
+function cardStyle(theme: AppTheme) {
+  return {
+    backgroundColor: theme.colors.card,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#F0F0F0',
-    overflow: 'hidden',
+    borderColor: theme.colors.divider,
+    overflow: 'hidden' as const,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
+    shadowOpacity: theme.isDark ? 0.25 : 0.04,
     shadowRadius: 5,
     elevation: 2,
-  },
+  }
+}
 
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 13,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F4F4F4',
-  },
-  infoContent: { flex: 1, gap: 2 },
-  infoLabel:   { fontFamily: 'Poppins-Regular', color: '#9CA3AF' },
-  infoValue:   { fontFamily: 'Poppins-Medium',  color: '#111827' },
-  infoHint:    { fontFamily: 'Poppins-Regular', color: '#D1D5DB' },
+function getStyles(theme: AppTheme) {
+  return StyleSheet.create({
+    safe:   { flex: 1, backgroundColor: theme.colors.background },
+    scroll: {},
 
-  editInput: {
-    fontFamily: 'Poppins-Regular',
-    color: '#111827',
-    borderBottomWidth: 1,
-    borderBottomColor: '#CE4002',
-    paddingBottom: 4,
-    padding: 0,
-  },
+    header: { flexDirection: 'row', alignItems: 'center', paddingBottom: 8 },
+    avatar: {
+      backgroundColor: theme.colors.primaryLight,
+      alignItems: 'center', justifyContent: 'center',
+      borderWidth: 2, borderColor: theme.colors.primary,
+    },
+    headerInfo: { flex: 1, gap: 2 },
+    bizName:  { fontFamily: 'Poppins-Bold',    color: theme.colors.text },
+    category: { fontFamily: 'Poppins-Regular', color: theme.colors.textSub },
 
-  editActions: {
-    flexDirection: 'row',
-    gap: 10,
-    padding: 16,
-  },
-  cancelBtn: {
-    flex: 1,
-    height: 44,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: '#E0E0E0',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  tallBtn: { height: 52, borderRadius: 14 },
-  cancelBtnText: { fontFamily: 'Poppins-SemiBold', color: '#6B7280' },
+    logoutBtn: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+      paddingVertical: 16, backgroundColor: theme.colors.dangerBg,
+      borderWidth: 1, borderColor: '#FECACA',
+    },
+    logoutText: { fontFamily: 'Poppins-SemiBold', color: '#EF4444' },
 
-  editBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    padding: 14,
-  },
-  editBtnText: { fontFamily: 'Poppins-SemiBold', color: '#CE4002' },
-
-  saveBtn: {
-    flex: 1,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: '#CE4002',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  saveBtnDisabled: { backgroundColor: '#E8A07A' },
-  saveBtnText: { fontFamily: 'Poppins-SemiBold', color: '#fff' },
-
-  subscriptionCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    borderColor: '#F0F0F0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 5,
-    elevation: 2,
-  },
-  subLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  subIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  subPlan:   { fontFamily: 'Poppins-SemiBold', color: '#111827' },
-  subStatus: { fontFamily: 'Poppins-Regular',  color: '#6B7280', marginTop: 2 },
-
-  pwToggle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    padding: 16,
-  },
-  pwToggleText: { fontFamily: 'Poppins-Medium', color: '#374151', flex: 1 },
-
-  pwForm: {
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-    gap: 14,
-    borderTopWidth: 1,
-    borderTopColor: '#F4F4F4',
-    paddingTop: 16,
-  },
-  pwField: { gap: 6 },
-  pwFieldLabel: { fontFamily: 'Poppins-Regular', color: '#6B7280' },
-  pwInput: {
-    height: 48,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: '#E0E0E0',
-    paddingHorizontal: 14,
-    fontFamily: 'Poppins-Regular',
-    color: '#111827',
-    backgroundColor: '#F4F4F2',
-  },
-
-  logoutBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 16,
-    backgroundColor: '#FEF2F2',
-    borderWidth: 1,
-    borderColor: '#FECACA',
-  },
-  logoutText: { fontFamily: 'Poppins-SemiBold', color: '#EF4444' },
-
-  // Tablet landscape side-by-side layout
-  sideRow:   { flexDirection: 'row', gap: 20 },
-  sideLeft:  { flex: 1 },
-  sideRight: { flex: 1 },
-})
+    sideRow:   { flexDirection: 'row', gap: 20 },
+    sideLeft:  { flex: 1 },
+    sideRight: { flex: 1 },
+  })
+}

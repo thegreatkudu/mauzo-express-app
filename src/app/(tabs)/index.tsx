@@ -58,6 +58,7 @@ import { useTranslation } from 'react-i18next'
 import { HomeStatsSkeleton } from '@/components/skeletons'
 import { useAuthStore } from '@/store/auth.store'
 import { useCartStore } from '@/store/cart.store'
+import { useTheme } from '@/hooks/use-theme'
 import { useOrders, useOrderSummary } from '@/hooks/useOrders'
 import { useNotifications, useNotificationPolling } from '@/hooks/useNotifications'
 import { useResponsive } from '@/hooks/useResponsive'
@@ -150,6 +151,7 @@ export default function HomeScreen() {
 
   const { hp, rf, vgap, gap, isTablet, isLandscape, contentMaxWidth } = useResponsive()
   const { t } = useTranslation()
+  const { theme } = useTheme()
 
   const setHomeReady = useUiStore(s => s.setHomeReady)
 
@@ -219,7 +221,7 @@ export default function HomeScreen() {
   const twoColLayout = isTablet && isLandscape
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.colors.background }]} edges={['top']}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.scroll, { paddingHorizontal: hp, paddingBottom: 32 }]}

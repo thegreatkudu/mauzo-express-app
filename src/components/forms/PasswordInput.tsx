@@ -1,7 +1,8 @@
 import { forwardRef, useState } from 'react'
-import { TextInput, type TextInputProps, TouchableOpacity, View } from 'react-native'
+import { StyleSheet, TextInput, type TextInputProps, TouchableOpacity, View } from 'react-native'
 import { HugeiconsIcon } from '@hugeicons/react-native'
 import { ShowPasswordIcon, HidePasswordIcon } from '@/constants/icons'
+import { useTheme } from '@/hooks/use-theme'
 
 interface Props extends Omit<TextInputProps, 'secureTextEntry'> {
   hasError?: boolean
@@ -12,18 +13,23 @@ const PasswordInput = forwardRef<TextInput, Props>(function PasswordInput(
   ref,
 ) {
   const [visible, setVisible] = useState(false)
+  const { theme } = useTheme()
 
   return (
-    <View className={[
-      'flex-row items-center h-14 px-4 rounded-2xl border bg-[#F9FAFB]',
-      hasError ? 'border-[#EF4444]' : 'border-[#E5E7EB]',
-    ].join(' ')}>
+    <View style={[
+      styles.row,
+      {
+        height: 56,
+        backgroundColor: theme.colors.inputBg,
+        borderColor: hasError ? theme.colors.danger : theme.colors.inputBorder,
+      },
+    ]}>
       <TextInput
         ref={ref}
         {...props}
         secureTextEntry={!visible}
-        className='flex-1 text-sm font-poppins text-[#111827]'
-        placeholderTextColor='#9CA3AF'
+        style={[styles.input, { color: theme.colors.text }, style]}
+        placeholderTextColor={theme.colors.placeholder}
         autoCapitalize='none'
         autoCorrect={false}
         spellCheck={false}
@@ -32,12 +38,27 @@ const PasswordInput = forwardRef<TextInput, Props>(function PasswordInput(
         <HugeiconsIcon
           icon={visible ? HidePasswordIcon : ShowPasswordIcon}
           size={20}
-          color='#9CA3AF'
+          color={theme.colors.textMuted}
           strokeWidth={1.5}
         />
       </TouchableOpacity>
     </View>
   )
+})
+
+const styles = StyleSheet.create({
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    borderWidth: 1.5,
+  },
+  input: {
+    flex: 1,
+    fontFamily: 'Poppins-Regular',
+    fontSize: 14,
+  },
 })
 
 export default PasswordInput

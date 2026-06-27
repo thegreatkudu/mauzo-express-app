@@ -32,6 +32,7 @@ import { useCartStore } from '@/store/cart.store'
 import { useResponsive } from '@/hooks/useResponsive'
 import { useTranslation } from 'react-i18next'
 import { spring } from '@/constants/animations'
+import { useTheme } from '@/hooks/use-theme'
 import {
   HomeIcon,
   SuppliersNavIcon,
@@ -40,11 +41,6 @@ import {
   ProfileIcon,
   AnalyticsIcon,
 } from '@/constants/icons'
-
-/** Brand colour used for the active tab indicator and tint. */
-const ACTIVE   = '#CE4002'
-/** Neutral grey for inactive tab items. */
-const INACTIVE = '#9CA3AF'
 
 // ─── TabIcon ──────────────────────────────────────────────────────────────────
 
@@ -60,6 +56,7 @@ const INACTIVE = '#9CA3AF'
  */
 function TabIcon({ icon, focused, size }: { icon: any; focused: boolean; size: number }) {
   const scale = useSharedValue(1)
+  const { theme } = useTheme()
 
   // Re-run the spring whenever focus changes; Reanimated executes this on the UI thread.
   useEffect(() => {
@@ -75,8 +72,7 @@ function TabIcon({ icon, focused, size }: { icon: any; focused: boolean; size: n
       <HugeiconsIcon
         icon={icon}
         size={size}
-        color={focused ? ACTIVE : INACTIVE}
-        // Slightly heavier stroke on the active icon to reinforce selection state.
+        color={focused ? theme.colors.tabBarActive : theme.colors.tabBarInactive}
         strokeWidth={focused ? 2 : 1.5}
       />
     </Animated.View>
@@ -96,14 +92,13 @@ function TabIcon({ icon, focused, size }: { icon: any; focused: boolean; size: n
  * @param size    - Forwarded to the underlying `TabIcon`.
  */
 function CartTabIcon({ focused, size }: { focused: boolean; size: number }) {
-  // Subscribe only to the derived item count — avoids re-renders on unrelated store changes.
   const count = useCartStore(s => s.getItemCount())
+  const { theme } = useTheme()
   return (
     <View>
       <TabIcon icon={CartIcon} focused={focused} size={size} />
       {count > 0 && (
-        <View style={styles.badge}>
-          {/* Cap at "9+" to prevent the badge from overflowing its pill shape. */}
+        <View style={[styles.badge, { borderColor: theme.colors.tabBar }]}>
           <Text style={styles.badgeText}>{count > 9 ? '9+' : count}</Text>
         </View>
       )}
@@ -133,8 +128,8 @@ export default function TabsLayout() {
   const insets = useSafeAreaInsets()
   const { tabIconSize, tabFontSize, tabBarHeight, isTablet, isSmallPhone } = useResponsive()
   const { t } = useTranslation()
+  const { theme } = useTheme()
 
-  // Hide labels on small phones to give the six icons enough horizontal breathing room.
   const showLabels = !isSmallPhone
 
   return (
@@ -142,15 +137,15 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#fff',
+          backgroundColor: theme.colors.tabBar,
           borderTopWidth: 1,
-          borderTopColor: '#EFEFEF',
+          borderTopColor: theme.colors.tabBarBorder,
           height: tabBarHeight + insets.bottom,
           paddingBottom: insets.bottom + (isTablet ? 10 : 4),
           paddingTop: isTablet ? 10 : 6,
         },
-        tabBarActiveTintColor:   ACTIVE,
-        tabBarInactiveTintColor: INACTIVE,
+        tabBarActiveTintColor:   theme.colors.tabBarActive,
+        tabBarInactiveTintColor: theme.colors.tabBarInactive,
         tabBarShowLabel: showLabels,
         tabBarLabelStyle: {
           fontFamily: 'Poppins-Bold',

@@ -1,4 +1,6 @@
-import { Text, View } from 'react-native'
+import { StyleSheet, Text, View } from 'react-native'
+import { useThemeStyles } from '@/hooks/use-theme'
+import type { AppTheme } from '@/hooks/use-theme'
 
 interface Props {
   label: string
@@ -8,15 +10,25 @@ interface Props {
 }
 
 export default function FormField({ label, error, children, required }: Props) {
+  const styles = useThemeStyles(getStyles)
+
   return (
-    <View className='gap-y-1.5'>
-      <Text className='text-sm font-poppins-semibold text-[#374151]'>
-        {label}{required && <Text className='text-[#EF4444]'> *</Text>}
+    <View style={styles.wrapper}>
+      <Text style={styles.label}>
+        {label}
+        {required && <Text style={styles.required}> *</Text>}
       </Text>
       {children}
-      {!!error && (
-        <Text className='text-xs font-poppins text-[#EF4444]'>{error}</Text>
-      )}
+      {!!error && <Text style={styles.error}>{error}</Text>}
     </View>
   )
+}
+
+function getStyles(theme: AppTheme) {
+  return StyleSheet.create({
+    wrapper:  { gap: 6 },
+    label:    { fontFamily: 'Poppins-SemiBold', fontSize: 13, color: theme.colors.text },
+    required: { color: theme.colors.danger },
+    error:    { fontFamily: 'Poppins-Regular', fontSize: 12, color: theme.colors.danger },
+  })
 }

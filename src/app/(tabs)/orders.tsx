@@ -11,6 +11,7 @@ import { HugeiconsIcon } from '@hugeicons/react-native'
 import { useTranslation } from 'react-i18next'
 import { useOrders } from '@/hooks/useOrders'
 import { useResponsive } from '@/hooks/useResponsive'
+import { useTheme } from '@/hooks/use-theme'
 import OrderCard from '@/components/OrderCard'
 import EmptyState from '@/components/ui/EmptyState'
 import { OrderCardSkeleton } from '@/components/skeletons'
@@ -28,6 +29,7 @@ export default function OrdersScreen() {
   const { data: orders, isLoading, isError, refetch, isRefetching } = useOrders()
   const { hp, rf, gap, ordersColumns, contentMaxWidth } = useResponsive()
   const { t } = useTranslation()
+  const { theme } = useTheme()
 
   const FILTERS: { key: FilterKey; label: string }[] = [
     { key: 'all',            label: t('orders.filter_all') },
@@ -68,7 +70,7 @@ export default function OrdersScreen() {
   const hasSearch = search.trim().length > 0
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.colors.background }]} edges={['top']}>
       <View style={contentMaxWidth ? { flex: 1, maxWidth: contentMaxWidth, alignSelf: 'center', width: '100%' } : { flex: 1 }}>
 
         <View style={[styles.header, { paddingHorizontal: hp }]}>

@@ -19,6 +19,7 @@ import { useResponsive } from '@/hooks/useResponsive'
 import EmptyState from '@/components/ui/EmptyState'
 import { useAppAlert } from '@/components/ui/AppAlert/AppAlertProvider'
 import { AddIcon, MinusIcon, TrashIcon, CartIcon, SuppliersNavIcon } from '@/constants/icons'
+import { useTheme } from '@/hooks/use-theme'
 import type { CartItem, Supplier } from '@/types'
 
 type SupplierGroup = {
@@ -37,6 +38,7 @@ export default function CartScreen() {
   const insets = useSafeAreaInsets()
   const { hp, rf, isTablet, contentMaxWidth } = useResponsive()
   const { t } = useTranslation()
+  const { theme } = useTheme()
   const { showAlert } = useAppAlert()
 
   useEffect(() => { fetchCart() }, [])
@@ -109,7 +111,7 @@ export default function CartScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.safe} edges={['top']}>
+      <SafeAreaView style={[styles.safe, { backgroundColor: theme.colors.background }]} edges={['top']}>
         <View style={[styles.header, { paddingHorizontal: hp }]}>
           <SkeletonBox height={22} width='50%' borderRadius={8} />
           <SkeletonBox height={13} width='30%' borderRadius={5} style={{ marginTop: 6 }} />
@@ -121,7 +123,7 @@ export default function CartScreen() {
 
   if (items.length === 0) {
     return (
-      <SafeAreaView style={styles.safe} edges={['top']}>
+      <SafeAreaView style={[styles.safe, { backgroundColor: theme.colors.background }]} edges={['top']}>
         <View style={[styles.header, { paddingHorizontal: hp }]}>
           <Text style={[styles.title, { fontSize: rf(22) }]}>{t('cart.title')}</Text>
         </View>

@@ -15,6 +15,7 @@ import { NotificationRowSkeleton } from '@/components/skeletons'
 import { BackIcon, NotificationIcon, CheckCircleIcon, RefreshIcon } from '@/constants/icons'
 import { timeAgo } from '@/utils/date'
 import { getNotifMeta } from '@/utils/notifications'
+import { useTheme } from '@/hooks/use-theme'
 import type { Notification } from '@/types'
 
 // ── Card ─────────────────────────────────────────────────────────────────────
@@ -75,6 +76,7 @@ const NotificationRow = memo(function NotificationRow({
 
 export default function NotificationsScreen() {
   const { t } = useTranslation()
+  const { theme } = useTheme()
   const { data: notifications, isLoading, isError, refetch, isRefetching } = useNotifications()
   const markRead = useMarkNotificationsRead()
 
@@ -102,7 +104,7 @@ export default function NotificationsScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.colors.background }]} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={8} activeOpacity={0.7}>

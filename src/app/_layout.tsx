@@ -18,6 +18,7 @@ import { useAuthStore } from '@/store/auth.store'
 import { useUiStore } from '@/store/ui.store'
 import { ShimmerProvider } from '@/components/skeletons'
 import SplashOverlay from '@/components/SplashOverlay'
+import { ThemeProvider, useTheme } from '@/providers/ThemeProvider'
 
 import "../../global.css";
 
@@ -130,6 +131,16 @@ function NavigationGuard() {
   return null
 }
 
+// ── ThemeStatusBar ────────────────────────────────────────────────────────────
+// Reads isDark from ThemeContext; cannot live inside ThemeProvider since it needs
+// to be a child of it. Placed after all content so the SplashOverlay can override
+// status bar visibility during the splash animation.
+
+function ThemeStatusBar() {
+  const { isDark } = useTheme()
+  return <StatusBar style={isDark ? 'light' : 'dark'} />
+}
+
 // ── RootLayout ────────────────────────────────────────────────────────────────
 
 export default function RootLayout() {
@@ -154,6 +165,7 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
+      <ThemeProvider>
       <ShimmerProvider>
       <Providers>
         <NavigationGuard />
@@ -171,7 +183,7 @@ export default function RootLayout() {
         </Stack>
         {/* SplashCover: covers the home screen on re-login while data loads. */}
         <SplashCover />
-        <StatusBar style="dark" />
+        <ThemeStatusBar />
         {/* SplashOverlay: initial app launch only — renders above everything,
             navigates to the destination while it's still visible, then fades out
             once the destination screen is ready. Eliminates the background flash
@@ -179,6 +191,7 @@ export default function RootLayout() {
         <SplashOverlay />
       </Providers>
       </ShimmerProvider>
+      </ThemeProvider>
     </GestureHandlerRootView>
   )
 }

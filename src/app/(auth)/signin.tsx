@@ -14,14 +14,16 @@ import { useTranslation } from 'react-i18next'
 
 import { useAuthStore } from '@/store/auth.store'
 import { useResponsive } from '@/hooks/useResponsive'
-
-const TEST_PHONE    = '0700000000'
-const TEST_PASSWORD = 'password123'
+import { useTheme, useThemeStyles } from '@/hooks/use-theme'
+import type { AppTheme } from '@/hooks/use-theme'
 import { isValidTanzaniaPhone } from '@/utils/phone'
 import { extractApiError } from '@/api/client'
 import FormField from '@/components/forms/FormField'
 import PasswordInput from '@/components/forms/PasswordInput'
 import { StorefrontIcon, PhoneIcon } from '@/constants/icons'
+
+const TEST_PHONE    = '0700000000'
+const TEST_PASSWORD = 'password123'
 
 const schema = z.object({
   phone:    z.string().refine(isValidTanzaniaPhone, 'Enter a valid phone number (07XXXXXXXX)'),
@@ -34,6 +36,8 @@ export default function SignInScreen() {
   const [loading, setLoading] = useState(false)
   const { rf, isTablet, isLandscape } = useResponsive()
   const { t } = useTranslation()
+  const { theme } = useTheme()
+  const styles = useThemeStyles(getStyles)
 
   const passwordRef = useRef<TextInput>(null)
 
@@ -58,9 +62,8 @@ export default function SignInScreen() {
     }
   }
 
-  // On tablets (or landscape phones) constrain form width and center it
-  const formMaxWidth = isTablet ? 480 : isLandscape ? 400 : undefined
-  const headerPaddingTop = isLandscape ? 24 : isTablet ? 64 : 48
+  const formMaxWidth       = isTablet ? 480 : isLandscape ? 400 : undefined
+  const headerPaddingTop   = isLandscape ? 24 : isTablet ? 64 : 48
   const headerPaddingBottom = isLandscape ? 20 : 36
 
   return (
@@ -71,15 +74,15 @@ export default function SignInScreen() {
           contentContainerStyle={[styles.scroll, { paddingHorizontal: isTablet ? 0 : 24 }]}
           keyboardShouldPersistTaps='handled'
         >
-          <View style={formMaxWidth ? { maxWidth: formMaxWidth, alignSelf: 'center', width: '100%', paddingHorizontal: isTablet ? 32 : 24 } : undefined}>
+          <View style={formMaxWidth
+            ? { maxWidth: formMaxWidth, alignSelf: 'center', width: '100%', paddingHorizontal: isTablet ? 32 : 24 }
+            : undefined
+          }>
 
             {/* Brand header */}
             <View style={[styles.header, { paddingTop: headerPaddingTop, paddingBottom: headerPaddingBottom }]}>
-              <View style={[
-                styles.logoWrap,
-                isTablet && { width: 96, height: 96, borderRadius: 28 },
-              ]}>
-                <HugeiconsIcon icon={StorefrontIcon} size={isTablet ? 48 : 40} color='#CE4002' strokeWidth={1.5} />
+              <View style={[styles.logoWrap, isTablet && { width: 96, height: 96, borderRadius: 28 }]}>
+                <HugeiconsIcon icon={StorefrontIcon} size={isTablet ? 48 : 40} color={theme.colors.primary} strokeWidth={1.5} />
               </View>
               <Text style={[styles.title, { fontSize: rf(26) }]}>{t('auth.signin.title')}</Text>
               <Text style={[styles.subtitle, { fontSize: rf(14) }]}>{t('auth.signin.subtitle')}</Text>
@@ -97,18 +100,17 @@ export default function SignInScreen() {
                       { height: isTablet ? 60 : 56 },
                       errors.phone && styles.inputError,
                     ]}>
-                      <HugeiconsIcon icon={PhoneIcon} size={18} color='#9CA3AF' strokeWidth={1.5} />
+                      <HugeiconsIcon icon={PhoneIcon} size={18} color={theme.colors.textMuted} strokeWidth={1.5} />
                       <Text style={[styles.dialCode, { fontSize: rf(14) }]}>+255</Text>
                       <View style={styles.dialDivider} />
                       <TextInput
                         style={[styles.input, { fontSize: rf(14) }]}
                         placeholder='07XXXXXXXX'
-                        placeholderTextColor='#9CA3AF'
+                        placeholderTextColor={theme.colors.placeholder}
                         keyboardType='phone-pad'
                         onBlur={onBlur}
                         onChangeText={onChange}
                         value={value}
-                        // ── Autofill annotations ──
                         textContentType='username'
                         autoComplete='username'
                         importantForAutofill='yes'
@@ -135,7 +137,6 @@ export default function SignInScreen() {
                       onChangeText={onChange}
                       value={value}
                       hasError={!!errors.password}
-                      // ── Autofill annotations ──
                       textContentType='password'
                       autoComplete='current-password'
                       importantForAutofill='yes'
@@ -198,40 +199,43 @@ export default function SignInScreen() {
   )
 }
 
-const styles = StyleSheet.create({
-  root:   { flex: 1, backgroundColor: '#fff' },
-  scroll: { paddingBottom: 32 },
+function getStyles(theme: AppTheme) {
+  return StyleSheet.create({
+    root:   { flex: 1, backgroundColor: theme.colors.surface },
+    scroll: { paddingBottom: 32 },
 
-  header: { alignItems: 'center', gap: 8 },
-  logoWrap: {
-    width: 80, height: 80, borderRadius: 24,
-    backgroundColor: '#FEF0E6',
-    alignItems: 'center', justifyContent: 'center', marginBottom: 8,
-  },
-  title:    { fontFamily: 'Poppins-Bold',    color: '#111827' },
-  subtitle: { fontFamily: 'Poppins-Regular', color: '#6B7280', textAlign: 'center' },
+    header: { alignItems: 'center', gap: 8 },
+    logoWrap: {
+      width: 80, height: 80, borderRadius: 24,
+      backgroundColor: theme.colors.primaryLight,
+      alignItems: 'center', justifyContent: 'center', marginBottom: 8,
+    },
+    title:    { fontFamily: 'Poppins-Bold',    color: theme.colors.text },
+    subtitle: { fontFamily: 'Poppins-Regular', color: theme.colors.textSub, textAlign: 'center' },
 
-  form: { gap: 16 },
+    form: { gap: 16 },
 
-  inputRow: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 14, borderRadius: 16, gap: 8,
-    borderWidth: 1.5, borderColor: '#E8E8E8', backgroundColor: '#F9FAFB',
-  },
-  inputError:  { borderColor: '#EF4444' },
-  dialCode:    { fontFamily: 'Poppins-SemiBold', color: '#374151' },
-  dialDivider: { width: 1, height: 20, backgroundColor: '#E8E8E8' },
-  input:       { flex: 1, fontFamily: 'Poppins-Regular', color: '#111827' },
+    inputRow: {
+      flexDirection: 'row', alignItems: 'center',
+      paddingHorizontal: 14, borderRadius: 16, gap: 8,
+      borderWidth: 1.5, borderColor: theme.colors.inputBorder,
+      backgroundColor: theme.colors.inputBg,
+    },
+    inputError:  { borderColor: theme.colors.danger },
+    dialCode:    { fontFamily: 'Poppins-SemiBold', color: theme.colors.text },
+    dialDivider: { width: 1, height: 20, backgroundColor: theme.colors.border },
+    input:       { flex: 1, fontFamily: 'Poppins-Regular', color: theme.colors.text },
 
-  forgotRow:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  testCredsLink:  { fontFamily: 'Poppins-SemiBold', color: '#6B7280' },
-  forgotLink:     { fontFamily: 'Poppins-SemiBold', color: '#CE4002' },
+    forgotRow:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    testCredsLink: { fontFamily: 'Poppins-SemiBold', color: theme.colors.textSub },
+    forgotLink:    { fontFamily: 'Poppins-SemiBold', color: theme.colors.primary },
 
-  submitBtn:         { backgroundColor: '#CE4002', alignItems: 'center', justifyContent: 'center', marginTop: 4 },
-  submitBtnDisabled: { backgroundColor: '#E8A07A' },
-  submitBtnText:     { fontFamily: 'Poppins-Bold', color: '#fff' },
+    submitBtn:         { backgroundColor: theme.colors.primary, alignItems: 'center', justifyContent: 'center', marginTop: 4 },
+    submitBtnDisabled: { backgroundColor: theme.colors.primaryMuted },
+    submitBtnText:     { fontFamily: 'Poppins-Bold', color: '#fff' },
 
-  signupRow:    { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 28 },
-  signupPrompt: { fontFamily: 'Poppins-Regular', color: '#6B7280' },
-  signupLink:   { fontFamily: 'Poppins-Bold',    color: '#CE4002' },
-})
+    signupRow:    { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 28 },
+    signupPrompt: { fontFamily: 'Poppins-Regular', color: theme.colors.textSub },
+    signupLink:   { fontFamily: 'Poppins-Bold',    color: theme.colors.primary },
+  })
+}

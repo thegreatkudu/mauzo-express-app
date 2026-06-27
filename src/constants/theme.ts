@@ -32,7 +32,10 @@ export const Colors = {
   },
 } as const;
 
-export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
+export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark
+
+// Extended type that covers all keys in the new ThemeColors
+export type AnyThemeColor = ThemeColor | 'backgroundElement' | 'backgroundSelected' | 'textSecondary'
 
 export const Fonts = Platform.select({
   ios: {

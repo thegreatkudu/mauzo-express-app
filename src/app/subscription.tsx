@@ -14,10 +14,12 @@ import { getSubscriptionPrices, getSubscriptionStatus } from '@/api/subscription
 import { useAuthStore } from '@/store/auth.store'
 import { ADMIN_PHONE } from '@/constants/config'
 import { CrownIcon, PhoneIcon, CheckCircleIcon } from '@/constants/icons'
+import { useTheme } from '@/hooks/use-theme'
 import type { SubscriptionPlan } from '@/types'
 
 export default function SubscriptionScreen() {
   const { t } = useTranslation()
+  const { theme } = useTheme()
 
   const PLAN_FEATURES = [
     t('subscription.features.browse'),
@@ -49,7 +51,7 @@ export default function SubscriptionScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.colors.background }]} edges={['top', 'bottom']}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
 
         {/* Header */}

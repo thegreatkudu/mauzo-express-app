@@ -52,6 +52,7 @@ import { useTranslation } from 'react-i18next'
 
 import { useOrders } from '@/hooks/useOrders'
 import { useResponsive } from '@/hooks/useResponsive'
+import { useTheme } from '@/hooks/use-theme'
 import { spring, listStagger } from '@/constants/animations'
 import { OrdersIcon, PackageIcon, CheckCircleIcon, ClockIcon, RefreshIcon } from '@/constants/icons'
 import StatusBadge from '@/components/ui/StatusBadge'
@@ -509,6 +510,7 @@ export default function AnalyticsScreen() {
   const { hp, rf, gap, isTablet, contentMaxWidth } = useResponsive()
   const { width: screenWidth } = useWindowDimensions()
   const { t } = useTranslation()
+  const { theme } = useTheme()
 
   // Trigger a background refetch each time this tab becomes visible.
   // `useCallback` with an empty dep array is required by useFocusEffect's contract.
@@ -566,7 +568,7 @@ export default function AnalyticsScreen() {
   const hasData = chartData.countBars.some(d => d.value > 0) || chartData.amountBars.some(d => d.value > 0)
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.colors.background }]} edges={['top']}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={
