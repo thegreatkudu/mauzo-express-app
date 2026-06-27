@@ -1,9 +1,12 @@
 import { StyleSheet, View } from 'react-native'
 import { SkeletonBox } from './Shimmer'
 import { useResponsive } from '@/hooks/useResponsive'
+import { useThemeStyles } from '@/hooks/use-theme'
+import type { AppTheme } from '@/hooks/use-theme'
 
 export function HomeStatsSkeleton() {
   const { gap } = useResponsive()
+  const styles  = useThemeStyles(getStyles)
 
   return (
     <View style={[styles.row, { gap, marginTop: 12 }]}>
@@ -19,6 +22,7 @@ export function HomeStatsSkeleton() {
 
 export function HomeActionsSkeleton() {
   const { gap } = useResponsive()
+  const styles  = useThemeStyles(getStyles)
 
   return (
     <View style={[styles.actionsGrid, { gap, marginTop: 12 }]}>
@@ -33,31 +37,28 @@ export function HomeActionsSkeleton() {
   )
 }
 
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-  },
-  card: {
-    flex:             1,
-    backgroundColor:  '#fff',
-    borderRadius:     14,
-    padding:          14,
-    borderTopWidth:   3,
-    borderWidth:      1,
-    borderColor:      '#F0F0F0',
-    borderTopColor:   '#E8EAED',
-    alignItems:       'center',
-  },
-  actionsGrid: {
-    flexDirection: 'row',
-    flexWrap:      'wrap',
-  },
-  actionCard: {
-    width:           '47.5%',
-    backgroundColor: '#fff',
-    borderRadius:    16,
-    padding:         16,
-    borderWidth:     1,
-    borderColor:     '#F0F0F0',
-  },
-})
+function getStyles(theme: AppTheme) {
+  return StyleSheet.create({
+    row: { flexDirection: 'row' },
+    card: {
+      flex:            1,
+      backgroundColor: theme.colors.card,
+      borderRadius:    14,
+      padding:         14,
+      borderTopWidth:  3,
+      borderWidth:     1,
+      borderColor:     theme.colors.divider,
+      borderTopColor:  theme.colors.skeleton,
+      alignItems:      'center',
+    },
+    actionsGrid: { flexDirection: 'row', flexWrap: 'wrap' },
+    actionCard: {
+      width:           '47.5%',
+      backgroundColor: theme.colors.card,
+      borderRadius:    16,
+      padding:         16,
+      borderWidth:     1,
+      borderColor:     theme.colors.divider,
+    },
+  })
+}

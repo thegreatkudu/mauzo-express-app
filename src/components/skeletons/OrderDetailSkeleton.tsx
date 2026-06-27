@@ -1,7 +1,11 @@
 import { ScrollView, StyleSheet, View } from 'react-native'
 import { SkeletonBox } from './Shimmer'
+import { useThemeStyles } from '@/hooks/use-theme'
+import type { AppTheme } from '@/hooks/use-theme'
 
 export function OrderDetailSkeleton() {
+  const styles = useThemeStyles(getStyles)
+
   return (
     <ScrollView
       contentContainerStyle={styles.scroll}
@@ -10,7 +14,6 @@ export function OrderDetailSkeleton() {
     >
       {/* ── Hero card ── */}
       <View style={styles.heroCard}>
-        {/* Band */}
         <View style={styles.heroBand}>
           <View style={styles.heroBandLeft}>
             <SkeletonBox height={18} width='48%' borderRadius={6} />
@@ -18,7 +21,6 @@ export function OrderDetailSkeleton() {
           </View>
           <SkeletonBox height={26} width={90} borderRadius={13} />
         </View>
-        {/* Body */}
         <View style={styles.heroBody}>
           <View style={styles.iconRow}>
             <SkeletonBox width={14} height={14} borderRadius={4} style={styles.shrink0} />
@@ -78,91 +80,57 @@ export function OrderDetailSkeleton() {
   )
 }
 
-const styles = StyleSheet.create({
-  scroll: {
-    paddingHorizontal: 16,
-    paddingVertical:   16,
-    gap:               14,
-    paddingBottom:     40,
-  },
+function getStyles(theme: AppTheme) {
+  return StyleSheet.create({
+    scroll: { paddingHorizontal: 16, paddingVertical: 16, gap: 14, paddingBottom: 40 },
 
-  // Hero
-  heroCard: {
-    backgroundColor: '#fff',
-    borderRadius:    18,
-    overflow:        'hidden',
-    borderWidth:     1,
-    borderColor:     '#F0F0F0',
-  },
-  heroBand: {
-    flexDirection:     'row',
-    alignItems:        'center',
-    justifyContent:    'space-between',
-    backgroundColor:   '#F0F0F0',
-    paddingHorizontal: 18,
-    paddingVertical:   16,
-  },
-  heroBandLeft: { flex: 1, marginRight: 12 },
-  heroBody: {
-    paddingHorizontal: 18,
-    paddingVertical:   14,
-    gap:               10,
-  },
+    heroCard: {
+      backgroundColor: theme.colors.card,
+      borderRadius:    18,
+      overflow:        'hidden',
+      borderWidth:     1,
+      borderColor:     theme.colors.divider,
+    },
+    heroBand: {
+      flexDirection:     'row',
+      alignItems:        'center',
+      justifyContent:    'space-between',
+      backgroundColor:   theme.colors.skeleton,
+      paddingHorizontal: 18,
+      paddingVertical:   16,
+    },
+    heroBandLeft: { flex: 1, marginRight: 12 },
+    heroBody:     { paddingHorizontal: 18, paddingVertical: 14, gap: 10 },
 
-  // Supplier
-  supplierCard: {
-    flexDirection:   'row',
-    alignItems:      'center',
-    gap:             12,
-    backgroundColor: '#fff',
-    borderRadius:    16,
-    padding:         16,
-    borderWidth:     1,
-    borderColor:     '#F0F0F0',
-  },
-  supplierInfo: { flex: 1, gap: 0 },
+    supplierCard: {
+      flexDirection:   'row',
+      alignItems:      'center',
+      gap:             12,
+      backgroundColor: theme.colors.card,
+      borderRadius:    16,
+      padding:         16,
+      borderWidth:     1,
+      borderColor:     theme.colors.divider,
+    },
+    supplierInfo: { flex: 1, gap: 0 },
 
-  // Card
-  card: {
-    backgroundColor: '#fff',
-    borderRadius:    16,
-    padding:         16,
-    borderWidth:     1,
-    borderColor:     '#F0F0F0',
-    gap:             10,
-  },
+    card: {
+      backgroundColor: theme.colors.card,
+      borderRadius:    16,
+      padding:         16,
+      borderWidth:     1,
+      borderColor:     theme.colors.divider,
+      gap:             10,
+    },
 
-  // Timeline
-  timelineStep: {
-    flexDirection: 'row',
-    alignItems:    'flex-start',
-    gap:           14,
-    minHeight:     52,
-  },
-  timelineLeft: {
-    alignItems: 'center',
-    width:      28,
-    gap:        3,
-  },
+    timelineStep: { flexDirection: 'row', alignItems: 'flex-start', gap: 14, minHeight: 52 },
+    timelineLeft: { alignItems: 'center', width: 28, gap: 3 },
 
-  // Items
-  iconRow: {
-    flexDirection: 'row',
-    alignItems:    'center',
-    gap:           8,
-  },
-  itemRow: {
-    flexDirection:  'row',
-    alignItems:     'center',
-    paddingVertical: 12,
-    gap:             10,
-  },
-  itemBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-  },
-  itemLeft:  { flex: 1, gap: 0 },
-  itemRight: { alignItems: 'flex-end', gap: 0 },
-
-  shrink0: { flexShrink: 0 },
-})
+    iconRow:    { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    itemRow:    { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, gap: 10 },
+    itemBorder: { borderBottomWidth: 1, borderBottomColor: theme.colors.divider },
+    itemLeft:   { flex: 1, gap: 0 },
+    itemRight:  { alignItems: 'flex-end', gap: 0 },
+    shrink0:    { flexShrink: 0 },
+  })
+}

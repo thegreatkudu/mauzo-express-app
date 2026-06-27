@@ -1,7 +1,10 @@
 import { StyleSheet, View } from 'react-native'
 import { SkeletonBox } from './Shimmer'
+import { useThemeStyles } from '@/hooks/use-theme'
+import type { AppTheme } from '@/hooks/use-theme'
 
 function PlanCardSkeleton() {
+  const styles = useThemeStyles(getStyles)
   return (
     <View style={styles.card}>
       <SkeletonBox height={14} width='70%' borderRadius={5} />
@@ -12,6 +15,7 @@ function PlanCardSkeleton() {
 }
 
 export function SubscriptionSkeleton() {
+  const styles = useThemeStyles(getStyles)
   return (
     <View style={styles.grid}>
       <PlanCardSkeleton />
@@ -22,20 +26,17 @@ export function SubscriptionSkeleton() {
   )
 }
 
-const styles = StyleSheet.create({
-  grid: {
-    flexDirection: 'row',
-    flexWrap:      'wrap',
-    gap:           10,
-    marginTop:     4,
-  },
-  card: {
-    width:           '47.5%',
-    backgroundColor: '#fff',
-    borderRadius:    16,
-    padding:         16,
-    borderWidth:     2,
-    borderColor:     '#E8E8E8',
-    gap:             4,
-  },
-})
+function getStyles(theme: AppTheme) {
+  return StyleSheet.create({
+    grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 4 },
+    card: {
+      width:           '47.5%',
+      backgroundColor: theme.colors.card,
+      borderRadius:    16,
+      padding:         16,
+      borderWidth:     2,
+      borderColor:     theme.colors.inputBorder,
+      gap:             4,
+    },
+  })
+}

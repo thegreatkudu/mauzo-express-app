@@ -1,5 +1,5 @@
 import '@/i18n'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Stack, router, useSegments } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import { StyleSheet } from 'react-native'
@@ -45,9 +45,11 @@ function SplashCover() {
   const segments     = useSegments()
   const inTabs       = segments[0] === '(tabs)'
 
-  const opacity  = useSharedValue(1)
-  const animStyle = useAnimatedStyle(() => ({ opacity: opacity.value }))
+  const opacity    = useSharedValue(1)
+  const animStyle  = useAnimatedStyle(() => ({ opacity: opacity.value }))
   const [visible, setVisible] = useState(false)
+  // Guard: prevent starting the fade animation more than once per visit.
+  const isFadingRef = useRef(false)
 
   // Show when entering (tabs); reset when leaving so re-login gets a fresh cover.
   useEffect(() => {
@@ -58,22 +60,29 @@ function SplashCover() {
       // Leaving tabs (sign-out) — reset everything silently for next session.
       setVisible(false)
       opacity.value = 1
+      isFadingRef.current = false
       setHomeReady(false)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [inTabs])
 
   // Fade out once the home screen signals its data is ready.
+  //
+  // `visible` is included in the dep array to handle a race condition: when
+  // react-query has cached data, HomeScreen's useEffect (child) fires before
+  // SplashCover's useEffect (parent), so homeReady can become true before
+  // `visible` is true. Without `visible` in deps, the effect would not
+  // re-run when `visible` finally becomes true.
   useEffect(() => {
-    if (homeReady && visible) {
+    if (homeReady && visible && !isFadingRef.current) {
+      isFadingRef.current = true
       opacity.value = withTiming(
         0,
         { duration: 500, easing: Easing.out(Easing.cubic) },
         (done) => { if (done) scheduleOnRN(setVisible, false) },
       )
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [homeReady])
+  }, [homeReady, visible])
 
   if (!visible) return null
 

@@ -3,14 +3,10 @@ import {
   Animated, Dimensions, StyleSheet, View, type ViewStyle,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
+import { useTheme } from '@/hooks/use-theme'
 
 const { width: SCREEN_W } = Dimensions.get('window')
 const SHIMMER_W = Math.round(SCREEN_W * 0.5)
-
-const BASE_COLOR    = '#E8EAED'
-const BASE_ALPHA    = 'rgba(232,234,237,0)'
-const HIGHLIGHT     = 'rgba(255,255,255,0.82)'
-const SHIMMER_COLORS: readonly [string, string, string] = [BASE_ALPHA, HIGHLIGHT, BASE_ALPHA]
 
 // Module-level default so context always has a value even without a Provider
 const _default = new Animated.Value(0)
@@ -47,6 +43,17 @@ export const SkeletonBox = memo(function SkeletonBox({
   style?: ViewStyle
 }) {
   const anim = useContext(ShimmerCtx)
+  const { theme } = useTheme()
+
+  const { baseColor, shimmerColors } = useMemo(() => {
+    const base      = theme.colors.skeleton
+    const baseAlpha = theme.isDark ? 'rgba(33,38,45,0)' : 'rgba(226,232,240,0)'
+    const highlight = theme.isDark ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.82)'
+    return {
+      baseColor:    base,
+      shimmerColors: [baseAlpha, highlight, baseAlpha] as const,
+    }
+  }, [theme])
 
   const translateX = useMemo(
     () =>
@@ -64,7 +71,7 @@ export const SkeletonBox = memo(function SkeletonBox({
           width:           width as any,
           height,
           borderRadius,
-          backgroundColor: BASE_COLOR,
+          backgroundColor: baseColor,
           overflow:        'hidden',
         },
         style,
@@ -81,7 +88,7 @@ export const SkeletonBox = memo(function SkeletonBox({
         }}
       >
         <LinearGradient
-          colors={SHIMMER_COLORS}
+          colors={shimmerColors}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={StyleSheet.absoluteFill}

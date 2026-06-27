@@ -1,27 +1,21 @@
 import { StyleSheet, View } from 'react-native'
 import { SkeletonBox } from './Shimmer'
+import { useThemeStyles } from '@/hooks/use-theme'
+import type { AppTheme } from '@/hooks/use-theme'
 
 export function SupplierCardSkeleton({ compact = false }: { compact?: boolean }) {
-  const bandH = compact ? 90 : 110
+  const styles = useThemeStyles(getStyles)
+  const bandH  = compact ? 90 : 110
 
   return (
     <View style={[styles.card, compact && styles.cardCompact]}>
-
-      {/* Colour band */}
       <SkeletonBox height={bandH} borderRadius={0} />
-
-      {/* Body */}
       <View style={[styles.body, compact && styles.bodyCompact]}>
-        {/* Business name */}
         <SkeletonBox height={13} width='70%' borderRadius={5} />
-
-        {/* Location row */}
         <View style={[styles.locRow, { marginTop: compact ? 5 : 6 }]}>
           <SkeletonBox width={12} height={12} borderRadius={3} style={styles.shrink0} />
           <SkeletonBox height={11} width='48%' borderRadius={4} />
         </View>
-
-        {/* CTA button */}
         <SkeletonBox
           height={compact ? 32 : 36}
           borderRadius={10}
@@ -32,28 +26,20 @@ export function SupplierCardSkeleton({ compact = false }: { compact?: boolean })
   )
 }
 
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: '#fff',
-    borderRadius:    16,
-    marginBottom:    12,
-    overflow:        'hidden',
-    borderWidth:     1,
-    borderColor:     '#F0F0F0',
-  },
-  cardCompact: {
-    marginBottom: 0,
-  },
-  body: {
-    padding: 12,
-  },
-  bodyCompact: {
-    padding: 10,
-  },
-  locRow: {
-    flexDirection: 'row',
-    alignItems:    'center',
-    gap:           4,
-  },
-  shrink0: { flexShrink: 0 },
-})
+function getStyles(theme: AppTheme) {
+  return StyleSheet.create({
+    card: {
+      backgroundColor: theme.colors.card,
+      borderRadius:    16,
+      marginBottom:    12,
+      overflow:        'hidden',
+      borderWidth:     1,
+      borderColor:     theme.colors.divider,
+    },
+    cardCompact: { marginBottom: 0 },
+    body:        { padding: 12 },
+    bodyCompact: { padding: 10 },
+    locRow:      { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    shrink0:     { flexShrink: 0 },
+  })
+}
