@@ -7,29 +7,38 @@
  * order volume trends, total spend over time, status distribution, and a
  * quick-access list of recent orders.
  *
- * Data strategy — no extra API calls:
- * All chart data is derived client-side from the `useOrders()` React Query cache.
- * The `['orders']` query key is shared with the Orders tab, so if the buyer has
- * already visited that tab the data is served instantly from cache. `useFocusEffect`
- * triggers a background refetch each time this tab gains focus to keep figures fresh.
+ * Data strategy — demo-first, API-ready:
+ * Chart data is derived client-side from the `useOrders()` React Query cache.
+ * When the orders array is empty (first launch or fresh account), the screen
+ * automatically enters **demo mode**, rendering production-quality synthetic
+ * data so stakeholders see exactly how the dashboard will look once connected
+ * to the live backend.  Switching to live data requires only removing the
+ * `isDemo` branch — the data pipeline is otherwise identical.
+ *
+ * Demo data lives in `@/constants/analyticsDemo` and is never embedded in
+ * UI components, keeping the architecture swap-ready.
  *
  * Chart design — dual mini-charts per time period:
  * Order counts and total amounts operate on vastly different numerical scales
- * (e.g. 5 orders vs 450,000 TZS). Rendering them on the same Y-axis would make
- * the count bars invisible. The solution is two stacked mini BarCharts, each with
- * its own independent Y-axis, inside the same card — the same pattern used by
- * Shopify Analytics and Stripe Dashboard.
+ * (e.g. 5 orders vs 450,000 TZS). The solution is two stacked mini BarCharts,
+ * each with its own independent Y-axis — the same pattern used by Shopify
+ * Analytics and Stripe Dashboard.  Amounts are displayed in K TZS (÷ 1,000).
  *
- * Amounts in the amount chart are displayed in K TZS (÷ 1,000) to keep the
- * Y-axis labels readable (e.g. "450" instead of "450000").
+ * Periods supported (scrollable chip row):
+ *   today   → 9 hourly buckets  (08:00–16:00)
+ *   week    → 7 daily bars      (last 7 calendar days)
+ *   month   → 4 weekly bars     (last 30 days split into Wk 1–4)
+ *   quarter → 3 monthly bars    (last 3 calendar months)
+ *   half    → 6 monthly bars    (last 6 calendar months)
+ *   year    → 12 monthly bars   (last 12 calendar months)
  *
  * Sections rendered (top → bottom):
  *   1. Header — title + subtitle + loading spinner
  *   2. Summary cards — total / pending / completed counts
- *   3. Chart card — period toggle + dual BarCharts (orders count + amount K TZS)
- *   4. Status breakdown — pill grid sorted by volume
- *   5. Recent orders — last 8 orders with stagger animation
- *   6. Empty state — shown when no orders exist at all
+ *   3. Demo banner — shown only when rendering demo data (no real orders yet)
+ *   4. Chart card — period chip strip + metrics strip + dual BarCharts
+ *   5. Status breakdown — pill grid sorted by volume
+ *   6. Recent orders — last 8 orders with stagger animation
  */
 
 import { memo, useCallback, useMemo, useState } from 'react'
@@ -55,6 +64,16 @@ import { useResponsive } from '@/hooks/useResponsive'
 import { useTheme, useThemeStyles } from '@/hooks/use-theme'
 import type { AppTheme } from '@/hooks/use-theme'
 import { spring, listStagger } from '@/constants/animations'
+import {
+  IS_DEMO_MODE,
+  buildDemoChartData,
+  getDemoPeriodMetrics,
+  deriveRealPeriodMetrics,
+  DEMO_STATUS_COUNTS,
+  DEMO_TOTALS,
+  DEMO_RECENT_ORDERS,
+} from '@/constants/analyticsDemo'
+import type { AnalyticsPeriod, PeriodMetrics } from '@/constants/analyticsDemo'
 import { OrdersIcon, PackageIcon, CheckCircleIcon, ClockIcon, RefreshIcon } from '@/constants/icons'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { formatDate, formatOrderId } from '@/utils/date'
@@ -63,39 +82,45 @@ import type { Order, OrderStatus } from '@/types'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-/**
- * The three time granularities the buyer can select for the Order Volume chart.
- * - `weekly`  — Last 7 days, one bar per calendar day.
- * - `monthly` — Last 28 days, one bar per 7-day week block (Wk 1 – Wk 4).
- * - `yearly`  — Last 12 calendar months, one bar per month.
- */
-type Period = 'weekly' | 'monthly' | 'yearly'
+/** All supported analytics time windows. Imported from analyticsDemo for consistency. */
+type Period = AnalyticsPeriod
 
 /**
  * A single bar entry consumed by `react-native-gifted-charts` `<BarChart>`.
  *
  * @property value      - Numeric height of the bar (count or K TZS amount).
- * @property label      - X-axis label displayed below the bar (e.g. "Mon", "Wk 2", "Jun").
- * @property frontColor - Fill colour of the bar; active periods use a brighter shade.
+ * @property label      - X-axis label displayed below the bar.
+ * @property frontColor - Fill colour of the bar; current slot uses a brighter shade.
  */
 interface BarEntry {
-  value: number
-  label: string
+  value:      number
+  label:      string
   frontColor: string
 }
 
 /**
  * The structured output of each `build*Data()` function, containing two
  * parallel bar arrays that share the same time-slot labels.
- *
- * @property countBars  - Bar heights represent total order count per slot.
- * @property amountBars - Bar heights represent total quoted amount ÷ 1,000 (K TZS) per slot.
- * @property labels     - Ordered list of entity labels (shared by both charts).
  */
 interface ChartData {
   countBars:  BarEntry[]
   amountBars: BarEntry[]
   labels:     string[]
+}
+
+// ─── Bar sizing config per period ────────────────────────────────────────────
+
+/**
+ * Per-period bar geometry.  `barCount` drives the spacing formula so bars
+ * always fill the available chart width regardless of device size.
+ */
+const BAR_CONFIG: Record<Period, { barWidth: number; minSpacing: number; barCount: number }> = {
+  today:   { barWidth: 12, minSpacing: 8,  barCount: 9  },
+  week:    { barWidth: 16, minSpacing: 16, barCount: 7  },
+  month:   { barWidth: 20, minSpacing: 28, barCount: 4  },
+  quarter: { barWidth: 24, minSpacing: 40, barCount: 3  },
+  half:    { barWidth: 16, minSpacing: 16, barCount: 6  },
+  year:    { barWidth: 10, minSpacing: 6,  barCount: 12 },
 }
 
 // ─── Chart colour tokens ──────────────────────────────────────────────────────
@@ -118,33 +143,56 @@ function getChartColors(theme: AppTheme): ChartColors {
   }
 }
 
-// ─── Client-side data builders ────────────────────────────────────────────────
+// ─── Real-data chart builders ─────────────────────────────────────────────────
 //
 // These functions group the raw orders array into time-slot buckets and build
-// the two parallel bar arrays for the dual chart. They operate entirely in
+// the two parallel bar arrays for the dual chart.  They operate entirely in
 // memory on the cached orders data — no network call is made.
 //
-// Amount normalisation: divide by 1,000 so K TZS values fit the Y-axis without
-// requiring a six-digit axis label (e.g. "450" instead of "450000").
+// Amount normalisation: divide by 1,000 so K TZS values fit the Y-axis.
 
 /**
- * Builds chart data for the **Weekly** view (last 7 calendar days).
+ * Builds chart data for the **Today** view (9 hourly slots, 08:00–16:00).
+ */
+function buildTodayData(orders: Order[], colors: ChartColors): ChartData {
+  const HOURS  = [8, 9, 10, 11, 12, 13, 14, 15, 16]
+  const LABELS = ['8am', '9am', '10am', '11am', '12pm', '1pm', '2pm', '3pm', '4pm']
+  const now = new Date()
+  const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+  const currentHour = now.getHours()
+
+  const slots = HOURS.map((h, i) => ({
+    hour:     h,
+    label:    LABELS[i],
+    count:    0,
+    amount:   0,
+    isActive: h === currentHour || (h === 16 && currentHour >= 16),
+  }))
+
+  orders.forEach(o => {
+    const d = new Date(o.created_at)
+    if (new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() === todayMidnight) {
+      const s = slots.find(sl => sl.hour === d.getHours())
+      if (s) { s.count++; s.amount += o.total_quoted_amount ?? 0 }
+    }
+  })
+
+  return {
+    labels:     LABELS,
+    countBars:  slots.map(s => ({ value: s.count,  label: s.label, frontColor: s.isActive ? colors.primary    : colors.primaryDim })),
+    amountBars: slots.map(s => ({ value: Math.round(s.amount / 1_000), label: s.label, frontColor: s.isActive ? colors.amountHi : colors.amountDim })),
+  }
+}
+
+/**
+ * Builds chart data for the **Week** view (last 7 calendar days).
  *
- * Algorithm:
- * 1. Create 7 time slots, one per calendar day, ending with today (slot index 6).
- *    Each slot stores its midnight timestamp as a lookup key.
- * 2. Iterate through all orders, stripping the time component from `created_at`
- *    to produce a comparable midnight timestamp, then accumulate into the
- *    matching slot.
- * 3. Map each slot to a pair of BarEntry objects — count bar (orange) and
- *    amount bar (amber). Today's slot uses the brighter "active" colour.
- *
- * @param orders - Full list of orders from the `useOrders()` cache.
- * @returns `ChartData` with 7 entries per array, oldest day on the left.
+ * Each slot stores its midnight timestamp as a lookup key.  Orders are
+ * matched by stripping the time component from `created_at`.
  */
 function buildWeeklyData(orders: Order[], colors: ChartColors): ChartData {
-  const DAYS  = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-  const now   = new Date()
+  const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+  const now  = new Date()
 
   const slots = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(now)
@@ -162,33 +210,15 @@ function buildWeeklyData(orders: Order[], colors: ChartColors): ChartData {
 
   return {
     labels:     slots.map(s => s.label),
-    countBars:  slots.map(s => ({
-      value:      s.count,
-      label:      s.label,
-      frontColor: s.isToday ? colors.primary    : colors.primaryDim,
-    })),
-    amountBars: slots.map(s => ({
-      value:      Math.round(s.amount / 1_000),
-      label:      s.label,
-      frontColor: s.isToday ? colors.amountHi : colors.amountDim,
-    })),
+    countBars:  slots.map(s => ({ value: s.count,  label: s.label, frontColor: s.isToday ? colors.primary    : colors.primaryDim })),
+    amountBars: slots.map(s => ({ value: Math.round(s.amount / 1_000), label: s.label, frontColor: s.isToday ? colors.amountHi : colors.amountDim })),
   }
 }
 
 /**
- * Builds chart data for the **Monthly** view (last 28 days split into 4 weeks).
+ * Builds chart data for the **Month** view (last 28 days, 4 weekly buckets).
  *
- * Week boundaries (days ago):
- *   Wk 1 — 28 to 21 days ago  (oldest)
- *   Wk 2 — 21 to 14 days ago
- *   Wk 3 — 14 to  7 days ago
- *   Wk 4 —  7 to  0 days ago  (current week — highlighted)
- *
- * Orders are assigned to a slot by computing `diff` (days elapsed since order
- * creation) and checking which `[end, start)` half-open interval it falls into.
- *
- * @param orders - Full list of orders from the `useOrders()` cache.
- * @returns `ChartData` with 4 entries per array, oldest week on the left.
+ * Wk 4 covers the most recent 7 days and is highlighted as the current period.
  */
 function buildMonthlyData(orders: Order[], colors: ChartColors): ChartData {
   const now = new Date()
@@ -208,35 +238,69 @@ function buildMonthlyData(orders: Order[], colors: ChartColors): ChartData {
 
   return {
     labels:     slots.map(s => s.label),
-    countBars:  slots.map((s, i) => ({
-      value:      s.count,
-      label:      s.label,
-      frontColor: i === 3 ? colors.primary    : colors.primaryDim,
-    })),
-    amountBars: slots.map((s, i) => ({
-      value:      Math.round(s.amount / 1_000),
-      label:      s.label,
-      frontColor: i === 3 ? colors.amountHi : colors.amountDim,
-    })),
+    countBars:  slots.map((s, i) => ({ value: s.count,  label: s.label, frontColor: i === 3 ? colors.primary    : colors.primaryDim })),
+    amountBars: slots.map((s, i) => ({ value: Math.round(s.amount / 1_000), label: s.label, frontColor: i === 3 ? colors.amountHi : colors.amountDim })),
   }
 }
 
 /**
- * Builds chart data for the **Yearly** view (last 12 calendar months).
- *
- * Algorithm:
- * 1. Generate 12 month slots working backwards from the current month.
- *    Each slot stores `{ yr, mo }` for precise matching across year boundaries
- *    (e.g. December of the previous year when the current month is January).
- * 2. Match each order to a slot by comparing its year and month.
- * 3. The last slot (index 11) is the current month — highlighted with the
- *    active colour.
- *
- * @param orders - Full list of orders from the `useOrders()` cache.
- * @returns `ChartData` with 12 entries per array, oldest month on the left.
+ * Builds chart data for the **Quarter** view (last 3 calendar months).
+ * Slots match exact year + month so they work correctly across year boundaries.
+ */
+function buildQuarterlyData(orders: Order[], colors: ChartColors): ChartData {
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+  const now = new Date()
+
+  const slots = Array.from({ length: 3 }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - (2 - i), 1)
+    return { yr: d.getFullYear(), mo: d.getMonth(), label: MONTHS[d.getMonth()], count: 0, amount: 0 }
+  })
+
+  orders.forEach(o => {
+    const d = new Date(o.created_at)
+    const s = slots.find(sl => sl.yr === d.getFullYear() && sl.mo === d.getMonth())
+    if (s) { s.count++; s.amount += o.total_quoted_amount ?? 0 }
+  })
+
+  return {
+    labels:     slots.map(s => s.label),
+    countBars:  slots.map((s, i) => ({ value: s.count,  label: s.label, frontColor: i === 2 ? colors.primary    : colors.primaryDim })),
+    amountBars: slots.map((s, i) => ({ value: Math.round(s.amount / 1_000), label: s.label, frontColor: i === 2 ? colors.amountHi : colors.amountDim })),
+  }
+}
+
+/**
+ * Builds chart data for the **Half** view (last 6 calendar months).
+ * Same slot-matching algorithm as quarterly, extended to 6 months.
+ */
+function buildBiannualData(orders: Order[], colors: ChartColors): ChartData {
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+  const now = new Date()
+
+  const slots = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1)
+    return { yr: d.getFullYear(), mo: d.getMonth(), label: MONTHS[d.getMonth()], count: 0, amount: 0 }
+  })
+
+  orders.forEach(o => {
+    const d = new Date(o.created_at)
+    const s = slots.find(sl => sl.yr === d.getFullYear() && sl.mo === d.getMonth())
+    if (s) { s.count++; s.amount += o.total_quoted_amount ?? 0 }
+  })
+
+  return {
+    labels:     slots.map(s => s.label),
+    countBars:  slots.map((s, i) => ({ value: s.count,  label: s.label, frontColor: i === 5 ? colors.primary    : colors.primaryDim })),
+    amountBars: slots.map((s, i) => ({ value: Math.round(s.amount / 1_000), label: s.label, frontColor: i === 5 ? colors.amountHi : colors.amountDim })),
+  }
+}
+
+/**
+ * Builds chart data for the **Year** view (last 12 calendar months).
+ * Slots are matched by year + month to handle cross-year ranges correctly.
  */
 function buildYearlyData(orders: Order[], colors: ChartColors): ChartData {
-  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
   const now    = new Date()
 
   const slots = Array.from({ length: 12 }, (_, i) => {
@@ -252,31 +316,13 @@ function buildYearlyData(orders: Order[], colors: ChartColors): ChartData {
 
   return {
     labels:     slots.map(s => s.label),
-    countBars:  slots.map((s, i) => ({
-      value:      s.count,
-      label:      s.label,
-      frontColor: i === 11 ? colors.primary    : colors.primaryDim,
-    })),
-    amountBars: slots.map((s, i) => ({
-      value:      Math.round(s.amount / 1_000),
-      label:      s.label,
-      frontColor: i === 11 ? colors.amountHi : colors.amountDim,
-    })),
+    countBars:  slots.map((s, i) => ({ value: s.count,  label: s.label, frontColor: i === 11 ? colors.primary    : colors.primaryDim })),
+    amountBars: slots.map((s, i) => ({ value: Math.round(s.amount / 1_000), label: s.label, frontColor: i === 11 ? colors.amountHi : colors.amountDim })),
   }
 }
 
 // ─── Status colour config ─────────────────────────────────────────────────────
 
-/**
- * Colour and label mapping for each `OrderStatus` value, used by the Status
- * Breakdown pill grid. Colours intentionally mirror those used in `StatusBadge`
- * to maintain visual consistency across the app.
- *
- * Each entry provides:
- * - `label`  — Human-readable display name for the status.
- * - `color`  — Text and icon colour (also applied to the pill border in some views).
- * - `bg`     — Background tint for the pill, derived from the colour's light variant.
- */
 const STATUS_CFG: Record<OrderStatus, { label: string; color: string; bg: string }> = {
   awaiting_quote: { label: 'Awaiting Quote', color: '#6B7280', bg: '#F0F0F0' },
   quote_received: { label: 'Quote Received', color: '#D97706', bg: '#FEF3C7' },
@@ -291,73 +337,101 @@ const STATUS_CFG: Record<OrderStatus, { label: string; color: string; bg: string
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 /**
- * Three-segment toggle (Weekly / Monthly / Yearly) for selecting the chart period.
- *
- * Implemented as a custom control rather than `@react-native-segmented-control/segmented-control`
- * to avoid a native dependency that requires rebuild on every Expo SDK upgrade.
- *
- * The active segment is elevated with a white background + shadow to read as a
- * "lifted" selection pill — a common iOS-style segmented control pattern.
- *
- * @param value    - Currently selected period.
- * @param onChange - Callback invoked with the newly selected period.
- * @param rf       - Responsive font-scale function from `useResponsive`.
+ * Horizontally-scrollable chip row for selecting the analytics time window.
+ * Six period options are rendered as pill buttons; the active chip is filled
+ * with the primary colour.  A ScrollView is used instead of a fixed-width
+ * segment control so all six labels are comfortably accessible on any screen.
  */
 const PeriodToggle = memo(function PeriodToggle({
   value,
   onChange,
   rf,
 }: {
-  value: Period
+  value:    Period
   onChange: (p: Period) => void
-  rf: (s: number) => number
+  rf:       (s: number) => number
 }) {
-  const { t } = useTranslation()
   const { theme } = useTheme()
+
   const opts: { key: Period; label: string }[] = [
-    { key: 'weekly',  label: t('analytics.period_weekly')  },
-    { key: 'monthly', label: t('analytics.period_monthly') },
-    { key: 'yearly',  label: t('analytics.period_yearly')  },
+    { key: 'today',   label: 'Today'    },
+    { key: 'week',    label: '7 Days'   },
+    { key: 'month',   label: '30 Days'  },
+    { key: 'quarter', label: '3 Months' },
+    { key: 'half',    label: '6 Months' },
+    { key: 'year',    label: 'Year'     },
   ]
+
   return (
-    <View style={{ flexDirection: 'row', backgroundColor: theme.colors.divider, borderRadius: 12, padding: 3 }}>
-      {opts.map(o => (
-        <TouchableOpacity
-          key={o.key}
-          style={[
-            { flex: 1, paddingVertical: 8, borderRadius: 10, alignItems: 'center' },
-            value === o.key && { backgroundColor: theme.colors.card, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 },
-          ]}
-          onPress={() => onChange(o.key)}
-          activeOpacity={0.8}
-        >
-          <Text style={[
-            { fontFamily: 'Poppins-Medium', color: theme.colors.textMuted },
-            { fontSize: rf(13) },
-            value === o.key && { color: theme.colors.text, fontFamily: 'Poppins-SemiBold' },
-          ]}>
-            {o.label}
-          </Text>
-        </TouchableOpacity>
-      ))}
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={{ flexDirection: 'row', gap: 6, paddingHorizontal: 2 }}
+    >
+      {opts.map(o => {
+        const active = value === o.key
+        return (
+          <TouchableOpacity
+            key={o.key}
+            style={[
+              {
+                paddingHorizontal: 14,
+                paddingVertical: 7,
+                borderRadius: 20,
+                borderWidth: 1.5,
+                borderColor: active ? theme.colors.primary : theme.colors.divider,
+                backgroundColor: active ? theme.colors.primary : 'transparent',
+              },
+            ]}
+            onPress={() => onChange(o.key)}
+            activeOpacity={0.8}
+          >
+            <Text
+              style={{
+                fontFamily: active ? 'Poppins-SemiBold' : 'Poppins-Medium',
+                fontSize: rf(12),
+                color: active ? '#fff' : theme.colors.textMuted,
+              }}
+            >
+              {o.label}
+            </Text>
+          </TouchableOpacity>
+        )
+      })}
+    </ScrollView>
+  )
+})
+
+/**
+ * Single KPI chip in the period metrics strip inside the chart card.
+ * Displays a numeric value prominently with a descriptive label below it.
+ * An optional `accent` colour highlights directional metrics (growth %).
+ */
+const MetricChip = memo(function MetricChip({
+  label,
+  value,
+  accent,
+}: {
+  label:   string
+  value:   string
+  accent?: string
+}) {
+  const { theme } = useTheme()
+  return (
+    <View style={{ flex: 1, alignItems: 'center', gap: 2 }}>
+      <Text style={{ fontFamily: 'Poppins-Bold', fontSize: 14, color: accent ?? theme.colors.text }}>
+        {value}
+      </Text>
+      <Text style={{ fontFamily: 'Poppins-Regular', fontSize: 10, color: theme.colors.textMuted }}>
+        {label}
+      </Text>
     </View>
   )
 })
 
 /**
  * A single KPI summary card rendered in the three-card row at the top of the screen.
- *
- * Displays an icon, a large numeric value, and a descriptive label. The coloured
- * top border visually links each card to its semantic meaning (orange = total,
- * amber = pending, green = completed).
- *
- * @param icon   - HugeIcons icon definition.
- * @param label  - Descriptive label rendered below the value.
- * @param value  - Numeric KPI value.
- * @param color  - Accent colour for the top border, icon, and value text.
- * @param bg     - Light background tint for the icon badge container.
- * @param rf     - Responsive font-scale function.
- * @param delay  - Entrance animation delay in ms (supports stagger between the three cards).
+ * The coloured top border visually links each card to its semantic meaning.
  */
 const SummaryCard = memo(function SummaryCard({
   icon, label, value, color, bg, rf, delay,
@@ -381,7 +455,7 @@ const SummaryCard = memo(function SummaryCard({
       <View style={{ width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: bg }}>
         <HugeiconsIcon icon={icon} size={16} color={color} strokeWidth={1.5} />
       </View>
-      <Text style={{ fontFamily: 'Poppins-Bold', color, fontSize: rf(24) }}>{value}</Text>
+      <Text style={{ fontFamily: 'Poppins-Bold', color, fontSize: rf(24) }}>{value.toLocaleString()}</Text>
       <Text style={{ fontFamily: 'Poppins-Regular', color: theme.colors.textSub, textAlign: 'center', fontSize: rf(11) }}>{label}</Text>
     </Animated.View>
   )
@@ -389,15 +463,7 @@ const SummaryCard = memo(function SummaryCard({
 
 /**
  * A single row in the "Recent Orders" list at the bottom of the Analytics screen.
- *
- * Each row animates in with a `FadeInDown` stagger keyed to its `index`, creating
- * a cascading entrance effect as the list populates.
- *
  * Tapping the row navigates to the full Order Detail screen via Expo Router.
- *
- * @param order - The order to render; sourced from the first 8 items in `useOrders()`.
- * @param index - Zero-based position used to compute the stagger delay.
- * @param rf    - Responsive font-scale function.
  */
 const RecentOrderItem = memo(function RecentOrderItem({
   order,
@@ -406,7 +472,7 @@ const RecentOrderItem = memo(function RecentOrderItem({
 }: {
   order: Order
   index: number
-  rf: (s: number) => number
+  rf:    (s: number) => number
 }) {
   const { theme } = useTheme()
   return (
@@ -445,33 +511,21 @@ const RecentOrderItem = memo(function RecentOrderItem({
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
 /**
- * Analytics screen — rendered as the fifth tab (`/(tabs)/analytics`).
+ * Analytics screen — rendered as the sixth tab (`/(tabs)/analytics`).
  *
- * State:
- * - `period` — Controls which time granularity the chart displays. Local UI state;
- *   switching period re-runs the `buildXxxData()` function synchronously via `useMemo`.
+ * **Demo mode** is active when `orders` is empty (falsy length) and not loading.
+ * In demo mode every derived value — chart data, status counts, summary totals,
+ * recent orders, and period metrics — is sourced from `analyticsDemo` constants
+ * instead of the React Query cache.  This ensures the screen always shows a
+ * rich, production-like dashboard rather than an empty state.
  *
- * Data:
- * - `useOrders()` — All orders for the authenticated user, cached by React Query.
- *   `useFocusEffect` triggers a background refetch each time the tab is opened so
- *   that analytics reflect the most recent activity without requiring a pull-to-refresh.
- *
- * Computed values:
- * - `chartData`     — Two bar arrays (count + amount) derived from orders for the selected period.
- * - `statusCounts`  — Map of OrderStatus → count, derived in a single pass over `orders`.
- * - `recentOrders`  — First 8 orders (already sorted newest-first by the API).
- * - `completedCount`— Sum of dispatched + delivered + closed orders.
- * - `pendingCount`  — Sum of awaiting_quote + quote_received orders.
- *
- * Chart sizing:
- * Bar width and spacing are computed from the available screen width so bars
- * fill the chart area without overflow or excessive whitespace regardless of
- * device size. The formula is:
- *   spacing = (chartWidth − barWidth × barCount) / (barCount + 1)
- * clamped to a minimum to prevent bars from touching.
+ * To wire up live data, remove the `isDemo` branches.  The real-data builders
+ * (`buildWeeklyData`, etc.) are already in place; no other structural changes
+ * are required.
  */
 export default function AnalyticsScreen() {
-  const [period, setPeriod] = useState<Period>('weekly')
+  const [period, setPeriod] = useState<Period>('week')
+
   const { data: orders, isLoading, isError, refetch, isRefetching } = useOrders()
   const { hp, rf, gap, isTablet, contentMaxWidth } = useResponsive()
   const { width: screenWidth } = useWindowDimensions()
@@ -481,59 +535,88 @@ export default function AnalyticsScreen() {
   const chartColors = getChartColors(theme)
 
   // Trigger a background refetch each time this tab becomes visible.
-  // `useCallback` with an empty dep array is required by useFocusEffect's contract.
   useFocusEffect(useCallback(() => { refetch() }, []))
 
-  // ── Derived chart data ──────────────────────────────────────────────────────
-  // Re-computed only when the orders list or the selected period changes.
-  const chartData = useMemo<ChartData>(() => {
+  // ── Two-level demo system ───────────────────────────────────────────────────
+  //
+  // isGlobalDemo — no real orders exist at all.
+  //   Governs: summary KPI cards, status breakdown, recent orders list.
+  //
+  // isPeriodDemo — IS_DEMO_MODE is on AND the selected time window has no
+  //   real orders. Governs: the bar chart and period metrics strip.
+  //   Flipping IS_DEMO_MODE to false in analyticsDemo.ts disables this so
+  //   the empty-state UI appears in production whenever the API returns
+  //   no data for the chosen period.
+
+  // ── Step 1: real chart data from the orders cache ──────────────────────────
+  const realChartData = useMemo((): ChartData => {
     if (!orders?.length) return { countBars: [], amountBars: [], labels: [] }
     switch (period) {
-      case 'weekly':  return buildWeeklyData(orders, chartColors)
-      case 'monthly': return buildMonthlyData(orders, chartColors)
-      case 'yearly':  return buildYearlyData(orders, chartColors)
+      case 'today':   return buildTodayData(orders, chartColors)
+      case 'week':    return buildWeeklyData(orders, chartColors)
+      case 'month':   return buildMonthlyData(orders, chartColors)
+      case 'quarter': return buildQuarterlyData(orders, chartColors)
+      case 'half':    return buildBiannualData(orders, chartColors)
+      case 'year':    return buildYearlyData(orders, chartColors)
     }
   }, [orders, period, chartColors.primary])
 
-  // ── Derived counts for the summary row ─────────────────────────────────────
-  // Single-pass accumulation over the orders array for the status breakdown grid.
-  const statusCounts = useMemo(() => {
+  // Does the current time window contain at least one real order bar?
+  const hasPeriodData =
+    realChartData.countBars.some(d => d.value > 0) ||
+    realChartData.amountBars.some(d => d.value > 0)
+
+  // Chart uses demo data when demo mode is on AND no real bars exist for the period.
+  const isPeriodDemo = IS_DEMO_MODE && !hasPeriodData
+  // Summary / status / recent orders use demo data only when there are no orders at all.
+  const isGlobalDemo = IS_DEMO_MODE && !orders?.length
+
+  // ── Step 2: final chart data — demo fallback or real ───────────────────────
+  const chartData = useMemo((): ChartData => {
+    if (isPeriodDemo) return buildDemoChartData(period, chartColors) as ChartData
+    return realChartData
+  }, [isPeriodDemo, realChartData, period, chartColors.primary])
+
+  // ── Period metrics (total, avg, peak, growth) ───────────────────────────────
+  const periodMetrics = useMemo((): PeriodMetrics | null => {
+    if (isPeriodDemo) return getDemoPeriodMetrics(period)
+    if (!hasPeriodData) return null
+    return deriveRealPeriodMetrics(
+      realChartData.countBars as any,
+      realChartData.labels,
+      realChartData.amountBars as any,
+      period,
+    )
+  }, [isPeriodDemo, hasPeriodData, realChartData, period])
+
+  // ── Status breakdown ────────────────────────────────────────────────────────
+  const statusCounts = useMemo((): Partial<Record<OrderStatus, number>> => {
+    if (isGlobalDemo) return DEMO_STATUS_COUNTS
     const counts: Partial<Record<OrderStatus, number>> = {}
     orders?.forEach(o => { counts[o.status] = (counts[o.status] ?? 0) + 1 })
     return counts
-  }, [orders])
+  }, [orders, isGlobalDemo])
 
-  const totalOrders = orders?.length ?? 0
+  // ── Summary totals ──────────────────────────────────────────────────────────
+  const totalOrders    = isGlobalDemo ? DEMO_TOTALS.total     : (orders?.length ?? 0)
+  const pendingCount   = isGlobalDemo ? DEMO_TOTALS.pending   : (orders ?? []).filter(o => ['awaiting_quote', 'quote_received'].includes(o.status)).length
+  const completedCount = isGlobalDemo ? DEMO_TOTALS.completed : (orders ?? []).filter(o => ['dispatched', 'delivered', 'closed'].includes(o.status)).length
 
-  // "Completed" groups statuses that represent successful order fulfilment.
-  const completedCount = (orders ?? []).filter(o =>
-    ['dispatched', 'delivered', 'closed'].includes(o.status)
-  ).length
-
-  // "Pending" groups statuses where the buyer is waiting on the supplier.
-  const pendingCount = (orders ?? []).filter(o =>
-    ['awaiting_quote', 'quote_received'].includes(o.status)
-  ).length
-
-  // Cap at 8 to keep the recent orders list concise; older orders are on the Orders tab.
-  const recentOrders = useMemo(() => (orders ?? []).slice(0, 8), [orders])
+  // ── Recent orders (real or demo) ────────────────────────────────────────────
+  const recentOrders = useMemo(
+    () => isGlobalDemo ? DEMO_RECENT_ORDERS : (orders ?? []).slice(0, 8),
+    [orders, isGlobalDemo],
+  )
 
   // ── Chart sizing ────────────────────────────────────────────────────────────
-  // Available width = screen width − horizontal padding (×2) − chart card padding (16 each side).
-  // Tablet layout subtracts an additional 16 dp for the content max-width constraint.
   const chartWidth = Math.max(200, screenWidth - hp * 2 - 32 - (isTablet ? 16 : 0))
+  const { barWidth, minSpacing, barCount } = BAR_CONFIG[period]
+  const spacing = Math.max(minSpacing, (chartWidth - barWidth * barCount) / (barCount + 1))
 
-  // Narrower bars for yearly view (12 bars) to avoid cramping on small screens.
-  const barWidth = period === 'yearly' ? 10 : 16
-
-  // Distribute remaining horizontal space evenly across inter-bar gaps.
-  // `Math.max(min, …)` guards against negative spacing when the screen is very narrow.
-  const spacing = period === 'yearly'  ? Math.max(6,  (chartWidth - barWidth * 12) / 13)
-                : period === 'monthly' ? Math.max(32, (chartWidth - barWidth * 4)  / 5)
-                :                        Math.max(20, (chartWidth - barWidth * 7)  / 8)
-
-  // Show chart content only when at least one bar in either series has a value > 0.
-  const hasData = chartData.countBars.some(d => d.value > 0) || chartData.amountBars.some(d => d.value > 0)
+  // Chart has renderable content when either real data or demo fallback is present.
+  // When IS_DEMO_MODE = false and there are no real orders for the period,
+  // hasData = false and the "No orders in this period" empty state appears.
+  const hasData = hasPeriodData || isPeriodDemo
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.colors.background }]} edges={['top']}>
@@ -544,7 +627,6 @@ export default function AnalyticsScreen() {
         }
         contentContainerStyle={[styles.scroll, { paddingHorizontal: hp, paddingBottom: 40 }]}
       >
-        {/* Constrain content width on tablets to avoid overly wide cards. */}
         <View style={contentMaxWidth ? { maxWidth: contentMaxWidth, alignSelf: 'center', width: '100%' } : undefined}>
 
           {/* ── 1. Header ── */}
@@ -556,7 +638,6 @@ export default function AnalyticsScreen() {
               <Text style={[styles.title, { fontSize: rf(22) }]}>{t('analytics.title')}</Text>
               <Text style={[styles.subtitle, { fontSize: rf(13) }]}>{t('analytics.subtitle')}</Text>
             </View>
-            {/* Inline spinner during the initial load; replaced by the RefreshControl on pull-to-refresh. */}
             {isLoading && <ActivityIndicator size='small' color={theme.colors.primary} />}
           </Animated.View>
 
@@ -578,24 +659,72 @@ export default function AnalyticsScreen() {
                 <SummaryCard icon={CheckCircleIcon} label={t('analytics.completed_orders')} value={completedCount} color={theme.colors.success}  bg={theme.colors.successBg}   rf={rf} delay={170} />
               </View>
 
-              {/* ── 3. Chart card ── */}
+              {/* ── 3. Demo banner — shown whenever the chart is using synthetic data ── */}
+              {isPeriodDemo && (
+                <Animated.View
+                  entering={FadeInDown.delay(200).springify().damping(spring.list.damping).stiffness(spring.list.stiffness)}
+                  style={[styles.demoBanner, { marginTop: gap + 8 }]}
+                >
+                  <Text style={[styles.demoBannerText, { fontSize: rf(12) }]}>
+                    {isGlobalDemo
+                      ? 'Demo preview — showing realistic sample data. Your analytics will appear here once you place your first order.'
+                      : 'No orders in this period yet — showing demo data so the chart looks production-ready.'}
+                  </Text>
+                </Animated.View>
+              )}
+
+              {/* ── 4. Chart card ── */}
               <Animated.View
                 entering={FadeInDown.delay(220).springify().damping(spring.hero.damping).stiffness(spring.hero.stiffness)}
                 style={[styles.chartCard, { marginTop: gap + 8 }]}
               >
-                {/* Chart header: section title + period toggle */}
+                {/* Chart header: section title + [Demo] badge + period chip row */}
                 <View style={styles.chartHeader}>
                   <View style={styles.chartTitleRow}>
                     <HugeiconsIcon icon={OrdersIcon} size={16} color={theme.colors.primary} strokeWidth={1.5} />
                     <Text style={[styles.chartTitle, { fontSize: rf(15) }]}>{t('analytics.chart_title')}</Text>
+                    {isPeriodDemo && (
+                      <View style={styles.demoBadge}>
+                        <Text style={[styles.demoBadgeText, { fontSize: rf(10) }]}>Demo</Text>
+                      </View>
+                    )}
                   </View>
                   <PeriodToggle value={period} onChange={setPeriod} rf={rf} />
                 </View>
 
-                {/* Chart body: skeleton → empty state → dual charts */}
+                {/* Period metrics strip — Total / Avg / Peak / Growth */}
+                {!isLoading && periodMetrics && (
+                  <View style={styles.metricsStrip}>
+                    <MetricChip
+                      label='Orders'
+                      value={periodMetrics.totalOrders.toLocaleString()}
+                    />
+                    <View style={styles.metricDivider} />
+                    <MetricChip
+                      label={periodMetrics.avgLabel}
+                      value={periodMetrics.avgPerSlot.toFixed(1)}
+                    />
+                    <View style={styles.metricDivider} />
+                    <MetricChip
+                      label='Peak'
+                      value={periodMetrics.peakLabel}
+                    />
+                    {periodMetrics.growthPct !== null && (
+                      <>
+                        <View style={styles.metricDivider} />
+                        <MetricChip
+                          label='Growth'
+                          value={`${periodMetrics.growthPct > 0 ? '+' : ''}${periodMetrics.growthPct}%`}
+                          accent={periodMetrics.growthPct >= 0 ? theme.colors.success : theme.colors.danger}
+                        />
+                      </>
+                    )}
+                  </View>
+                )}
+
+                {/* Chart body: skeleton → no-data message → dual mini-charts */}
                 <View style={styles.chartBody}>
                   {isLoading ? (
-                    // Two skeleton placeholders mirror the two mini-charts that will appear.
                     <View style={styles.chartLoading}>
                       <SkeletonBox height={120} borderRadius={12} />
                       <View style={{ height: 12 }} />
@@ -609,12 +738,12 @@ export default function AnalyticsScreen() {
                       </Text>
                     </View>
                   ) : (
-                    // Dual mini-charts: each has its own independent Y-axis, avoiding the
-                    // scale-mismatch problem that would arise from plotting counts (0–20)
-                    // and amounts (0–500,000 TZS) on the same axis.
+                    // Two mini-charts with independent Y-axes avoid the scale-mismatch
+                    // problem that arises when plotting counts (0–300) and TZS amounts
+                    // (0–24,000 K) on a shared axis.
                     <View style={styles.dualChartWrap}>
 
-                      {/* Mini-chart 1: Total Orders (count) */}
+                      {/* Mini-chart 1: Order count per slot */}
                       <View style={styles.miniChartLegend}>
                         <View style={[styles.legendDot, { backgroundColor: theme.colors.primary }]} />
                         <Text style={[styles.legendLabel, { fontSize: rf(12) }]}>
@@ -643,7 +772,7 @@ export default function AnalyticsScreen() {
 
                       <View style={styles.miniChartDivider} />
 
-                      {/* Mini-chart 2: Total Amount (K TZS) */}
+                      {/* Mini-chart 2: Total amount (K TZS) per slot */}
                       <View style={styles.miniChartLegend}>
                         <View style={[styles.legendDot, { backgroundColor: theme.colors.warning }]} />
                         <Text style={[styles.legendLabel, { fontSize: rf(12) }]}>
@@ -674,8 +803,7 @@ export default function AnalyticsScreen() {
                 </View>
               </Animated.View>
 
-              {/* ── 4. Status breakdown ── */}
-              {/* Only shown once data has loaded and at least one status is present. */}
+              {/* ── 5. Status breakdown ── */}
               {!isLoading && Object.keys(statusCounts).length > 0 && (
                 <Animated.View
                   entering={FadeInDown.delay(300).springify().damping(spring.list.damping).stiffness(spring.list.stiffness)}
@@ -684,7 +812,6 @@ export default function AnalyticsScreen() {
                   <Text style={[styles.sectionTitle, { fontSize: rf(15) }]}>
                     {t('analytics.status_breakdown')}
                   </Text>
-                  {/* Sort pills by count descending so the most active statuses appear first. */}
                   <View style={styles.statusGrid}>
                     {(Object.entries(statusCounts) as [OrderStatus, number][])
                       .sort((a, b) => b[1] - a[1])
@@ -692,7 +819,7 @@ export default function AnalyticsScreen() {
                         const cfg = STATUS_CFG[status]
                         return (
                           <View key={status} style={[styles.statusPill, { backgroundColor: cfg.bg }]}>
-                            <Text style={[styles.statusCount, { color: cfg.color, fontSize: rf(15) }]}>{count}</Text>
+                            <Text style={[styles.statusCount, { color: cfg.color, fontSize: rf(15) }]}>{count.toLocaleString()}</Text>
                             <Text style={[styles.statusLabel, { color: cfg.color, fontSize: rf(10) }]}>{cfg.label}</Text>
                           </View>
                         )
@@ -701,7 +828,7 @@ export default function AnalyticsScreen() {
                 </Animated.View>
               )}
 
-              {/* ── 5. Recent orders list ── */}
+              {/* ── 6. Recent orders list ── */}
               {recentOrders.length > 0 && (
                 <View style={[styles.sectionCard, { marginTop: gap + 8 }]}>
                   <Animated.View
@@ -722,8 +849,8 @@ export default function AnalyticsScreen() {
                         <RecentOrderItem key={o.order_id} order={o} index={i} rf={rf} />
                       ))
                   }
-                  {/* "View All" button appears only when there are more than 8 orders. */}
-                  {orders && orders.length > 8 && (
+                  {/* "View All" only makes sense for real orders */}
+                  {!isGlobalDemo && orders && orders.length > 8 && (
                     <TouchableOpacity
                       style={styles.viewAllBtn}
                       onPress={() => router.push('/(tabs)/orders')}
@@ -733,18 +860,6 @@ export default function AnalyticsScreen() {
                     </TouchableOpacity>
                   )}
                 </View>
-              )}
-
-              {/* ── 6. Empty state (no orders at all) ── */}
-              {!isLoading && !orders?.length && (
-                <Animated.View
-                  entering={FadeInDown.delay(100).springify().damping(spring.hero.damping).stiffness(spring.hero.stiffness)}
-                  style={styles.emptyWrap}
-                >
-                  <HugeiconsIcon icon={OrdersIcon} size={48} color={theme.colors.textDisabled} strokeWidth={1} />
-                  <Text style={[styles.emptyTitle, { fontSize: rf(16) }]}>{t('analytics.no_orders')}</Text>
-                  <Text style={[styles.emptySub,   { fontSize: rf(13) }]}>{t('analytics.no_orders_sub')}</Text>
-                </Animated.View>
               )}
             </>
           )}
@@ -761,11 +876,26 @@ function getStyles(theme: AppTheme) {
     safe:   { flex: 1, backgroundColor: theme.colors.background },
     scroll: { paddingTop: 16 },
 
-    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
+    header:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
     title:    { fontFamily: 'Poppins-Bold',    color: theme.colors.text },
     subtitle: { fontFamily: 'Poppins-Regular', color: theme.colors.textSub, marginTop: 2 },
 
     summaryRow: { flexDirection: 'row' },
+
+    // Subtle info banner shown only in demo mode.
+    demoBanner: {
+      backgroundColor: theme.isDark ? '#1C1A2E' : '#F0EEFF',
+      borderRadius: 12,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      borderWidth: 1,
+      borderColor: theme.isDark ? '#3730A3' : '#C7D2FE',
+    },
+    demoBannerText: {
+      fontFamily: 'Poppins-Regular',
+      color: theme.isDark ? '#A5B4FC' : '#4338CA',
+      lineHeight: 18,
+    },
 
     chartCard: {
       backgroundColor: theme.colors.card,
@@ -781,7 +911,38 @@ function getStyles(theme: AppTheme) {
     },
     chartHeader:   { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12, gap: 12 },
     chartTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    chartTitle:    { fontFamily: 'Poppins-SemiBold', color: theme.colors.text },
+    chartTitle:    { fontFamily: 'Poppins-SemiBold', color: theme.colors.text, flex: 1 },
+
+    // Small "Demo" label badge next to the chart title.
+    demoBadge: {
+      backgroundColor: theme.colors.warningBg,
+      borderRadius: 6,
+      paddingHorizontal: 7,
+      paddingVertical: 2,
+    },
+    demoBadgeText: {
+      fontFamily: 'Poppins-SemiBold',
+      color: theme.colors.warning,
+    },
+
+    // Metrics strip: Total | Avg | Peak | Growth — sits between chip row and charts.
+    metricsStrip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      backgroundColor: theme.colors.background,
+      borderTopWidth: 1,
+      borderTopColor: theme.colors.divider,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.divider,
+    },
+    metricDivider: {
+      width: 1,
+      height: 28,
+      backgroundColor: theme.colors.divider,
+    },
+
     chartBody: {
       paddingHorizontal: 8,
       paddingBottom: 16,
@@ -820,10 +981,6 @@ function getStyles(theme: AppTheme) {
 
     viewAllBtn:  { marginTop: 12, paddingVertical: 10, borderRadius: 10, borderWidth: 1.5, borderColor: theme.colors.primary, alignItems: 'center' },
     viewAllText: { fontFamily: 'Poppins-SemiBold', color: theme.colors.primary },
-
-    emptyWrap:  { alignItems: 'center', justifyContent: 'center', paddingVertical: 60, gap: 12 },
-    emptyTitle: { fontFamily: 'Poppins-SemiBold', color: theme.colors.text },
-    emptySub:   { fontFamily: 'Poppins-Regular',  color: theme.colors.textMuted, textAlign: 'center', paddingHorizontal: 32 },
 
     errorWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 60, gap: 12 },
     errorText: { fontFamily: 'Poppins-Regular', color: theme.colors.textSub },
