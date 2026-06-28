@@ -2,6 +2,7 @@ import { StyleSheet, Text, View } from 'react-native'
 import { HugeiconsIcon } from '@hugeicons/react-native'
 import { VendorStore } from '@/types'
 import { CATEGORY_ICON_MAP, DEFAULT_CATEGORY_ICON, TickIcon } from '@/constants/icons'
+import { shadows } from '@/theme'
 
 interface Props {
   vendor: VendorStore
@@ -56,11 +57,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: '#fff',
     marginTop: -(LOGO_SIZE / 2 + 4),
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
-    elevation: 6,
+    ...shadows.medium,
   },
   logo: {
     width: LOGO_SIZE,

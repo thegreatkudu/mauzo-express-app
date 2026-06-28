@@ -24,6 +24,7 @@ import {
 } from '@/constants/icons'
 import type { AppTheme } from '@/hooks/use-theme'
 import type { CartItem, Supplier } from '@/types'
+import { shadows } from '@/theme'
 
 type SupplierGroup = {
   supplier: Supplier
@@ -294,11 +295,7 @@ function ScreenHeader({ onBack, rf, hp, isTablet }: {
           backgroundColor: theme.colors.card,
           alignItems: 'center',
           justifyContent: 'center',
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.10,
-          shadowRadius: 6,
-          elevation: 4,
+          ...shadows.medium,
         }}
       >
         <HugeiconsIcon
@@ -353,11 +350,7 @@ function makeStyles({ colors }: AppTheme) {
       borderRadius: 16,
       borderWidth: 1,
       borderColor: colors.divider,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.04,
-      shadowRadius: 5,
-      elevation: 2,
+      ...shadows.subtle,
       overflow: 'hidden',
     },
     supplierHeader: {
@@ -418,11 +411,7 @@ function makeStyles({ colors }: AppTheme) {
       padding: 16,
       borderWidth: 1,
       borderColor: colors.divider,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.04,
-      shadowRadius: 5,
-      elevation: 2,
+      ...shadows.subtle,
       gap: 12,
     },
     totalRow:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
@@ -438,11 +427,7 @@ function makeStyles({ colors }: AppTheme) {
       borderRadius: 16,
       borderWidth: 1,
       borderColor: colors.divider,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.04,
-      shadowRadius: 5,
-      elevation: 2,
+      ...shadows.subtle,
       paddingTop: 16,
       paddingHorizontal: 16,
       paddingBottom: 12,
@@ -467,11 +452,7 @@ function makeStyles({ colors }: AppTheme) {
       backgroundColor: colors.card,
       borderTopWidth: 1,
       borderTopColor: colors.divider,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: -4 },
-      shadowOpacity: 0.08,
-      shadowRadius: 12,
-      elevation: 12,
+      ...shadows.heavy,
     },
     placeBtn: {
       backgroundColor: colors.primary,

@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import {
-  ActivityIndicator, Modal, Pressable, RefreshControl,
-  ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
+  ActivityIndicator, RefreshControl,
+  ScrollView, StyleSheet, Text, TouchableOpacity, View,
 } from 'react-native'
+import BottomSheet, { BottomSheetView, BottomSheetTextInput } from '@expo/ui/community/bottom-sheet'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { router, useLocalSearchParams } from 'expo-router'
 import { HugeiconsIcon } from '@hugeicons/react-native'
@@ -10,6 +11,7 @@ import { toast } from 'sonner-native'
 import { useTranslation } from 'react-i18next'
 import { useTheme, useThemeStyles } from '@/hooks/use-theme'
 import type { AppTheme } from '@/hooks/use-theme'
+import { shadows } from '@/theme'
 
 import { useOrderDetail, useAcceptOrder, useRejectOrder, useMarkDelivered, useReportDeliveryIssue } from '@/hooks/useOrders'
 import { OrderDetailSkeleton } from '@/components/skeletons'
@@ -488,94 +490,89 @@ export default function OrderDetailScreen() {
         )}
       </ScrollView>
 
-      {/* ── Reject Modal ── */}
-      <Modal
-        visible={rejectModalOpen}
-        transparent
-        animationType='slide'
-        onRequestClose={() => setRejectModalOpen(false)}
+      {/* ── Reject Sheet ── */}
+      <BottomSheet
+        index={rejectModalOpen ? 0 : -1}
+        enablePanDownToClose
+        onClose={() => setRejectModalOpen(false)}
+        backgroundStyle={{ backgroundColor: theme.colors.card }}
       >
-        <Pressable style={styles.overlay} onPress={() => setRejectModalOpen(false)}>
-          <Pressable style={styles.sheet} onPress={() => {}}>
-            <View style={styles.sheetHandle} />
-            <View style={styles.sheetHeader}>
-              <Text style={styles.sheetTitle}>{t('order_detail.reject_modal_title')}</Text>
-              <TouchableOpacity onPress={() => setRejectModalOpen(false)} hitSlop={8}>
-                <HugeiconsIcon icon={CloseIcon} size={20} color={theme.colors.textSub} strokeWidth={1.5} />
-              </TouchableOpacity>
-            </View>
-            <Text style={styles.sheetSubtitle}>{t('order_detail.reject_modal_subtitle')}</Text>
-            <TextInput
-              style={styles.reasonInput}
-              value={rejectReason}
-              onChangeText={setRejectReason}
-              placeholder={t('order_detail.reject_reason_placeholder')}
-              placeholderTextColor={theme.colors.placeholder}
-              multiline
-              numberOfLines={4}
-              textAlignVertical='top'
-            />
-            <TouchableOpacity
-              style={[
-                styles.rejectConfirmBtn,
-                (rejectMutation.isPending || !rejectReason.trim()) && styles.btnDisabled,
-              ]}
-              onPress={handleReject}
-              disabled={rejectMutation.isPending || !rejectReason.trim()}
-              activeOpacity={0.88}
-            >
-              {rejectMutation.isPending
-                ? <ActivityIndicator color='#fff' />
-                : <Text style={styles.rejectConfirmBtnText}>{t('order_detail.reject_submit')}</Text>
-              }
+        <BottomSheetView style={styles.sheetContent}>
+          <View style={styles.sheetHeader}>
+            <Text style={styles.sheetTitle}>{t('order_detail.reject_modal_title')}</Text>
+            <TouchableOpacity onPress={() => setRejectModalOpen(false)} hitSlop={8}>
+              <HugeiconsIcon icon={CloseIcon} size={20} color={theme.colors.textSub} strokeWidth={1.5} />
             </TouchableOpacity>
-          </Pressable>
-        </Pressable>
-      </Modal>
-      {/* ── Issue Report Modal ── */}
-      <Modal
-        visible={issueModalOpen}
-        transparent
-        animationType='slide'
-        onRequestClose={() => setIssueModalOpen(false)}
+          </View>
+          <Text style={styles.sheetSubtitle}>{t('order_detail.reject_modal_subtitle')}</Text>
+          <BottomSheetTextInput
+            style={styles.reasonInput}
+            value={rejectReason}
+            onChangeText={setRejectReason}
+            placeholder={t('order_detail.reject_reason_placeholder')}
+            placeholderTextColor={theme.colors.placeholder}
+            multiline
+            numberOfLines={4}
+            textAlignVertical='top'
+          />
+          <TouchableOpacity
+            style={[
+              styles.rejectConfirmBtn,
+              (rejectMutation.isPending || !rejectReason.trim()) && styles.btnDisabled,
+            ]}
+            onPress={handleReject}
+            disabled={rejectMutation.isPending || !rejectReason.trim()}
+            activeOpacity={0.88}
+          >
+            {rejectMutation.isPending
+              ? <ActivityIndicator color='#fff' />
+              : <Text style={styles.rejectConfirmBtnText}>{t('order_detail.reject_submit')}</Text>
+            }
+          </TouchableOpacity>
+        </BottomSheetView>
+      </BottomSheet>
+
+      {/* ── Issue Report Sheet ── */}
+      <BottomSheet
+        index={issueModalOpen ? 0 : -1}
+        enablePanDownToClose
+        onClose={() => setIssueModalOpen(false)}
+        backgroundStyle={{ backgroundColor: theme.colors.card }}
       >
-        <Pressable style={styles.overlay} onPress={() => setIssueModalOpen(false)}>
-          <Pressable style={styles.sheet} onPress={() => {}}>
-            <View style={styles.sheetHandle} />
-            <View style={styles.sheetHeader}>
-              <Text style={styles.sheetTitle}>{t('order_detail.issue_modal_title')}</Text>
-              <TouchableOpacity onPress={() => setIssueModalOpen(false)} hitSlop={8}>
-                <HugeiconsIcon icon={CloseIcon} size={20} color={theme.colors.textSub} strokeWidth={1.5} />
-              </TouchableOpacity>
-            </View>
-            <Text style={styles.sheetSubtitle}>{t('order_detail.issue_modal_subtitle')}</Text>
-            <TextInput
-              style={styles.reasonInput}
-              value={issueReason}
-              onChangeText={setIssueReason}
-              placeholder={t('order_detail.issue_reason_placeholder')}
-              placeholderTextColor={theme.colors.placeholder}
-              multiline
-              numberOfLines={4}
-              textAlignVertical='top'
-            />
-            <TouchableOpacity
-              style={[
-                styles.issueConfirmBtn,
-                (reportIssueMutation.isPending || !issueReason.trim()) && styles.btnDisabled,
-              ]}
-              onPress={handleReportIssue}
-              disabled={reportIssueMutation.isPending || !issueReason.trim()}
-              activeOpacity={0.88}
-            >
-              {reportIssueMutation.isPending
-                ? <ActivityIndicator color='#fff' />
-                : <Text style={styles.rejectConfirmBtnText}>{t('order_detail.issue_submit')}</Text>
-              }
+        <BottomSheetView style={styles.sheetContent}>
+          <View style={styles.sheetHeader}>
+            <Text style={styles.sheetTitle}>{t('order_detail.issue_modal_title')}</Text>
+            <TouchableOpacity onPress={() => setIssueModalOpen(false)} hitSlop={8}>
+              <HugeiconsIcon icon={CloseIcon} size={20} color={theme.colors.textSub} strokeWidth={1.5} />
             </TouchableOpacity>
-          </Pressable>
-        </Pressable>
-      </Modal>
+          </View>
+          <Text style={styles.sheetSubtitle}>{t('order_detail.issue_modal_subtitle')}</Text>
+          <BottomSheetTextInput
+            style={styles.reasonInput}
+            value={issueReason}
+            onChangeText={setIssueReason}
+            placeholder={t('order_detail.issue_reason_placeholder')}
+            placeholderTextColor={theme.colors.placeholder}
+            multiline
+            numberOfLines={4}
+            textAlignVertical='top'
+          />
+          <TouchableOpacity
+            style={[
+              styles.issueConfirmBtn,
+              (reportIssueMutation.isPending || !issueReason.trim()) && styles.btnDisabled,
+            ]}
+            onPress={handleReportIssue}
+            disabled={reportIssueMutation.isPending || !issueReason.trim()}
+            activeOpacity={0.88}
+          >
+            {reportIssueMutation.isPending
+              ? <ActivityIndicator color='#fff' />
+              : <Text style={styles.rejectConfirmBtnText}>{t('order_detail.issue_submit')}</Text>
+            }
+          </TouchableOpacity>
+        </BottomSheetView>
+      </BottomSheet>
     </SafeAreaView>
   )
 }
@@ -622,8 +619,7 @@ function getStyles(theme: AppTheme) {
     heroCard: {
       backgroundColor: theme.colors.card, borderRadius: 18, overflow: 'hidden',
       borderWidth: 1, borderColor: theme.colors.divider,
-      shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.04, shadowRadius: 5, elevation: 2,
+      ...shadows.subtle,
     },
     heroBand: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingVertical: 16 },
     heroBandLeft: { gap: 4, flex: 1, marginRight: 12 },
@@ -645,8 +641,7 @@ function getStyles(theme: AppTheme) {
       flexDirection: 'row', alignItems: 'center', gap: 12,
       backgroundColor: theme.colors.card, borderRadius: 16, padding: 16,
       borderWidth: 1, borderColor: theme.colors.divider,
-      shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.04, shadowRadius: 5, elevation: 2,
+      ...shadows.subtle,
     },
     supplierIconWrap: { width: 46, height: 46, borderRadius: 14, backgroundColor: theme.colors.primaryLight, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
     supplierInfo:     { flex: 1, gap: 3 },
@@ -676,8 +671,7 @@ function getStyles(theme: AppTheme) {
     card: {
       backgroundColor: theme.colors.card, borderRadius: 16, padding: 16,
       borderWidth: 1, borderColor: theme.colors.divider,
-      shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.04, shadowRadius: 5, elevation: 2, gap: 14,
+      ...shadows.subtle, gap: 14,
     },
     cardTitle: { fontSize: 15, fontFamily: 'Poppins-SemiBold', color: theme.colors.text },
 
@@ -734,8 +728,7 @@ function getStyles(theme: AppTheme) {
     actionsCard: {
       backgroundColor: theme.colors.card, borderRadius: 16, padding: 16,
       borderWidth: 1, borderColor: theme.colors.divider,
-      shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.04, shadowRadius: 5, elevation: 2,
+      ...shadows.subtle,
     },
     actionsNote: { fontSize: 12, fontFamily: 'Poppins-Regular', color: theme.colors.textSub, marginBottom: 4 },
     actionsRow:  { flexDirection: 'row', gap: 10 },
@@ -768,13 +761,7 @@ function getStyles(theme: AppTheme) {
     retryBtn:  { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 12, borderWidth: 1.5, borderColor: theme.colors.primary },
     retryText: { fontSize: 14, fontFamily: 'Poppins-SemiBold', color: theme.colors.primary },
 
-    overlay: { flex: 1, backgroundColor: theme.colors.overlay, justifyContent: 'flex-end' },
-    sheet: {
-      backgroundColor: theme.colors.card,
-      borderTopLeftRadius: 24, borderTopRightRadius: 24,
-      paddingHorizontal: 20, paddingBottom: 40, paddingTop: 12,
-    },
-    sheetHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: theme.colors.border, alignSelf: 'center', marginBottom: 16 },
+    sheetContent: { paddingHorizontal: 20, paddingBottom: 36, paddingTop: 4 },
     sheetHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
     sheetTitle:    { fontSize: 17, fontFamily: 'Poppins-SemiBold', color: theme.colors.text },
     sheetSubtitle: { fontSize: 13, fontFamily: 'Poppins-Regular',  color: theme.colors.textSub, marginBottom: 14 },

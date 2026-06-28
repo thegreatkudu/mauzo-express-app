@@ -4,6 +4,7 @@ import { HugeiconsIcon } from '@hugeicons/react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { TrashIcon, MinusIcon, AddIcon } from '@/constants/icons'
+import { shadows } from '@/theme'
 
 interface Props {
   price: number
@@ -114,11 +115,7 @@ const styles = StyleSheet.create({
     gap: 12,
     borderTopWidth: 1,
     borderTopColor: '#F0F0F0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 16,
+    ...shadows.heavy,
   },
   stepper: {
     flexDirection: 'row',

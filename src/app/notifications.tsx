@@ -18,6 +18,7 @@ import { getNotifMeta } from '@/utils/notifications'
 import { useTheme, useThemeStyles } from '@/hooks/use-theme'
 import type { AppTheme } from '@/hooks/use-theme'
 import type { Notification } from '@/types'
+import { shadows } from '@/theme'
 
 // ── Card ─────────────────────────────────────────────────────────────────────
 
@@ -47,11 +48,7 @@ const NotificationRow = memo(function NotificationRow({
           borderLeftWidth: 3,
           borderColor:     theme.colors.border,
           borderLeftColor: unread ? meta.color : theme.colors.border,
-          shadowColor:     '#000',
-          shadowOffset:    { width: 0, height: 2 },
-          shadowOpacity:   theme.isDark ? 0 : 0.04,
-          shadowRadius:    5,
-          elevation:       2,
+          ...shadows.subtle,
         },
       ]}
       onPress={onPress}

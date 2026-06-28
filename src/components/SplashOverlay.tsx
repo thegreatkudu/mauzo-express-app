@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Dimensions, Platform, StatusBar, StyleSheet, Text, View } from 'react-native'
+import { Dimensions, StatusBar, StyleSheet, Text, View } from 'react-native'
 import { router } from 'expo-router'
 import { LinearGradient } from 'expo-linear-gradient'
 import { HugeiconsIcon } from '@hugeicons/react-native'
@@ -19,6 +19,7 @@ import { ShoppingBag01Icon } from '@hugeicons/core-free-icons'
 import { useAnimatedSplash, LOGO_SIZE } from '@/hooks/useAnimatedSplash'
 import { useAuthStore } from '@/store/auth.store'
 import { useUiStore } from '@/store/ui.store'
+import { shadows } from '@/theme'
 
 const GRADIENT_COLORS: [string, string, string] = ['#8C2800', '#CE4002', '#E8621A']
 const RING_SIZE = LOGO_SIZE + 32
@@ -306,15 +307,7 @@ const styles = StyleSheet.create({
     alignItems:      'center',
     justifyContent:  'center',
     overflow:        'hidden',
-    ...Platform.select({
-      ios: {
-        shadowColor:   '#000',
-        shadowOffset:  { width: 0, height: 8 },
-        shadowOpacity: 0.22,
-        shadowRadius:  20,
-      },
-      android: { elevation: 12 },
-    }),
+    ...shadows.heavy,
   },
   shimmerClip: {
     position:     'absolute',

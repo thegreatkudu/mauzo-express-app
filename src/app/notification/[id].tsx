@@ -15,6 +15,7 @@ import { getNotifMeta } from '@/utils/notifications'
 import { useTheme, useThemeStyles } from '@/hooks/use-theme'
 import type { AppTheme } from '@/hooks/use-theme'
 import type { NotificationType } from '@/types'
+import { shadows } from '@/theme'
 
 type Params = {
   id:           string
@@ -198,11 +199,7 @@ function getStyles(theme: AppTheme) {
       borderRadius:   40,
       alignItems:     'center',
       justifyContent: 'center',
-      shadowColor:    '#000',
-      shadowOffset:   { width: 0, height: 2 },
-      shadowOpacity:  theme.isDark ? 0 : 0.04,
-      shadowRadius:   5,
-      elevation:      2,
+      ...shadows.subtle,
     },
 
     newBadge: {
@@ -243,11 +240,7 @@ function getStyles(theme: AppTheme) {
       marginBottom:    12,
       borderWidth:     1,
       borderColor:     theme.colors.border,
-      shadowColor:     '#000',
-      shadowOffset:    { width: 0, height: 2 },
-      shadowOpacity:   theme.isDark ? 0 : 0.04,
-      shadowRadius:    5,
-      elevation:       2,
+      ...shadows.subtle,
       gap:             10,
     },
     messageCardLabel: {
@@ -272,11 +265,7 @@ function getStyles(theme: AppTheme) {
       marginBottom:      24,
       borderWidth:       1,
       borderColor:       theme.colors.border,
-      shadowColor:       '#000',
-      shadowOffset:      { width: 0, height: 2 },
-      shadowOpacity:     theme.isDark ? 0 : 0.04,
-      shadowRadius:      5,
-      elevation:         2,
+      ...shadows.subtle,
     },
     detailRow: {
       flexDirection:   'row',

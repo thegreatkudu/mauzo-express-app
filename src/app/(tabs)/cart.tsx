@@ -22,6 +22,7 @@ import { AddIcon, MinusIcon, TrashIcon, CartIcon, SuppliersNavIcon } from '@/con
 import { useTheme, useThemeStyles } from '@/hooks/use-theme'
 import type { AppTheme } from '@/hooks/use-theme'
 import type { CartItem, Supplier } from '@/types'
+import { shadows } from '@/theme'
 
 type SupplierGroup = {
   supplier: Supplier
@@ -299,11 +300,7 @@ function getStyles(theme: AppTheme) {
       borderColor:     theme.colors.border,
       overflow:        'hidden',
       marginBottom:    12,
-      shadowColor:     '#000',
-      shadowOffset:    { width: 0, height: 2 },
-      shadowOpacity:   theme.isDark ? 0 : 0.04,
-      shadowRadius:    5,
-      elevation:       2,
+      ...shadows.subtle,
     },
     supplierHeader: {
       flexDirection:     'row',
@@ -366,11 +363,11 @@ function getStyles(theme: AppTheme) {
       borderTopWidth:  1,
       borderTopColor:  theme.colors.border,
       gap:             14,
-      shadowColor:     '#000',
-      shadowOffset:    { width: 0, height: -4 },
-      shadowOpacity:   theme.isDark ? 0.25 : 0.08,
-      shadowRadius:    12,
-      elevation:       12,
+      shadowColor: '#f0f0f0',
+      shadowOffset: { width: 0, height: -4 },
+      shadowOpacity: 0.08,
+      shadowRadius: 12,
+      elevation: 8,
     },
     totalRow:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     totalLabel: { fontFamily: 'Poppins-Regular', color: theme.colors.textSub },

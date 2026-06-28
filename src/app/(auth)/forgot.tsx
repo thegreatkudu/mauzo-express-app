@@ -7,6 +7,7 @@ import { PhoneIcon, BackIcon } from '@/constants/icons'
 import { ADMIN_PHONE } from '@/constants/config'
 import { useTheme, useThemeStyles } from '@/hooks/use-theme'
 import type { AppTheme } from '@/hooks/use-theme'
+import { shadows } from '@/theme'
 
 export default function ForgotScreen() {
   const { t } = useTranslation()
@@ -69,11 +70,7 @@ function getStyles(theme: AppTheme) {
       backgroundColor: theme.colors.card,
       alignItems:      'center',
       justifyContent:  'center',
-      shadowColor:     '#000',
-      shadowOffset:    { width: 0, height: 2 },
-      shadowOpacity:   theme.isDark ? 0 : 0.10,
-      shadowRadius:    6,
-      elevation:       4,
+      ...shadows.medium,
     },
     headerTitle: {
       flex:       1,

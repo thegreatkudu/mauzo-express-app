@@ -15,6 +15,7 @@ import {
 } from '@/constants/icons'
 import { useTheme, useThemeStyles } from '@/hooks/use-theme'
 import type { AppTheme } from '@/hooks/use-theme'
+import { shadows } from '@/theme'
 
 export default function OrderSuccessScreen() {
   const { t } = useTranslation()
@@ -303,11 +304,7 @@ function getStyles(theme: AppTheme) {
       borderRadius:    20,
       borderWidth:     1,
       borderColor:     theme.colors.border,
-      shadowColor:     '#000',
-      shadowOffset:    { width: 0, height: 4 },
-      shadowOpacity:   theme.isDark ? 0 : 0.04,
-      shadowRadius:    16,
-      elevation:       4,
+      ...shadows.medium,
       overflow:        'hidden',
     },
     summaryHeader:   { padding: 20, backgroundColor: theme.colors.primaryLight },

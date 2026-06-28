@@ -1,14 +1,19 @@
-import { Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { useState } from 'react'
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import BottomSheet, { BottomSheetView } from '@expo/ui/community/bottom-sheet'
 import { HugeiconsIcon } from '@hugeicons/react-native'
 import { CheckCircleIcon, GlobeIcon } from '@/constants/icons'
 import { useLanguage } from '@/hooks/useLanguage'
 import { useTranslation } from 'react-i18next'
-import { useState } from 'react'
+import { useTheme, useThemeStyles } from '@/hooks/use-theme'
+import type { AppTheme } from '@/hooks/use-theme'
 
 export default function LanguageSelector() {
   const { currentLanguage, changeLanguage, languages } = useLanguage()
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
+  const { theme } = useTheme()
+  const styles = useThemeStyles(makeStyles)
 
   const current = languages.find(l => l.code === currentLanguage) ?? languages[0]
 
@@ -22,93 +27,87 @@ export default function LanguageSelector() {
       >
         <Text style={styles.triggerFlag}>{current.flag}</Text>
         <Text style={styles.triggerLabel}>{current.nativeName}</Text>
-        <HugeiconsIcon icon={GlobeIcon} size={16} color='#9CA3AF' strokeWidth={1.5} />
+        <HugeiconsIcon icon={GlobeIcon} size={16} color={theme.colors.textMuted} strokeWidth={1.5} />
       </TouchableOpacity>
 
-      <Modal visible={open} transparent animationType='slide' onRequestClose={() => setOpen(false)}>
-        <Pressable style={styles.overlay} onPress={() => setOpen(false)}>
-          <View style={styles.sheet}>
-            <View style={styles.sheetHandle} />
-            <Text style={styles.sheetTitle}>{t('profile.select_language')}</Text>
-            {languages.map(lang => {
-              const isSelected = lang.code === currentLanguage
-              return (
-                <TouchableOpacity
-                  key={lang.code}
-                  style={[styles.option, isSelected && styles.optionActive]}
-                  onPress={() => { changeLanguage(lang.code); setOpen(false) }}
-                  activeOpacity={0.75}
-                >
-                  <Text style={styles.optionFlag}>{lang.flag}</Text>
-                  <View style={styles.optionText}>
-                    <Text style={[styles.optionNative, isSelected && styles.optionNativeActive]}>
-                      {lang.nativeName}
-                    </Text>
-                    <Text style={styles.optionName}>{lang.name}</Text>
-                  </View>
-                  {isSelected && (
-                    <HugeiconsIcon icon={CheckCircleIcon} size={20} color='#CE4002' strokeWidth={2} />
-                  )}
-                </TouchableOpacity>
-              )
-            })}
-          </View>
-        </Pressable>
-      </Modal>
+      <BottomSheet
+        index={open ? 0 : -1}
+        enablePanDownToClose
+        onClose={() => setOpen(false)}
+        backgroundStyle={{ backgroundColor: theme.colors.card }}
+      >
+        <BottomSheetView style={styles.content}>
+          <Text style={styles.sheetTitle}>{t('profile.select_language')}</Text>
+          {languages.map(lang => {
+            const isSelected = lang.code === currentLanguage
+            return (
+              <TouchableOpacity
+                key={lang.code}
+                style={[styles.option, isSelected && styles.optionActive]}
+                onPress={() => { changeLanguage(lang.code); setOpen(false) }}
+                activeOpacity={0.75}
+              >
+                <Text style={styles.optionFlag}>{lang.flag}</Text>
+                <View style={styles.optionText}>
+                  <Text style={[styles.optionNative, isSelected && styles.optionNativeActive]}>
+                    {lang.nativeName}
+                  </Text>
+                  <Text style={styles.optionName}>{lang.name}</Text>
+                </View>
+                {isSelected && (
+                  <HugeiconsIcon icon={CheckCircleIcon} size={20} color={theme.colors.primary} strokeWidth={2} />
+                )}
+              </TouchableOpacity>
+            )
+          })}
+        </BottomSheetView>
+      </BottomSheet>
     </>
   )
 }
 
-const styles = StyleSheet.create({
-  trigger: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-    backgroundColor: '#F9FAFB',
-    borderWidth: 1,
-    borderColor: '#E8E8E8',
-  },
-  triggerFlag:  { fontSize: 16 },
-  triggerLabel: { fontSize: 13, fontFamily: 'Poppins-Medium', color: '#374151', flex: 1 },
+function makeStyles({ colors }: AppTheme) {
+  return StyleSheet.create({
+    trigger: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 12,
+      backgroundColor: colors.cardAlt,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    triggerFlag:  { fontSize: 16 },
+    triggerLabel: { fontSize: 13, fontFamily: 'Poppins-Medium', color: colors.text, flex: 1 },
 
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
-  sheet: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: 20,
-    paddingBottom: 36,
-    paddingTop: 12,
-  },
-  sheetHandle: {
-    width: 40, height: 4, borderRadius: 2,
-    backgroundColor: '#E8E8E8',
-    alignSelf: 'center',
-    marginBottom: 20,
-  },
-  sheetTitle: {
-    fontSize: 17,
-    fontFamily: 'Poppins-SemiBold',
-    color: '#111827',
-    marginBottom: 16,
-  },
+    content: {
+      paddingHorizontal: 20,
+      paddingBottom: 36,
+      paddingTop: 8,
+    },
+    sheetTitle: {
+      fontSize: 17,
+      fontFamily: 'Poppins-SemiBold',
+      color: colors.text,
+      marginBottom: 16,
+    },
 
-  option: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    paddingVertical: 14,
-    paddingHorizontal: 12,
-    borderRadius: 14,
-    marginBottom: 6,
-  },
-  optionActive: { backgroundColor: '#FEF0E6' },
-  optionFlag:   { fontSize: 24 },
-  optionText:   { flex: 1, gap: 2 },
-  optionNative: { fontSize: 15, fontFamily: 'Poppins-SemiBold', color: '#111827' },
-  optionNativeActive: { color: '#CE4002' },
-  optionName:   { fontSize: 12, fontFamily: 'Poppins-Regular', color: '#9CA3AF' },
-})
+    option: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 14,
+      paddingVertical: 14,
+      paddingHorizontal: 12,
+      borderRadius: 14,
+      marginBottom: 6,
+    },
+    optionActive:       { backgroundColor: colors.primaryLight },
+    optionFlag:         { fontSize: 24 },
+    optionText:         { flex: 1, gap: 2 },
+    optionNative:       { fontSize: 15, fontFamily: 'Poppins-SemiBold', color: colors.text },
+    optionNativeActive: { color: colors.primary },
+    optionName:         { fontSize: 12, fontFamily: 'Poppins-Regular',  color: colors.textMuted },
+  })
+}

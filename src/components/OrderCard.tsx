@@ -36,6 +36,7 @@ import { spring, listStagger } from '@/constants/animations'
 import { useTheme, useThemeStyles } from '@/hooks/use-theme'
 import type { AppTheme } from '@/hooks/use-theme'
 import type { Order } from '@/types'
+import { shadows } from '@/theme'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -159,11 +160,7 @@ function getStyles(theme: AppTheme) {
       marginBottom:    10,
       borderWidth:     1,
       borderColor:     theme.colors.border,
-      shadowColor:     '#000',
-      shadowOffset:    { width: 0, height: 2 },
-      shadowOpacity:   theme.isDark ? 0 : 0.04,
-      shadowRadius:    5,
-      elevation:       2,
+      ...shadows.subtle,
       gap:             8,
     },
     cardTablet: { marginBottom: 0, borderRadius: 18, padding: 18 },

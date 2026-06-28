@@ -38,48 +38,49 @@
  *   500 + stagger(i, 40) — Individual recent order rows
  */
 
+import { HugeiconsIcon } from '@hugeicons/react-native'
+import { LinearGradient } from 'expo-linear-gradient'
+import { router } from 'expo-router'
 import { useEffect, useMemo } from 'react'
 import {
   Pressable, RefreshControl, ScrollView,
   StyleSheet, Text, TouchableOpacity, View,
 } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import { router } from 'expo-router'
-import { HugeiconsIcon } from '@hugeicons/react-native'
-import { LinearGradient } from 'expo-linear-gradient'
 import Animated, {
   FadeInDown,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
 } from 'react-native-reanimated'
+import { SafeAreaView } from 'react-native-safe-area-context'
 
-import { useTranslation } from 'react-i18next'
+import DashboardCard from '@/components/home/DashboardCard'
 import { HomeStatsSkeleton } from '@/components/skeletons'
+import StatusBadge from '@/components/ui/StatusBadge'
+import { listStagger, spring } from '@/constants/animations'
+import {
+  AnalyticsIcon,
+  CartIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  InfoIcon,
+  NotificationIcon,
+  OrdersIcon,
+  ReceiptIcon,
+  SuppliersNavIcon,
+} from '@/constants/icons'
+import type { AppTheme } from '@/hooks/use-theme'
+import { useTheme, useThemeStyles } from '@/hooks/use-theme'
+import { useNotificationPolling, useNotifications } from '@/hooks/useNotifications'
+import { useOrders, useOrderSummary } from '@/hooks/useOrders'
+import { useResponsive } from '@/hooks/useResponsive'
 import { useAuthStore } from '@/store/auth.store'
 import { useCartStore } from '@/store/cart.store'
-import { useTheme, useThemeStyles } from '@/hooks/use-theme'
-import type { AppTheme } from '@/hooks/use-theme'
-import { useOrders, useOrderSummary } from '@/hooks/useOrders'
-import { useNotifications, useNotificationPolling } from '@/hooks/useNotifications'
-import { useResponsive } from '@/hooks/useResponsive'
 import { useUiStore } from '@/store/ui.store'
-import { spring, listStagger } from '@/constants/animations'
-import DashboardCard from '@/components/home/DashboardCard'
-import StatusBadge from '@/components/ui/StatusBadge'
-import { formatDate, formatOrderId } from '@/utils/date'
-import {
-  NotificationIcon,
-  SuppliersNavIcon,
-  OrdersIcon,
-  CartIcon,
-  InfoIcon,
-  ClockIcon,
-  CheckCircleIcon,
-  ReceiptIcon,
-  AnalyticsIcon,
-} from '@/constants/icons'
 import type { Order } from '@/types'
+import { formatDate, formatOrderId } from '@/utils/date'
+import { useTranslation } from 'react-i18next'
+import { shadows } from '@/theme'
 
 // ─── SpringPressable ──────────────────────────────────────────────────────────
 
@@ -104,7 +105,7 @@ function SpringPressable({
   children: React.ReactNode
   onPress: () => void
 }) {
-  const scale    = useSharedValue(1)
+  const scale = useSharedValue(1)
   const animStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }))
@@ -112,7 +113,7 @@ function SpringPressable({
   return (
     <Pressable
       onPressIn={() => { scale.value = withSpring(0.95, spring.press) }}
-      onPressOut={() => { scale.value = withSpring(1,    spring.press) }}
+      onPressOut={() => { scale.value = withSpring(1, spring.press) }}
       onPress={onPress}
     >
       <Animated.View style={animStyle}>{children}</Animated.View>
@@ -138,7 +139,7 @@ function SpringPressable({
  */
 export default function HomeScreen() {
   // ── Store subscriptions ────────────────────────────────────────────────────
-  const profile   = useAuthStore(s => s.profile)
+  const profile = useAuthStore(s => s.profile)
   // Subscribe only to the derived count, not the entire cart state.
   const cartCount = useCartStore(s => s.getItemCount())
   const { fetchCart } = useCartStore()
@@ -146,9 +147,9 @@ export default function HomeScreen() {
   // ── Data hooks ─────────────────────────────────────────────────────────────
   // Two separate queries: summary (lightweight) for counts, orders (full) for
   // amounts and the recent orders list. Both share staleTime: 30s in the cache.
-  const { data: summary,       isLoading: summaryLoading, refetch: refetchSummary } = useOrderSummary()
-  const { data: orders,        isLoading: ordersLoading,  refetch: refetchOrders  } = useOrders()
-  const { data: notifications }                                                      = useNotifications()
+  const { data: summary, isLoading: summaryLoading, refetch: refetchSummary } = useOrderSummary()
+  const { data: orders, isLoading: ordersLoading, refetch: refetchOrders } = useOrders()
+  const { data: notifications } = useNotifications()
 
   const { hp, rf, vgap, gap, isTablet, isLandscape, contentMaxWidth } = useResponsive()
   const { t } = useTranslation()
@@ -174,14 +175,14 @@ export default function HomeScreen() {
   }, [summaryLoading, ordersLoading])
 
   // ── Derived values ─────────────────────────────────────────────────────────
-  const unreadCount    = notifications?.filter(n => !n.is_read).length ?? 0
-  const sub            = profile?.subscription
-  const isOnTrial      = sub?.type === 'trial'
-  const daysLeft       = sub?.days_remaining ?? 0
+  const unreadCount = notifications?.filter(n => !n.is_read).length ?? 0
+  const sub = profile?.subscription
+  const isOnTrial = sub?.type === 'trial'
+  const daysLeft = sub?.days_remaining ?? 0
 
   // Order counts from the lightweight summary endpoint.
-  const activeOrders   = summary?.active_count             ?? 0
-  const pendingQuotes  = summary?.pending_quotation_count  ?? 0
+  const activeOrders = summary?.active_count ?? 0
+  const pendingQuotes = summary?.pending_quotation_count ?? 0
   const acceptedOrders = summary?.accepted_quotation_count ?? 0
 
   // Spend totals derived client-side from the full orders cache.
@@ -190,21 +191,21 @@ export default function HomeScreen() {
   const { todayAmount, monthAmount, yearAmount } = useMemo(() => {
     let todayAmt = 0, monthAmt = 0, yearAmt = 0
 
-    // Single pass: nest comparisons from widest (year) to narrowest (day)
-    // so each order is checked at most three times instead of running
-    // three separate filter passes over the array.
-    ;(orders ?? []).forEach(o => {
-      const d   = new Date(o.created_at)
-      const amt = o.total_quoted_amount ?? 0 // treat un-quoted orders as 0
+      // Single pass: nest comparisons from widest (year) to narrowest (day)
+      // so each order is checked at most three times instead of running
+      // three separate filter passes over the array.
+      ; (orders ?? []).forEach(o => {
+        const d = new Date(o.created_at)
+        const amt = o.total_quoted_amount ?? 0 // treat un-quoted orders as 0
 
-      if (d.getFullYear() === now.getFullYear()) {
-        yearAmt += amt
-        if (d.getMonth() === now.getMonth()) {
-          monthAmt += amt
-          if (d.getDate() === now.getDate()) todayAmt += amt
+        if (d.getFullYear() === now.getFullYear()) {
+          yearAmt += amt
+          if (d.getMonth() === now.getMonth()) {
+            monthAmt += amt
+            if (d.getDate() === now.getDate()) todayAmt += amt
+          }
         }
-      }
-    })
+      })
 
     return { todayAmount: todayAmt, monthAmount: monthAmt, yearAmount: yearAmt }
   }, [orders])
@@ -531,11 +532,11 @@ function StatusGuideSection({ vgap, rf }: { vgap: number; rf: (s: number) => num
 
   /** Ordered steps that mirror the actual order lifecycle progression. */
   const STATUS_STEPS = [
-    { icon: ClockIcon,        color: '#9CA3AF', label: t('home.status_awaiting_quote'),  desc: t('home.status_awaiting_quote_desc')  },
-    { icon: ReceiptIcon,      color: '#D97706', label: t('home.status_quote_received'),  desc: t('home.status_quote_received_desc')  },
-    { icon: CheckCircleIcon,  color: '#059669', label: t('home.status_accepted'),        desc: t('home.status_accepted_desc')        },
-    { icon: SuppliersNavIcon, color: '#7C3AED', label: t('home.status_dispatched'),      desc: t('home.status_dispatched_desc')      },
-    { icon: CheckCircleIcon,  color: '#2563EB', label: t('home.status_delivered'),       desc: t('home.status_delivered_desc')       },
+    { icon: ClockIcon, color: '#9CA3AF', label: t('home.status_awaiting_quote'), desc: t('home.status_awaiting_quote_desc') },
+    { icon: ReceiptIcon, color: '#D97706', label: t('home.status_quote_received'), desc: t('home.status_quote_received_desc') },
+    { icon: CheckCircleIcon, color: '#059669', label: t('home.status_accepted'), desc: t('home.status_accepted_desc') },
+    { icon: SuppliersNavIcon, color: '#7C3AED', label: t('home.status_dispatched'), desc: t('home.status_dispatched_desc') },
+    { icon: CheckCircleIcon, color: '#2563EB', label: t('home.status_delivered'), desc: t('home.status_delivered_desc') },
   ]
 
   return (
@@ -547,7 +548,7 @@ function StatusGuideSection({ vgap, rf }: { vgap: number; rf: (s: number) => num
             <HugeiconsIcon icon={s.icon} size={16} color={s.color} strokeWidth={1.5} />
             <View style={styles.statusText}>
               <Text style={[styles.statusLabel, { fontSize: rf(13) }]}>{s.label}</Text>
-              <Text style={[styles.statusDesc,  { fontSize: rf(12) }]}>{s.desc}</Text>
+              <Text style={[styles.statusDesc, { fontSize: rf(12) }]}>{s.desc}</Text>
             </View>
           </View>
         ))}
@@ -634,11 +635,11 @@ function RecentOrdersSection({
               >
                 {/* Left side: order identifier, supplier, and date */}
                 <View style={styles.recentLeft}>
-                  <Text style={[styles.recentId,       { fontSize: rf(13) }]}>{formatOrderId(o.order_id)}</Text>
+                  <Text style={[styles.recentId, { fontSize: rf(13) }]}>{formatOrderId(o.order_id)}</Text>
                   <Text style={[styles.recentSupplier, { fontSize: rf(12) }]} numberOfLines={1}>
                     {o.supplier.business_name}
                   </Text>
-                  <Text style={[styles.recentDate,     { fontSize: rf(11) }]}>{formatDate(o.created_at)}</Text>
+                  <Text style={[styles.recentDate, { fontSize: rf(11) }]}>{formatDate(o.created_at)}</Text>
                 </View>
 
                 {/* Right side: status badge and quoted amount (if available) */}
@@ -686,8 +687,8 @@ function QuickAction({
   color: string; bg: string; onPress: () => void
   rf: (s: number) => number
 }) {
-  const styles    = useThemeStyles(getStyles)
-  const scale     = useSharedValue(1)
+  const styles = useThemeStyles(getStyles)
+  const scale = useSharedValue(1)
   const pressStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }))
@@ -705,7 +706,7 @@ function QuickAction({
     >
       <Pressable
         onPressIn={() => { scale.value = withSpring(0.95, spring.press) }}
-        onPressOut={() => { scale.value = withSpring(1,    spring.press) }}
+        onPressOut={() => { scale.value = withSpring(1, spring.press) }}
         onPress={onPress}
       >
         {/* Inner view: press-spring scale transform. Separate from the entrance
@@ -715,7 +716,7 @@ function QuickAction({
             <HugeiconsIcon icon={icon} size={22} color={color} strokeWidth={1.5} />
           </View>
           <Text style={[styles.actionLabel, { fontSize: rf(13) }]}>{label}</Text>
-          <Text style={[styles.actionSub,   { fontSize: rf(11) }]}>{subtitle}</Text>
+          <Text style={[styles.actionSub, { fontSize: rf(11) }]}>{subtitle}</Text>
         </Animated.View>
       </Pressable>
     </Animated.View>
@@ -747,7 +748,7 @@ function getGreeting(): 'morning' | 'afternoon' | 'evening' {
 
 function getStyles(theme: AppTheme) {
   return StyleSheet.create({
-    safe:   { flex: 1, backgroundColor: theme.colors.background },
+    safe: { flex: 1, backgroundColor: theme.colors.background },
     scroll: {},
 
     header: {
@@ -755,10 +756,10 @@ function getStyles(theme: AppTheme) {
       alignItems: 'center',
       justifyContent: 'space-between',
     },
-    headerLeft:    { flex: 1, marginRight: 12 },
+    headerLeft: { flex: 1, marginRight: 12 },
     headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     greeting: { fontFamily: 'Poppins-Regular', color: theme.colors.textSub },
-    bizName:  { fontFamily: 'Poppins-Bold',    color: theme.colors.text },
+    bizName: { fontFamily: 'Poppins-Bold', color: theme.colors.text },
 
     notifBtn: {
       width: 44,
@@ -769,11 +770,7 @@ function getStyles(theme: AppTheme) {
       justifyContent: 'center',
       borderWidth: 1,
       borderColor: theme.colors.divider,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.04,
-      shadowRadius: 5,
-      elevation: 2,
+      ...shadows.subtle,
     },
     notifBtnTablet: { width: 50, height: 50, borderRadius: 14 },
     notifBadge: {
@@ -793,29 +790,25 @@ function getStyles(theme: AppTheme) {
     notifBadgeText: { color: '#fff', fontSize: 9, fontFamily: 'Poppins-Bold' },
 
     trialBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
-    trialText:   { flex: 1, fontFamily: 'Poppins-Regular', color: '#92400E' },
-    trialLink:   { fontFamily: 'Poppins-Bold', color: '#D97706', textDecorationLine: 'underline' },
+    trialText: { flex: 1, fontFamily: 'Poppins-Regular', color: '#92400E' },
+    trialLink: { fontFamily: 'Poppins-Bold', color: '#D97706', textDecorationLine: 'underline' },
 
     sectionTitle: { fontFamily: 'Poppins-Bold', color: theme.colors.text, marginBottom: 12 },
 
-    actionsGrid:    { flexDirection: 'row', flexWrap: 'wrap' },
-    actionWrapper:  { width: '47.5%' },
+    actionsGrid: { flexDirection: 'row', flexWrap: 'wrap' },
+    actionWrapper: { width: '47.5%' },
     actionCard: {
       backgroundColor: theme.colors.card,
       borderRadius: 16,
       padding: 16,
       borderWidth: 1,
       borderColor: theme.colors.divider,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.04,
-      shadowRadius: 5,
-      elevation: 2,
+      ...shadows.subtle,
       gap: 8,
     },
-    actionIcon:  { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+    actionIcon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
     actionLabel: { fontFamily: 'Poppins-SemiBold', color: theme.colors.text },
-    actionSub:   { fontFamily: 'Poppins-Regular',  color: theme.colors.textMuted },
+    actionSub: { fontFamily: 'Poppins-Regular', color: theme.colors.textMuted },
 
     statusGuide: {
       backgroundColor: theme.colors.card,
@@ -825,19 +818,16 @@ function getStyles(theme: AppTheme) {
       borderColor: theme.colors.divider,
       gap: 14,
       marginBottom: 8,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.04,
-      shadowRadius: 5,
-      elevation: 2,
-    },
-    statusRow:   { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-    statusText:  { flex: 1, gap: 2 },
-    statusLabel: { fontFamily: 'Poppins-SemiBold', color: theme.colors.text },
-    statusDesc:  { fontFamily: 'Poppins-Regular',  color: theme.colors.textSub },
 
-    twoColRow:   { flexDirection: 'row', gap: 20 },
-    twoColLeft:  { flex: 3 },
+      ...shadows.subtle,
+    },
+    statusRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+    statusText: { flex: 1, gap: 2 },
+    statusLabel: { fontFamily: 'Poppins-SemiBold', color: theme.colors.text },
+    statusDesc: { fontFamily: 'Poppins-Regular', color: theme.colors.textSub },
+
+    twoColRow: { flexDirection: 'row', gap: 20 },
+    twoColLeft: { flex: 3 },
     twoColRight: { flex: 2 },
 
     recentHeader: {
@@ -852,11 +842,7 @@ function getStyles(theme: AppTheme) {
       borderRadius: 16,
       borderWidth: 1,
       borderColor: theme.colors.divider,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.04,
-      shadowRadius: 5,
-      elevation: 2,
+      ...shadows.subtle,
       overflow: 'hidden',
     },
     recentRow: {
@@ -868,12 +854,12 @@ function getStyles(theme: AppTheme) {
       gap: 12,
     },
     recentRowBorder: { borderBottomWidth: 1, borderBottomColor: theme.colors.borderLight },
-    recentLeft:      { flex: 1, gap: 2 },
-    recentRight:     { alignItems: 'flex-end', gap: 4 },
-    recentId:        { fontFamily: 'Poppins-Bold',    color: theme.colors.text },
-    recentSupplier:  { fontFamily: 'Poppins-Regular', color: theme.colors.textSub },
-    recentDate:      { fontFamily: 'Poppins-Regular', color: theme.colors.textMuted },
-    recentAmount:    { fontFamily: 'Poppins-SemiBold', color: theme.colors.primary },
+    recentLeft: { flex: 1, gap: 2 },
+    recentRight: { alignItems: 'flex-end', gap: 4 },
+    recentId: { fontFamily: 'Poppins-Bold', color: theme.colors.text },
+    recentSupplier: { fontFamily: 'Poppins-Regular', color: theme.colors.textSub },
+    recentDate: { fontFamily: 'Poppins-Regular', color: theme.colors.textMuted },
+    recentAmount: { fontFamily: 'Poppins-SemiBold', color: theme.colors.primary },
 
     skeletonLine: { height: 12, backgroundColor: theme.colors.skeleton, borderRadius: 6 },
   })

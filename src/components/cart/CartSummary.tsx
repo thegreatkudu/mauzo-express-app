@@ -3,6 +3,7 @@ import { HugeiconsIcon } from '@hugeicons/react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useCartStore } from '@/store/cart.store'
 import { SparklesIcon, LockIcon } from '@/constants/icons'
+import { shadows } from '@/theme'
 
 interface Props {
   onCheckout: () => void
@@ -97,11 +98,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 36,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 20,
+    ...shadows.heavy,
   },
   heading: {
     fontSize: 16,

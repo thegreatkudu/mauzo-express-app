@@ -27,6 +27,7 @@ import {
 } from '@/constants/icons'
 import type { AppTheme } from '@/hooks/use-theme'
 import type { Brand, Unit } from '@/types'
+import { shadows } from '@/theme'
 
 export default function ProductDetailScreen() {
   const { t } = useTranslation()
@@ -379,11 +380,7 @@ function ScreenHeader({
           backgroundColor: theme.colors.card,
           alignItems: 'center',
           justifyContent: 'center',
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.10,
-          shadowRadius: 6,
-          elevation: 4,
+          ...shadows.medium,
         }}
       >
         <HugeiconsIcon
@@ -439,11 +436,7 @@ function makeStyles({ colors }: AppTheme) {
       padding: 16,
       borderWidth: 1,
       borderColor: colors.divider,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.04,
-      shadowRadius: 5,
-      elevation: 2,
+      ...shadows.subtle,
       gap: 8,
     },
     cardTitle: {
@@ -524,11 +517,11 @@ function makeStyles({ colors }: AppTheme) {
       borderTopWidth: 1,
       borderTopColor: colors.divider,
       gap: 12,
-      shadowColor: '#000',
+      shadowColor: '#f0f0f0',
       shadowOffset: { width: 0, height: -4 },
       shadowOpacity: 0.08,
       shadowRadius: 12,
-      elevation: 12,
+      elevation: 8,
     },
     bottomTopRow: {
       flexDirection: 'row',

@@ -37,11 +37,11 @@ export const Colors = {
   overlay: 'rgba(0,0,0,0.45)',
 } as const
 
-// Card shadow (SRS §6.1)
+// Card shadow (SRS §6.1) — standardized to match the app-wide shadow design system
 export const CARD_SHADOW = {
-  shadowColor: '#000',
+  shadowColor: '#f0f0f0',
   shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.04,
-  shadowRadius: 5,
-  elevation: 2,
+  shadowOpacity: 0.06,
+  shadowRadius: 8,
+  elevation: 3,
 } as const

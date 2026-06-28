@@ -79,6 +79,7 @@ import StatusBadge from '@/components/ui/StatusBadge'
 import { formatDate, formatOrderId } from '@/utils/date'
 import { SkeletonBox } from '@/components/skeletons/Shimmer'
 import type { Order, OrderStatus } from '@/types'
+import { shadows } from '@/theme'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -447,8 +448,7 @@ const SummaryCard = memo(function SummaryCard({
         flex: 1, backgroundColor: theme.colors.card, borderRadius: 14, padding: 14,
         borderTopWidth: 3, borderTopColor: color,
         borderWidth: 1, borderColor: theme.colors.divider,
-        shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.04, shadowRadius: 5, elevation: 2,
+        ...shadows.subtle,
         alignItems: 'center', gap: 6,
       }}
     >
@@ -903,11 +903,7 @@ function getStyles(theme: AppTheme) {
       borderWidth: 1,
       borderColor: theme.colors.divider,
       overflow: 'hidden',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.04,
-      shadowRadius: 6,
-      elevation: 2,
+      ...shadows.subtle,
     },
     chartHeader:   { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12, gap: 12 },
     chartTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
@@ -967,11 +963,7 @@ function getStyles(theme: AppTheme) {
       padding: 16,
       borderWidth: 1,
       borderColor: theme.colors.divider,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.04,
-      shadowRadius: 6,
-      elevation: 2,
+      ...shadows.subtle,
     },
     sectionTitle: { fontFamily: 'Poppins-SemiBold', color: theme.colors.text, marginBottom: 12 },
     statusGrid:   { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },

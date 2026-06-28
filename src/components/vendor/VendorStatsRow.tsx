@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native'
 import { VendorStore } from '@/types'
+import { shadows } from '@/theme'
 
 interface Props {
   vendor: VendorStore
@@ -38,11 +39,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderWidth: 1,
     borderColor: '#F0F0F0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 5,
-    elevation: 2,
+    ...shadows.subtle,
     marginBottom: 12,
   },
   stat: {

@@ -6,6 +6,7 @@ import { router } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import * as SecureStore from 'expo-secure-store'
+import { shadows } from '@/theme'
 import {
   GridIcon,
   VendorStoreIcon,
@@ -406,11 +407,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 32,
     paddingHorizontal: 28,
     paddingTop: 28,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -6 },
-    shadowOpacity: 0.10,
-    shadowRadius: 20,
-    elevation: 24,
+    ...shadows.heavy,
   },
 
   // ── Progress bars ──

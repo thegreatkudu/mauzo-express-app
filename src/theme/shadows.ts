@@ -1,43 +1,38 @@
-// Snapcart shadow system — converted from the three reference CSS box-shadows
-// into React Native shadow/elevation props, plus a vendor preset.
-//
-// Source CSS:
-//   card    → rgba(0, 0, 0, 0.05) 0px 0px 0px 1px
-//   soft    → rgba(27, 31, 35, 0.04) 0px 1px 0px, rgba(255, 255, 255, 0.25) 0px 1px 0px inset
-//   product → rgba(0, 0, 0, 0.05) 0px 1px 2px 0px
-//   vendor  → extrapolated from the above pattern for larger / elevated cards
-import { Platform } from 'react-native'
+// Premium shadow design system — light tint, minimal offset, low opacity.
+// All values unified (no Platform.select) — React Native ignores irrelevant props per platform.
 
-type ShadowStyle = {
-  shadowColor: string
-  shadowOffset: { width: number; height: number }
-  shadowOpacity: number
-  shadowRadius: number
-} | { elevation: number }
-
-const ios = (color: string, w: number, h: number, opacity: number, radius: number): ShadowStyle => ({
-  shadowColor: color,
-  shadowOffset: { width: w, height: h },
-  shadowOpacity: opacity,
-  shadowRadius: radius,
-})
-
-function shadow(
-  iOSArgs: Parameters<typeof ios>,
-  androidElevation: number,
-): ShadowStyle {
-  return Platform.OS === 'ios'
-    ? ios(...iOSArgs)
-    : { elevation: androidElevation }
-}
-
-// Unified card shadow: rgba(0, 0, 0, 0.04) 0px 2px 5px
-export const shadowStyles = {
-  card:    shadow(['#000000', 0, 2, 0.04, 5],  2),
-  soft:    shadow(['#1B1F23', 0, 1, 0.04, 0],  1),
-  product: shadow(['#000000', 0, 2, 0.04, 5],  2),
-  vendor:  shadow(['#000000', 0, 4, 0.08, 12], 4),
-  float:   shadow(['#000000', 0, 8, 0.10, 16], 8),
+export const shadows = {
+  subtle: {
+    shadowColor: '#f0f0f0',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  medium: {
+    shadowColor: '#f0f0f0',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 5,
+  },
+  heavy: {
+    shadowColor: '#f0f0f0',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 8,
+  },
 } as const
 
-export type ShadowKey = keyof typeof shadowStyles
+// Backward-compatible aliases used by existing components
+export const shadowStyles = {
+  card:    shadows.subtle,
+  soft:    shadows.subtle,
+  product: shadows.subtle,
+  vendor:  shadows.medium,
+  float:   shadows.heavy,
+} as const
+
+export type ShadowKey   = keyof typeof shadowStyles
+export type ShadowLevel = keyof typeof shadows

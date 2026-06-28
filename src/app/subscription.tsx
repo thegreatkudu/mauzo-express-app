@@ -18,6 +18,7 @@ import { CrownIcon, PhoneIcon, CheckCircleIcon } from '@/constants/icons'
 import { useTheme, useThemeStyles } from '@/hooks/use-theme'
 import type { AppTheme } from '@/hooks/use-theme'
 import type { SubscriptionPlan } from '@/types'
+import { shadows } from '@/theme'
 
 export default function SubscriptionScreen() {
   const { t } = useTranslation()
@@ -171,11 +172,7 @@ function PlanCard({ plan, selected, onSelect, theme }: {
           borderWidth: 1.5,
           borderColor: theme.colors.border,
           gap: 4,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: theme.isDark ? 0 : 0.04,
-          shadowRadius: 5,
-          elevation: 2,
+          ...shadows.subtle,
           position: 'relative' as const,
         },
         selected && { borderColor: theme.colors.primary, backgroundColor: theme.colors.primaryLight },
@@ -250,11 +247,7 @@ function getStyles(theme: AppTheme) {
       paddingHorizontal: 18,
       paddingVertical:   12,
       alignItems:        'center',
-      shadowColor:       '#000',
-      shadowOffset:      { width: 0, height: 3 },
-      shadowOpacity:     0.10,
-      shadowRadius:      8,
-      elevation:         4,
+      ...shadows.medium,
     },
     statusExpired: { backgroundColor: theme.colors.dangerBg },
     statusTrial:   { backgroundColor: theme.colors.warningBg },
@@ -285,11 +278,7 @@ function getStyles(theme: AppTheme) {
       borderWidth:     1,
       borderColor:     theme.colors.border,
       gap:             12,
-      shadowColor:     '#000',
-      shadowOffset:    { width: 0, height: 2 },
-      shadowOpacity:   theme.isDark ? 0 : 0.04,
-      shadowRadius:    5,
-      elevation:       2,
+      ...shadows.subtle,
     },
     featuresTitle: {
       fontSize:     15,

@@ -1,6 +1,7 @@
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { HugeiconsIcon } from '@hugeicons/react-native'
 import { TickIcon } from '@/constants/icons'
+import { shadows } from '@/theme'
 
 interface ColorOption {
   label: string
@@ -76,11 +77,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.15,
-    shadowRadius: 3,
-    elevation: 2,
+    ...shadows.subtle,
   },
   swatchActive: {
     borderWidth: 2.5,

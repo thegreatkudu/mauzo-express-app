@@ -4,6 +4,7 @@ import {
   Pressable, RefreshControl, ScrollView, StyleSheet,
   Text, TextInput, TouchableOpacity, View,
 } from 'react-native'
+import BottomSheet, { BottomSheetScrollView } from '@expo/ui/community/bottom-sheet'
 import { Image } from 'expo-image'
 import { FlashList } from '@shopify/flash-list'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -19,6 +20,7 @@ import { extractApiError } from '@/api/client'
 import { useTheme, useThemeStyles } from '@/hooks/use-theme'
 import type { AppTheme } from '@/hooks/use-theme'
 import { useResponsive } from '@/hooks/useResponsive'
+import { shadows } from '@/theme'
 import { ProductCardSkeleton } from '@/components/skeletons'
 import EmptyState from '@/components/ui/EmptyState'
 import {
@@ -182,126 +184,141 @@ function AddToCartModal({ product, supplierId, onClose }: {
     }
   }
 
-  if (!product) return null
-
   const isLoading = brandsLoading || unitsLoading
 
+  function handleClose() {
+    setBrandPickerOpen(false)
+    setUnitPickerOpen(false)
+    onClose()
+  }
+
   return (
-    <Modal visible={!!product} transparent animationType='slide' onRequestClose={onClose}>
-      <Pressable style={styles.overlay} onPress={onClose}>
-        <Pressable style={styles.sheet} onPress={() => {}}>
-          {/* Handle */}
-          <View style={styles.sheetHandle} />
-
-          {/* Header */}
-          <View style={styles.sheetHeader}>
-            <Text style={styles.sheetTitle} numberOfLines={2}>{product.name}</Text>
-            <TouchableOpacity onPress={onClose} hitSlop={8}>
-              <HugeiconsIcon icon={CloseIcon} size={20} color={theme.colors.textSub} strokeWidth={1.5} />
-            </TouchableOpacity>
-          </View>
-
-          {isLoading ? (
-            <ActivityIndicator color={theme.colors.primary} style={{ marginVertical: 32 }} />
-          ) : (
-            <ScrollView showsVerticalScrollIndicator={false}>
-              {/* Brand picker */}
-              <View style={styles.fieldGroup}>
-                <Text style={styles.fieldLabel}>{t('supplier_products.brand_label')}</Text>
-                <TouchableOpacity
-                  style={styles.picker}
-                  onPress={() => setBrandPickerOpen(true)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={[styles.pickerText, !selectedBrand && styles.pickerPlaceholder]}>
-                    {selectedBrand?.name ?? t('supplier_products.brand_placeholder')}
-                  </Text>
-                  <HugeiconsIcon icon={ChevronDownIcon} size={18} color={theme.colors.textMuted} strokeWidth={1.5} />
+    <>
+      {/* ── Main Add to Cart sheet ── */}
+      <BottomSheet
+        index={!!product ? 0 : -1}
+        enablePanDownToClose
+        onClose={handleClose}
+        backgroundStyle={{ backgroundColor: theme.colors.card }}
+        snapPoints={['80%']}
+      >
+        <BottomSheetScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.sheetContent}
+        >
+          {product && (
+            <>
+              {/* Header */}
+              <View style={styles.sheetHeader}>
+                <Text style={styles.sheetTitle} numberOfLines={2}>{product.name}</Text>
+                <TouchableOpacity onPress={handleClose} hitSlop={8}>
+                  <HugeiconsIcon icon={CloseIcon} size={20} color={theme.colors.textSub} strokeWidth={1.5} />
                 </TouchableOpacity>
               </View>
 
-              {/* Unit picker */}
-              <View style={styles.fieldGroup}>
-                <Text style={styles.fieldLabel}>{t('supplier_products.unit_label')}</Text>
-                <TouchableOpacity
-                  style={styles.picker}
-                  onPress={() => setUnitPickerOpen(true)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={[styles.pickerText, !selectedUnit && styles.pickerPlaceholder]}>
-                    {selectedUnit
-                      ? `${selectedUnit.name} — TZS ${selectedUnit.price.toLocaleString()}`
-                      : t('supplier_products.unit_placeholder')}
-                  </Text>
-                  <HugeiconsIcon icon={ChevronDownIcon} size={18} color={theme.colors.textMuted} strokeWidth={1.5} />
-                </TouchableOpacity>
-              </View>
+              {isLoading ? (
+                <ActivityIndicator color={theme.colors.primary} style={{ marginVertical: 32 }} />
+              ) : (
+                <>
+                  {/* Brand picker */}
+                  <View style={styles.fieldGroup}>
+                    <Text style={styles.fieldLabel}>{t('supplier_products.brand_label')}</Text>
+                    <TouchableOpacity
+                      style={styles.picker}
+                      onPress={() => setBrandPickerOpen(true)}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={[styles.pickerText, !selectedBrand && styles.pickerPlaceholder]}>
+                        {selectedBrand?.name ?? t('supplier_products.brand_placeholder')}
+                      </Text>
+                      <HugeiconsIcon icon={ChevronDownIcon} size={18} color={theme.colors.textMuted} strokeWidth={1.5} />
+                    </TouchableOpacity>
+                  </View>
 
-              {/* Quantity */}
-              <View style={styles.fieldGroup}>
-                <Text style={styles.fieldLabel}>{t('supplier_products.quantity_label')}</Text>
-                <View style={styles.qtyRow}>
-                  <TouchableOpacity
-                    style={styles.qtyBtn}
-                    onPress={() => setQuantity(q => Math.max(product.min_order_quantity, q - 1))}
-                    hitSlop={8}
-                  >
-                    <HugeiconsIcon icon={MinusIcon} size={18} color={theme.colors.text} strokeWidth={2} />
-                  </TouchableOpacity>
-                  <TextInput
-                    style={styles.qtyInput}
-                    value={String(quantity)}
-                    onChangeText={v => {
-                      const n = parseInt(v, 10)
-                      if (!isNaN(n) && n >= product.min_order_quantity) setQuantity(n)
-                    }}
-                    keyboardType='number-pad'
-                    textAlign='center'
-                  />
-                  <TouchableOpacity
-                    style={styles.qtyBtn}
-                    onPress={() => setQuantity(q => q + 1)}
-                    hitSlop={8}
-                  >
-                    <HugeiconsIcon icon={AddIcon} size={18} color={theme.colors.text} strokeWidth={2} />
-                  </TouchableOpacity>
-                </View>
-                <Text style={styles.minQtyHint}>
-                  {t('supplier_products.min_qty_hint', { count: product.min_order_quantity })}
-                </Text>
-              </View>
+                  {/* Unit picker */}
+                  <View style={styles.fieldGroup}>
+                    <Text style={styles.fieldLabel}>{t('supplier_products.unit_label')}</Text>
+                    <TouchableOpacity
+                      style={styles.picker}
+                      onPress={() => setUnitPickerOpen(true)}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={[styles.pickerText, !selectedUnit && styles.pickerPlaceholder]}>
+                        {selectedUnit
+                          ? `${selectedUnit.name} — TZS ${selectedUnit.price.toLocaleString()}`
+                          : t('supplier_products.unit_placeholder')}
+                      </Text>
+                      <HugeiconsIcon icon={ChevronDownIcon} size={18} color={theme.colors.textMuted} strokeWidth={1.5} />
+                    </TouchableOpacity>
+                  </View>
 
-              {/* Price preview */}
-              {selectedUnit && (
-                <View style={styles.pricePreview}>
-                  <Text style={styles.pricePreviewLabel}>{t('supplier_products.price_preview')}</Text>
-                  <Text style={styles.pricePreviewValue}>
-                    TZS {pricePreview.toLocaleString()}
-                  </Text>
-                </View>
+                  {/* Quantity */}
+                  <View style={styles.fieldGroup}>
+                    <Text style={styles.fieldLabel}>{t('supplier_products.quantity_label')}</Text>
+                    <View style={styles.qtyRow}>
+                      <TouchableOpacity
+                        style={styles.qtyBtn}
+                        onPress={() => setQuantity(q => Math.max(product.min_order_quantity, q - 1))}
+                        hitSlop={8}
+                      >
+                        <HugeiconsIcon icon={MinusIcon} size={18} color={theme.colors.text} strokeWidth={2} />
+                      </TouchableOpacity>
+                      <TextInput
+                        style={styles.qtyInput}
+                        value={String(quantity)}
+                        onChangeText={v => {
+                          const n = parseInt(v, 10)
+                          if (!isNaN(n) && n >= product.min_order_quantity) setQuantity(n)
+                        }}
+                        keyboardType='number-pad'
+                        textAlign='center'
+                      />
+                      <TouchableOpacity
+                        style={styles.qtyBtn}
+                        onPress={() => setQuantity(q => q + 1)}
+                        hitSlop={8}
+                      >
+                        <HugeiconsIcon icon={AddIcon} size={18} color={theme.colors.text} strokeWidth={2} />
+                      </TouchableOpacity>
+                    </View>
+                    <Text style={styles.minQtyHint}>
+                      {t('supplier_products.min_qty_hint', { count: product.min_order_quantity })}
+                    </Text>
+                  </View>
+
+                  {/* Price preview */}
+                  {selectedUnit && (
+                    <View style={styles.pricePreview}>
+                      <Text style={styles.pricePreviewLabel}>{t('supplier_products.price_preview')}</Text>
+                      <Text style={styles.pricePreviewValue}>
+                        TZS {pricePreview.toLocaleString()}
+                      </Text>
+                    </View>
+                  )}
+
+                  {/* Confirm */}
+                  <TouchableOpacity
+                    style={[styles.confirmBtn, adding && styles.confirmBtnDisabled]}
+                    onPress={handleAdd}
+                    disabled={adding}
+                    activeOpacity={0.88}
+                  >
+                    {adding
+                      ? <ActivityIndicator color='#fff' />
+                      : <>
+                          <HugeiconsIcon icon={CheckCircleIcon} size={18} color='#fff' strokeWidth={2} />
+                          <Text style={styles.confirmBtnText}>{t('supplier_products.add_to_cart')}</Text>
+                        </>
+                    }
+                  </TouchableOpacity>
+                </>
               )}
-
-              {/* Confirm */}
-              <TouchableOpacity
-                style={[styles.confirmBtn, adding && styles.confirmBtnDisabled]}
-                onPress={handleAdd}
-                disabled={adding}
-                activeOpacity={0.88}
-              >
-                {adding
-                  ? <ActivityIndicator color='#fff' />
-                  : <>
-                      <HugeiconsIcon icon={CheckCircleIcon} size={18} color='#fff' strokeWidth={2} />
-                      <Text style={styles.confirmBtnText}>{t('supplier_products.add_to_cart')}</Text>
-                    </>
-                }
-              </TouchableOpacity>
-            </ScrollView>
+            </>
           )}
-        </Pressable>
-      </Pressable>
+        </BottomSheetScrollView>
+      </BottomSheet>
 
-      {/* Brand picker modal */}
+      {/* ── Brand picker modal ── */}
       <Modal
         visible={brandPickerOpen}
         transparent
@@ -333,7 +350,7 @@ function AddToCartModal({ product, supplierId, onClose }: {
         </Pressable>
       </Modal>
 
-      {/* Unit picker modal */}
+      {/* ── Unit picker modal ── */}
       <Modal
         visible={unitPickerOpen}
         transparent
@@ -365,7 +382,7 @@ function AddToCartModal({ product, supplierId, onClose }: {
           </View>
         </Pressable>
       </Modal>
-    </Modal>
+    </>
   )
 }
 
@@ -576,8 +593,7 @@ function getStyles(theme: AppTheme) {
       backgroundColor: theme.colors.card,
       borderRadius: 16, borderWidth: 1, borderColor: theme.colors.divider,
       overflow: 'hidden', marginBottom: 12,
-      shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.04, shadowRadius: 5, elevation: 2,
+      ...shadows.subtle,
     },
     productCardCompact: { marginBottom: 0 },
     productUnavailable: { opacity: 0.55 },
@@ -618,9 +634,10 @@ function getStyles(theme: AppTheme) {
     overlay: { flex: 1, backgroundColor: theme.colors.overlay, justifyContent: 'flex-end' },
     sheet: {
       backgroundColor: theme.colors.card, borderTopLeftRadius: 24, borderTopRightRadius: 24,
-      paddingHorizontal: 20, paddingBottom: 36, paddingTop: 12, maxHeight: '85%',
+      paddingHorizontal: 20, paddingBottom: 36, paddingTop: 12,
     },
     sheetHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: theme.colors.border, alignSelf: 'center', marginBottom: 16 },
+    sheetContent: { paddingHorizontal: 20, paddingBottom: 36, paddingTop: 4 },
     sheetHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 20 },
     sheetTitle:  { fontSize: 17, fontFamily: 'Poppins-SemiBold', color: theme.colors.text, flex: 1 },
 

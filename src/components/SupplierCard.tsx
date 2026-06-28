@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next'
 import { useTheme, useThemeStyles } from '@/hooks/use-theme'
 import type { AppTheme } from '@/hooks/use-theme'
 import type { Supplier } from '@/types'
+import { shadows } from '@/theme'
 
 interface SupplierCardProps {
   supplier: Supplier
@@ -124,11 +125,7 @@ function getStyles(theme: AppTheme) {
       borderColor: theme.colors.divider,
       overflow: 'hidden',
       marginBottom: 12,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.04,
-      shadowRadius: 5,
-      elevation: 2,
+      ...shadows.subtle,
     },
     cardCompact: { marginBottom: 0 },
 
@@ -155,11 +152,7 @@ function getStyles(theme: AppTheme) {
       width: 56, height: 56, borderRadius: 28,
       backgroundColor: theme.colors.card,
       alignItems: 'center', justifyContent: 'center',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.08,
-      shadowRadius: 6,
-      elevation: 3,
+      ...shadows.medium,
     },
     bandIconCircleCompact: { width: 44, height: 44, borderRadius: 22 },
 

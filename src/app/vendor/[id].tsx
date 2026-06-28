@@ -19,6 +19,7 @@ import {
   PackageIcon, ChevronRightIcon,
 } from '@/constants/icons'
 import type { AppTheme } from '@/hooks/use-theme'
+import { shadows } from '@/theme'
 
 export default function SupplierProfileScreen() {
   const { t } = useTranslation()
@@ -209,11 +210,7 @@ function ScreenHeader({ onBack, rf, hp, isTablet }: {
           backgroundColor: theme.colors.card,
           alignItems: 'center',
           justifyContent: 'center',
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.10,
-          shadowRadius: 6,
-          elevation: 4,
+          ...shadows.medium,
         }}
       >
         <HugeiconsIcon
@@ -252,11 +249,7 @@ function makeStyles({ colors }: AppTheme) {
       alignItems: 'center',
       borderWidth: 1,
       borderColor: colors.divider,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.04,
-      shadowRadius: 5,
-      elevation: 2,
+      ...shadows.subtle,
       gap: 10,
     },
     heroIconWrap: {
@@ -297,11 +290,7 @@ function makeStyles({ colors }: AppTheme) {
       padding: 16,
       borderWidth: 1,
       borderColor: colors.divider,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.04,
-      shadowRadius: 5,
-      elevation: 2,
+      ...shadows.subtle,
       gap: 2,
     },
     cardTitle: { fontFamily: 'Poppins-SemiBold', color: colors.text, marginBottom: 8 },

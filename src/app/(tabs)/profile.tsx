@@ -19,6 +19,7 @@ import { maskPhone } from '@/utils/phone'
 import { daysRemaining } from '@/utils/date'
 import { useTheme, useThemeStyles } from '@/hooks/use-theme'
 import type { AppTheme, ThemeMode } from '@/hooks/use-theme'
+import { shadows } from '@/theme'
 import {
   PersonIcon, PhoneIcon, LocationIcon, EditIcon,
   KeyIcon, LogoutIcon, CrownIcon, ChevronRightIcon,
@@ -271,7 +272,7 @@ export default function ProfileScreen() {
             onPress={confirmLogout}
             activeOpacity={0.85}
           >
-            <HugeiconsIcon icon={LogoutIcon} size={20} color='#EF4444' strokeWidth={1.5} />
+            <HugeiconsIcon icon={LogoutIcon} size={20} color={theme.colors.danger} strokeWidth={1.5} />
             <Text style={[styles.logoutText, { fontSize: rf(15) }]}>{t('profile.sign_out')}</Text>
           </TouchableOpacity>
 
@@ -531,11 +532,7 @@ function cardStyle(theme: AppTheme) {
     borderWidth: 1,
     borderColor: theme.colors.divider,
     overflow: 'hidden' as const,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: theme.isDark ? 0.25 : 0.04,
-    shadowRadius: 5,
-    elevation: 2,
+    ...shadows.subtle,
   }
 }
 
@@ -557,9 +554,9 @@ function getStyles(theme: AppTheme) {
     logoutBtn: {
       flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
       paddingVertical: 16, backgroundColor: theme.colors.dangerBg,
-      borderWidth: 1, borderColor: '#FECACA',
+      borderWidth: 1, borderColor: theme.colors.danger + '40',
     },
-    logoutText: { fontFamily: 'Poppins-SemiBold', color: '#EF4444' },
+    logoutText: { fontFamily: 'Poppins-SemiBold', color: theme.colors.danger },
 
     sideRow:   { flexDirection: 'row', gap: 20 },
     sideLeft:  { flex: 1 },
