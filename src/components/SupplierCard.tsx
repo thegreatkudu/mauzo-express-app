@@ -37,25 +37,24 @@ const SupplierCard = memo(function SupplierCard({
     text: theme.colors.primary,
   }
 
-  // Header band height scales with compact mode (mirrors product image sizing)
-  const bandHeight = compact ? 90 : 110
-
   return (
     <TouchableOpacity
       style={[styles.card, compact && styles.cardCompact]}
       onPress={onPress}
       activeOpacity={0.85}
     >
-      {/* ── Coloured header band (mirrors product image area) ── */}
-      <View style={[styles.band, { height: bandHeight, backgroundColor: accent.bg }]}>
-        {/* Category chip — top-left */}
-        <View style={styles.categoryChip}>
-          <Text style={[styles.categoryChipText, { fontSize: rf(10) }]} numberOfLines={1}>
-            {supplier.category.name}
-          </Text>
+      {/* ── Coloured header band ── */}
+      <View style={[styles.band, compact && styles.bandCompact, { backgroundColor: accent.bg }]}>
+        {/* Row 1 — category chip, left-aligned */}
+        <View style={styles.bandTop}>
+          <View style={styles.categoryChip}>
+            <Text style={[styles.categoryChipText, { fontSize: rf(10) }]} numberOfLines={1}>
+              {supplier.category.name}
+            </Text>
+          </View>
         </View>
 
-        {/* Centred building icon */}
+        {/* Row 2 — centred logo/icon circle, grows to fill remaining space */}
         <View style={styles.bandIconWrap}>
           <View style={[styles.bandIconCircle, compact && styles.bandIconCircleCompact]}>
             <HugeiconsIcon
@@ -67,17 +66,19 @@ const SupplierCard = memo(function SupplierCard({
           </View>
         </View>
 
-        {/* Product count badge — bottom-right */}
-        <View style={styles.productBadge}>
-          <HugeiconsIcon icon={PackageIcon} size={10} color={theme.colors.textSub} strokeWidth={1.5} />
-          <Text style={[styles.productBadgeText, { fontSize: rf(10) }]}>
-            {t(
-              supplier.product_count !== 1
-                ? 'supplier_card.products_other'
-                : 'supplier_card.products_one',
-              { count: supplier.product_count },
-            )}
-          </Text>
+        {/* Row 3 — product count badge, right-aligned */}
+        <View style={styles.bandBottom}>
+          <View style={styles.productBadge}>
+            <HugeiconsIcon icon={PackageIcon} size={10} color={theme.colors.textSub} strokeWidth={1.5} />
+            <Text style={[styles.productBadgeText, { fontSize: rf(10) }]}>
+              {t(
+                supplier.product_count !== 1
+                  ? 'supplier_card.products_other'
+                  : 'supplier_card.products_one',
+                { count: supplier.product_count },
+              )}
+            </Text>
+          </View>
         </View>
       </View>
 
@@ -131,15 +132,18 @@ function getStyles(theme: AppTheme) {
 
     band: {
       width: '100%',
-      justifyContent: 'center',
-      alignItems: 'center',
-      position: 'relative',
+      height: 130,
+      flexDirection: 'column',
+      alignItems: 'stretch',
+      paddingVertical: 8,
+      paddingHorizontal: 8,
     },
+    bandCompact: { height: 112 },
+
+    bandTop:    { alignSelf: 'flex-start' },
+    bandBottom: { alignSelf: 'flex-end' },
 
     categoryChip: {
-      position: 'absolute',
-      top: 8,
-      left: 8,
       backgroundColor: theme.isDark ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.90)',
       paddingHorizontal: 8,
       paddingVertical: 3,
@@ -147,7 +151,7 @@ function getStyles(theme: AppTheme) {
     },
     categoryChipText: { fontFamily: 'Poppins-SemiBold', color: theme.colors.primary },
 
-    bandIconWrap: { alignItems: 'center', justifyContent: 'center' },
+    bandIconWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
     bandIconCircle: {
       width: 56, height: 56, borderRadius: 28,
       backgroundColor: theme.colors.card,
@@ -157,9 +161,6 @@ function getStyles(theme: AppTheme) {
     bandIconCircleCompact: { width: 44, height: 44, borderRadius: 22 },
 
     productBadge: {
-      position: 'absolute',
-      bottom: 8,
-      right: 8,
       flexDirection: 'row',
       alignItems: 'center',
       gap: 4,
